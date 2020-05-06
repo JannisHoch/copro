@@ -1,0 +1,21 @@
+name: conflict_model
+
+channels:
+  - defaults
+  - anaconda
+  - conda-forge
+
+dependencies:
+  - python>=3.6
+  - xarray>=0.15.0
+  - pandas>=0.25.1
+  - numpy>=1.16.5
+  - matplotlib>=3.2.0
+  - rasterio>=1.1.0
+  - geopandas>=0.7.0
+  - ipython
+  - notebook
+  - nbconvert
+  - scikit-learn
+  - netcdf4
+    
