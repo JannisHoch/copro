@@ -18,4 +18,5 @@ dependencies:
   - nbconvert
   - scikit-learn
   - netcdf4
+  - ConfigParser
     
