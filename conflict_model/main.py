@@ -12,6 +12,4 @@ config.read(settings_file)
 
 conflict_gdf = utils.get_geodataframe(config)
 
-print(conflict_gdf.head())
-
 selected_conflict_gdf, continent_gdf = selection.select(conflict_gdf, config)
