@@ -2,7 +2,6 @@
 
 from . import selection
 from . import utils
-from . import main
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
