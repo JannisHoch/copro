@@ -29,6 +29,8 @@ def filter_conflict_properties(gdf, config, plotting=False):
             print('...filtering key', key, 'with value', selection_criteria[key] + os.linesep)
             gdf = gdf.loc[(gdf[key] == selection_criteria[key])]
 
+    return gdf
+
 def select_period(gdf, config):
 
     t0 = config.getint('settings', 'y_start')
