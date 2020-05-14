@@ -17,11 +17,12 @@ def cli():
 # @click.option('-s', '--start-date', default='', help='set start time for all models')
 # @click.option('-e', '--end-date', default='', help='set end time for all models')
 
+# def run(cfg, env='', out_dir='', end_date='', start_date=''):
+
 def main(cfg):
     """
     CFG: path to cfg-file with run settings
     """
-# def run(cfg, env='', out_dir='', end_date='', start_date=''):
 
     if gpd.__version__ < '0.7.0':
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd.__version__))
