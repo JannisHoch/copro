@@ -37,12 +37,21 @@ This automatically executes the notebook and converts it to a html-file, also st
 with runner script
 ^^^^^^^^^^^^^^^^^^
 
-To run the model from command line, a command line script is provided.
+To run the model from command line, a command line script is provided. In the most basic version, all data is taken from the settings-file.
 
 .. code-block:: console
 
     $ cd path/to/conflict_model/scripts
     $ python runner.py path/to/conflict_model/data/run_setting.cfg
+
+.. note:: by default, no output is stored in the current version of the model!
+
+If output is to be stored in an output map, this currently needs to be specified in the runner scipt explictely (-s option).
+By default, output is stored to the output directory specified in the settings-file. Alternatively, this can be provided via command line too (-o option)
+
+.. code-block:: console
+
+    $ python runner.py -s True -o path/to/output/folder path/to/conflict_model/data/run_setting.cfg
 
 For help, try this if you are in the scripts folder:
 

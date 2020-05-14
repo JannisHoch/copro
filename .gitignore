@@ -130,3 +130,6 @@ dmypy.json
 
 # run settings
 */run_setting.cfg
+
+#output folders
+OUT*/

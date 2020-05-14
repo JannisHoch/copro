@@ -2,8 +2,9 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
-def conflict_in_year_bool(conflict_gdf, continent_gdf, config, plotting=False):
+def conflict_in_year_bool(conflict_gdf, continent_gdf, config, saving_plots=False, showing_plots=False, out_dir=None):
     """Determins per year the number of fatalities per country and derivates a boolean value whether conflict has occured in one year in one country or not.
 
     Arguments:
@@ -14,6 +15,22 @@ def conflict_in_year_bool(conflict_gdf, continent_gdf, config, plotting=False):
     Keyword Arguments:
         plotting {bool}: whether or not to make annual plots of boolean conflict and conflict fatalities (default: False)
     """    
+
+    #out_dir
+    #if not set as keyword argument, then taken from cfg-file
+    if out_dir==None:
+        out_dir = config.get('general','output_dir')
+    else:
+        out_dir = out_dir
+    if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+
+    print('output directory is', out_dir)
+
+    if saving_plots:
+        print('saving plots')
+    else:
+        print('not saving plots')
 
     # get all years in the dataframe
     years = conflict_gdf.year.unique()
@@ -36,35 +53,40 @@ def conflict_in_year_bool(conflict_gdf, continent_gdf, config, plotting=False):
         # if the fatalities exceed 0.0, this entry is assigned a value 1, otherwise 0
         annual_fatalities_sum['conflict_bool'] = np.where(annual_fatalities_sum['best_SUM']>0.0, 1, 0)
             
-        # plot results if specified    
-        if plotting:
-            
-            fig, (ax1, ax2) = plt.subplots(1,2, figsize=(20,10), sharey=True)
-    
-            annual_fatalities_sum.plot(ax=ax1,column='conflict_bool',
-                                           vmin=0,
-                                           vmax=2,
-                                           categorical=True,
-                                           legend=True)
+        fig, (ax1, ax2) = plt.subplots(1,2, figsize=(20,10), sharey=True)
 
-            continent_gdf.boundary.plot(ax=ax1,
-                                        color='0.5',
-                                        linestyle=':')
+        annual_fatalities_sum.plot(ax=ax1,column='conflict_bool',
+                                        vmin=0,
+                                        vmax=2,
+                                        categorical=True,
+                                        legend=True)
 
-            ax1.set_xlim(continent_gdf.total_bounds[0]-1, continent_gdf.total_bounds[2]+1)
-            ax1.set_ylim(continent_gdf.total_bounds[1]-1, continent_gdf.total_bounds[3]+1)
-            ax1.set_title('conflict_bool ' + str(year))
-            
-            annual_fatalities_sum.plot(ax=ax2, column='best_SUM',
-                                           vmin=0,
-                                           vmax=1500)
+        continent_gdf.boundary.plot(ax=ax1,
+                                    color='0.5',
+                                    linestyle=':')
 
-            continent_gdf.boundary.plot(ax=ax2,
-                                        color='0.5',
-                                        linestyle=':')
+        ax1.set_xlim(continent_gdf.total_bounds[0]-1, continent_gdf.total_bounds[2]+1)
+        ax1.set_ylim(continent_gdf.total_bounds[1]-1, continent_gdf.total_bounds[3]+1)
+        ax1.set_title('conflict_bool ' + str(year))
+        
+        annual_fatalities_sum.plot(ax=ax2, column='best_SUM',
+                                        vmin=0,
+                                        vmax=1500)
 
-            ax2.set_xlim(continent_gdf.total_bounds[0]-1, continent_gdf.total_bounds[2]+1)
-            ax2.set_ylim(continent_gdf.total_bounds[1]-1, continent_gdf.total_bounds[3]+1)
-            ax2.set_title('aggr. fatalities ' + str(year))
+        continent_gdf.boundary.plot(ax=ax2,
+                                    color='0.5',
+                                    linestyle=':')
+
+        ax2.set_xlim(continent_gdf.total_bounds[0]-1, continent_gdf.total_bounds[2]+1)
+        ax2.set_ylim(continent_gdf.total_bounds[1]-1, continent_gdf.total_bounds[3]+1)
+        ax2.set_title('aggr. fatalities ' + str(year))
+
+        fn_out = os.path.join(out_dir, 'plot' + str(year) + '.png')
+        
+        if saving_plots:
+            plt.savefig(fn_out, dpi=300)
+
+        if not showing_plots:
+            plt.close()
 
     return 
