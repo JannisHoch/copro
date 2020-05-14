@@ -34,5 +34,7 @@ def main(cfg):
 
     selected_conflict_gdf, continent_gdf = conflict_model.selection.select(conflict_gdf, config)
 
+    conflict_model.analysis.conflict_in_year_bool(conflict_gdf, continent_gdf, config, plotting=False)
+
 if __name__ == '__main__':
     main()
