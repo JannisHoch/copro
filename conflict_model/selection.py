@@ -3,7 +3,16 @@ import geopandas as gpd
 import numpy as np
 import os, sys
 
-def filter_conflict_properties(gdf, config, plotting=False):
+def filter_conflict_properties(gdf, config):
+    """filters conflict database according to certain conflict properties such as number of casualties, type of violence or country.
+
+    Arguments:
+        gdf {geodataframe}: geodataframe containing entries with conflicts
+        config {configuration}: parsed configuration settings
+
+    Returns:
+        geodataframe: geodataframe containing filtered entries
+    """    
     
     selection_criteria = {'best': config.getint('conflict', 'min_nr_casualties'),
                           'type_of_violence': config.getint('conflict', 'type_of_conflict'),
@@ -32,6 +41,15 @@ def filter_conflict_properties(gdf, config, plotting=False):
     return gdf
 
 def select_period(gdf, config):
+    """Reducing the geodataframe to those entries falling into a specified time period.
+
+    Arguments:
+        gdf {geodataframe}: geodataframe containing entries with conflicts
+        config {configuration}: parsed configuration settings
+
+    Returns:
+        geodataframe: geodataframe containing filtered entries
+    """    
 
     t0 = config.getint('settings', 'y_start')
     t1 = config.getint('settings', 'y_end')
@@ -44,6 +62,16 @@ def select_period(gdf, config):
     return gdf
 
 def clip_to_continent(gdf, config):
+    """As the original conflict data has global extent, this function clips the database to those entries which have occured on a specified continent.
+
+    Arguments:
+        gdf {geodataframe}: geodataframe containing entries with conflicts
+        config {configuration}: parsed configuration settings
+
+    Returns:
+        geodataframe: geodataframe containing filtered entries
+        geodataframe: geodataframe containing country polygons of selected continent
+    """    
     
     world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
     continent_gdf = world[world["continent"] == config.get('settings', 'continent')]
@@ -55,6 +83,15 @@ def clip_to_continent(gdf, config):
     return gdf, continent_gdf
 
 def climate_zoning(gdf, config):
+    """Only those conflicts falling in certain climate zones may be of interest and this functions keeps only those falling into the specified zones.
+
+    Arguments:
+        gdf {geodataframe}: geodataframe containing entries with conflicts
+        config {configuration}: parsed configuration settings
+
+    Returns:
+        geodataframe: geodataframe containing filtered entries
+    """    
     
     Koeppen_Geiger_fo = os.path.join(config.get('general', 'input_dir'),
                                      config.get('climate', 'shp')) 
@@ -83,6 +120,19 @@ def climate_zoning(gdf, config):
     return gdf
 
 def select(gdf, config, plotting=False):
+    """Filtering the original global conflict dataset based on a) conflict properties, b) time period, c) continent, and d) climate zone.
+
+    Arguments:
+        gdf {geodataframe}: geodataframe containing entries with conflicts
+        config {configuration}: parsed configuration settings
+
+    Keyword Arguments:
+        plotting {bool}: whether or not to plot the resulting selection (default: False)
+
+    Returns:
+        geodataframe: geodataframe containing filtered entries
+        geodataframe: geodataframe containing country polygons of selected continent
+    """    
 
     gdf = filter_conflict_properties(gdf, config)
 
