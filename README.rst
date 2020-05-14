@@ -9,13 +9,14 @@ conflict_model
 installation
 ----------------
 
-to install the conflict model, first clone the code from GitHub. It is advised to create an individual python environment first. Then go to the model folder and install the model.
+To install the conflict model, first clone the code from GitHub. It is advised to create an individual python environment first. Then go to the model folder and install the model.
 
 .. code-block:: console
 
     $ git clone https://github.com/JannisHoch/conflict_model.git
     $ cd path/to/conflict_model
     $ conda-env create -f=environment.yml
+    $ conda activate conflict_model
     $ python setup.py develop
 
 execution
@@ -31,7 +32,7 @@ To run the example jupyter notebook, follow these instructions
     $ cd path/to/conflict_model/example
     $ sh run.sh
 
-This automatically executes the ipynb and converts it to a html-file, also stored in the conflict_model folder.
+This automatically executes the notebook and converts it to a html-file, also stored in the example folder.
 
 with runner script
 ^^^^^^^^^^^^^^^^^^
@@ -51,7 +52,10 @@ For help, try this if you are in the scripts folder:
 
 authors
 ----------------
-Jannis M. Hoch (Utrecht University), Sophie de Bruin (Utrecht University, PBL), Niko Wanders (Utrecht University)
+
+* Jannis M. Hoch (Utrecht University)
+* Sophie de Bruin (Utrecht University, PBL)
+* Niko Wanders (Utrecht University)
 
 corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
 
