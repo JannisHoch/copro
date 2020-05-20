@@ -13,7 +13,14 @@ with open('HISTORY.rst') as history_file:
 # with open('requirements_dev.txt') as requirements_file:
 #     requirements = requirements_file.read()
 
-requirements = []
+requirements = ['Click>=7.0', 
+                'xarray>=0.15.1',
+                'pandas>=1.0.3',
+                'rasterio>=1.1.0',
+                'rioxarray>=0.0.26',
+                'geopandas>=0.7.0',
+                'numpy>=1.16.5',
+                'scikit-learn>=0.22.1',]
 
 setup_requirements = ['pytest-runner', ]
 
