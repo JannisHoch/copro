@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 requirements = ['Click>=7.0', 
                 'xarray>=0.15.1',
                 'pandas>=1.0.3',
-                'rasterio>=1.1.0',
+                'rasterio>=1.1.3',
                 'rioxarray>=0.0.26',
                 'geopandas>=0.7.0',
                 'numpy>=1.16.5',
