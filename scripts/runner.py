@@ -6,6 +6,7 @@ import click
 from os.path import isdir, dirname, abspath
 from os import makedirs
 import geopandas as gpd
+import numpy as np
 import os, sys
 
 # ad-hoc functions
@@ -24,8 +25,6 @@ def cli():
 
 @click.command()
 @click.argument('cfg',)
-@click.option('-o', '--out-dir', default=None, help='directory to save model outputs', type=click.Path(), show_default=True)
-@click.option('-s', '--safe-plots', default=False, help='whether or not to safe plots', type=bool, show_default=True)
 
 def main(cfg, out_dir=None, safe_plots=False):
     """
@@ -33,21 +32,36 @@ def main(cfg, out_dir=None, safe_plots=False):
 
     CFG: path to cfg-file with run settings
     """
+    print('')
+    print('#### LETS GET STARTED PEOPLZ! ####' + os.linesep)
 
     if gpd.__version__ < '0.7.0':
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd.__version__))
 
-    if out_dir:
-        out_dir = parse_dir('out-dir', out_dir)
-
     config = RawConfigParser(allow_no_value=True)
     config.read(cfg)
+
+    #out_dir
+    out_dir = config.get('general','output_dir')
+    if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+    print('for the record, saving output to folder {}'.format(out_dir) + os.linesep)
 
     conflict_gdf = conflict_model.utils.get_geodataframe(config)
 
     selected_conflict_gdf, extent_gdf = conflict_model.selection.select(conflict_gdf, config)
 
-    conflict_model.analysis.conflict_in_year_bool(selected_conflict_gdf, extent_gdf, config, saving_plots=safe_plots, out_dir=out_dir)
+    sim_years = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1)
+
+    print('preps are all done, now entering annual analysis' + os.linesep)
+
+    for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1):
+
+        print('entering year {}'.format(sim_year) + os.linesep)
+
+        boolean_conflict_gdf = conflict_model.analysis.conflict_in_year_bool(selected_conflict_gdf, extent_gdf, config, sim_year, out_dir, saving_plots=True)
+
+        GDP_PPP_gdf = conflict_model.env_vars_nc.rasterstats_GDP_PPP(boolean_conflict_gdf, config, sim_year, out_dir, saving_plots=True)
 
 if __name__ == '__main__':
     main()
