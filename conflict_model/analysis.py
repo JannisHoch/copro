@@ -56,17 +56,26 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, saving_plots=False, 
                                         categorical=True,
                                         legend=True)
 
+        temp_sel_year.plot(ax=ax1, legend=True, color='r', label='PRIO/UCDP events')
+
         extent_gdf.boundary.plot(ax=ax1,
                                     color='0.5',
-                                    linestyle=':')
+                                    linestyle=':',
+                                    label='water province borders')
 
         ax1.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
         ax1.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
         ax1.set_title('conflict_bool ' + str(year))
+
+        ax1.legend()
         
-        annual_fatalities_sum.plot(ax=ax2, column='best_SUM',
-                                        vmin=0,
-                                        vmax=1500)
+        annual_fatalities_sum.plot(ax=ax2, 
+                                   column='best_SUM',
+                                   vmin=0,
+                                   vmax=1500,
+                                   legend=True,
+                                   legend_kwds={'label': "FATALITIES_SUM",
+                                                'orientation': "vertical"},)
 
         extent_gdf.boundary.plot(ax=ax2,
                                     color='0.5',
@@ -79,7 +88,6 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, saving_plots=False, 
         fn_out = os.path.join(out_dir, 'plot' + str(year) + '.png')
         
         if saving_plots:
-            print('saving plots')
             plt.savefig(fn_out, dpi=300)
 
         if not showing_plots:
