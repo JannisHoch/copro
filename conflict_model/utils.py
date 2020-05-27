@@ -32,3 +32,18 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
                           crs=crs)
     
     return gdf
+
+def show_versions():
+    from conflict_model import __version__ as cm_version
+    from geopandas import __version__ as gpd_version
+    from pandas import __version__ as pd_version
+    from numpy import __version__ as np_version
+    from matplotlib import __version__ as mpl_version
+    from sys import version as os_version
+
+    print("Python version: {}".format(os_version))
+    print("conflict_model version: {}".format(cm_version))
+    print("geopandas version: {}".format(gpd_version))
+    print("pandas version: {}".format(pd_version))
+    print("numpy version: {}".format(np_version))
+    print("matplotlib version: {}".format(mpl_version))

@@ -45,9 +45,9 @@ def main(cfg, out_dir=None, safe_plots=False):
 
     conflict_gdf = conflict_model.utils.get_geodataframe(config)
 
-    selected_conflict_gdf, continent_gdf = conflict_model.selection.select(conflict_gdf, config)
+    selected_conflict_gdf, extent_gdf = conflict_model.selection.select(conflict_gdf, config)
 
-    conflict_model.analysis.conflict_in_year_bool(selected_conflict_gdf, continent_gdf, config, saving_plots=safe_plots, out_dir=out_dir)
+    conflict_model.analysis.conflict_in_year_bool(selected_conflict_gdf, extent_gdf, config, saving_plots=safe_plots, out_dir=out_dir)
 
 if __name__ == '__main__':
     main()
