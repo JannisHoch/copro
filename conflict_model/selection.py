@@ -76,9 +76,9 @@ def clip_to_extent(gdf, config):
     shp_fo = os.path.join(config.get('general', 'input_dir'), 
                           config.get('extent', 'shp'))
     
-    print('reading extent and spatial aggregation level from file {}'.format(shp_fo) + os.linesep)
-
+    print('reading extent and spatial aggregation level from file {}'.format(shp_fo))
     extent_gdf = gpd.read_file(shp_fo)
+    print('...DONE' + os.linesep)
 
     print('clipping datasets to extent')    
     gdf = gpd.clip(gdf, extent_gdf)

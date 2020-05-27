@@ -1,0 +1,1 @@
+python runner.py ..\data\run_setting.cfg

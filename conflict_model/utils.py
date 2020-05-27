@@ -22,14 +22,15 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
                                config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
-    print('reading csv file to dataframe...' + os.linesep)
+    print('reading csv file to dataframe {}'.format(conflict_fo))
     df = pd.read_csv(conflict_fo)
+    print('...DONE' + os.linesep)
 
-    print('...translating to geopandas dataframe')
-    
+    print('translating to geopandas dataframe')
     gdf = gpd.GeoDataFrame(df,
                           geometry=gpd.points_from_xy(df[longitude], df[latitude]),
                           crs=crs)
+    print('...DONE' + os.linesep)
     
     return gdf
 
