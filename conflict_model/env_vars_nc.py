@@ -37,9 +37,6 @@ def rasterstats_GDP_PPP(gdf, config, sim_year, out_dir, saving_plots=False, show
         gdf.loc[i, 'zonal_stats_max'] = zonal_stats[0]['max']
         gdf.loc[i, 'zonal_stats_mean'] = zonal_stats[0]['mean']
 
-    print(gdf)
-    import pdb; pdb.set_trace()
-
     fig, axes = plt.subplots(1, 3 , figsize=(20, 10))
 
     fig.suptitle(str(int(sim_year)), y=0.78)

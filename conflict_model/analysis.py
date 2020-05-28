@@ -16,6 +16,8 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, s
         plotting {bool}: whether or not to make annual plots of boolean conflict and conflict fatalities (default: False)
     """  
         
+    print('determining whether a conflict took place or not...')
+    
     # select the entries which occured in this year
     temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]
     
@@ -30,6 +32,8 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, s
     
     # if the fatalities exceed 0.0, this entry is assigned a value 1, otherwise 0
     annual_fatalities_sum['conflict_bool'] = np.where(annual_fatalities_sum['best_SUM']>0.0, 1, 0)
+
+    print('...DONE' + os.linesep)
         
     fig, (ax1, ax2) = plt.subplots(1,2, figsize=(20,10), sharey=True)
 
@@ -76,4 +80,4 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, s
     if not showing_plots:
         plt.close()
 
-    return temp_sel_year
+    return annual_fatalities_sum
