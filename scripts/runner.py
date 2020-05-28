@@ -61,7 +61,7 @@ def main(cfg, out_dir=None, safe_plots=False):
 
         boolean_conflict_gdf = conflict_model.analysis.conflict_in_year_bool(selected_conflict_gdf, extent_gdf, config, sim_year, out_dir, saving_plots=True)
 
-        GDP_PPP_gdf = conflict_model.env_vars_nc.rasterstats_GDP_PPP(boolean_conflict_gdf, config, sim_year, out_dir, saving_plots=True)
+        GDP_PPP_gdf = conflict_model.env_vars_nc.rasterstats_GDP_PPP(boolean_conflict_gdf, extent_gdf, config, sim_year, out_dir, saving_plots=True)
 
 if __name__ == '__main__':
     main()
