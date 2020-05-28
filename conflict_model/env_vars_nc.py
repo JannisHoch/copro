@@ -6,8 +6,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys
 
-def rasterstats_GDP_PPP(gdf, config, sim_year, out_dir, saving_plots=False, showing_plots=False):
+def rasterstats_GDP_PPP(gdf, extent_gdf, config, sim_year, out_dir, saving_plots=False, showing_plots=False):
 
+    print('calculating zonal statistics per aggregation unit')
+    
     nc_fo = os.path.join(config.get('general', 'input_dir'), 
                          config.get('env_vars', 'GDP_PPP'))
 
@@ -37,6 +39,8 @@ def rasterstats_GDP_PPP(gdf, config, sim_year, out_dir, saving_plots=False, show
         gdf.loc[i, 'zonal_stats_max'] = zonal_stats[0]['max']
         gdf.loc[i, 'zonal_stats_mean'] = zonal_stats[0]['mean']
 
+    print('...DONE' + os.linesep)
+
     fig, axes = plt.subplots(1, 3 , figsize=(20, 10))
 
     fig.suptitle(str(int(sim_year)), y=0.78)
@@ -50,6 +54,10 @@ def rasterstats_GDP_PPP(gdf, config, sim_year, out_dir, saving_plots=False, show
                                 'orientation': "vertical",
                                 'shrink': 0.5,
                                 'extend': 'both'})
+    extent_gdf.boundary.plot(ax=axes[0],
+                                color='0.5',
+                                linestyle=':',
+                                label='water province borders')
 
     gdf.plot(ax=axes[1],
                 column='zonal_stats_max',
@@ -60,6 +68,10 @@ def rasterstats_GDP_PPP(gdf, config, sim_year, out_dir, saving_plots=False, show
                                 'orientation': "vertical",
                                 'shrink': 0.5,
                                 'extend': 'both'})
+    extent_gdf.boundary.plot(ax=axes[1],
+                                color='0.5',
+                                linestyle=':',
+                                label='water province borders')
 
     gdf.plot(ax=axes[2],
                 column='zonal_stats_mean',
@@ -70,6 +82,10 @@ def rasterstats_GDP_PPP(gdf, config, sim_year, out_dir, saving_plots=False, show
                                 'orientation': "vertical",
                                 'shrink': 0.5,
                                 'extend': 'both'})
+    extent_gdf.boundary.plot(ax=axes[2],
+                                color='0.5',
+                                linestyle=':',
+                                label='water province borders')
 
     plt.tight_layout()
 
@@ -79,7 +95,7 @@ def rasterstats_GDP_PPP(gdf, config, sim_year, out_dir, saving_plots=False, show
     if saving_plots:
         plt.savefig(plt_name, dpi=300)
 
-    if not showing_plots:
+    if showing_plots == False:
         plt.close()
 
     return gdf
