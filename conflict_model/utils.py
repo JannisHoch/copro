@@ -40,11 +40,17 @@ def show_versions():
     from pandas import __version__ as pd_version
     from numpy import __version__ as np_version
     from matplotlib import __version__ as mpl_version
+    from rasterstats import __version__ as rstats_version
+    from xarray import __version__ as xr_version
+    from rasterio import __version__ as rio_version
     from sys import version as os_version
 
     print("Python version: {}".format(os_version))
     print("conflict_model version: {}".format(cm_version))
     print("geopandas version: {}".format(gpd_version))
+    print("xarray version: {}".format(xr_version))
+    print("rasterio version: {}".format(rio_version))
     print("pandas version: {}".format(pd_version))
     print("numpy version: {}".format(np_version))
     print("matplotlib version: {}".format(mpl_version))
+    print("rasterstats version: {}".format(rstats_version))
