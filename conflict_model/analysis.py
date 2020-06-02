@@ -18,37 +18,45 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, s
         
     print('determining whether a conflict took place or not...')
     
-    # select the entries which occured in this year
-    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]
+    # select the conflict entries which occured in this year
+    conflict_gdf_perYear = conflict_gdf.loc[conflict_gdf.year == sim_year]
     
     # merge this selection with the continent data
-    data_merged = gpd.sjoin(temp_sel_year, extent_gdf, how="inner", op='within')
+    # this adds the water province where conflict took place to each selected conflict entry
+    extent_conflict_merged = gpd.sjoin(conflict_gdf_perYear, extent_gdf, how="inner", op='within')
+
+    # sum fatalities per water province and create dataframe with new column name; index is the water province ID
+    fatalities_per_waterProvince = extent_conflict_merged['best'].groupby(extent_conflict_merged['watprovID']).sum().to_frame().rename(columns={"best": "best_SUM"})
     
-    # per country the annual total fatalities are computed and stored in a separate column
-    annual_fatalities_sum = pd.merge(extent_gdf,
-                                        data_merged['best'].groupby(data_merged['watprovID']).sum().\
-                                        to_frame().rename(columns={"best": "best_SUM"}),
-                                        on='watprovID')
+    # per water province the annual total fatalities are computed and stored in a separate column
+    # this dataframe may be smaller than extent_conflict_merged as multiple conflicts may be in one water province
+    extent_waterProvinces_with_boolFatalities = pd.merge(extent_gdf,
+                                                     fatalities_per_waterProvince,
+                                                     on='watprovID')
     
     # if the fatalities exceed 0.0, this entry is assigned a value 1, otherwise 0
-    annual_fatalities_sum['conflict_bool'] = np.where(annual_fatalities_sum['best_SUM']>0.0, 1, 0)
+    extent_waterProvinces_with_boolFatalities['conflict_bool'] = np.where(extent_waterProvinces_with_boolFatalities['best_SUM']>0.0, 1, 0)
 
     print('...DONE' + os.linesep)
         
     fig, (ax1, ax2) = plt.subplots(1,2, figsize=(20,10), sharey=True)
 
-    annual_fatalities_sum.plot(ax=ax1,column='conflict_bool',
-                                    vmin=0,
-                                    vmax=2,
-                                    categorical=True,
-                                    legend=True)
+    extent_waterProvinces_with_boolFatalities.plot(ax=ax1,
+                                               column='conflict_bool',
+                                               vmin=0,
+                                               vmax=2,
+                                               categorical=True,
+                                               legend=True)
 
-    temp_sel_year.plot(ax=ax1, legend=True, color='r', label='PRIO/UCDP events')
+    conflict_gdf_perYear.plot(ax=ax1, 
+                              legend=True, 
+                              color='r', 
+                              label='PRIO/UCDP events')
 
     extent_gdf.boundary.plot(ax=ax1,
-                                color='0.5',
-                                linestyle=':',
-                                label='water province borders')
+                             color='0.5',
+                             linestyle=':',
+                             label='water province borders')
 
     ax1.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
     ax1.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
@@ -56,17 +64,17 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, s
 
     ax1.legend()
     
-    annual_fatalities_sum.plot(ax=ax2, 
-                                column='best_SUM',
-                                vmin=0,
-                                vmax=1500,
-                                legend=True,
-                                legend_kwds={'label': "FATALITIES_SUM",
-                                            'orientation': "vertical"},)
+    extent_waterProvinces_with_boolFatalities.plot(ax=ax2, 
+                                               column='best_SUM',
+                                               vmin=0,
+                                               vmax=1500,
+                                               legend=True,
+                                               legend_kwds={'label': "FATALITIES_SUM",
+                                                            'orientation': "vertical"},)
 
     extent_gdf.boundary.plot(ax=ax2,
-                                color='0.5',
-                                linestyle=':')
+                             color='0.5',
+                             linestyle=':')
 
     ax2.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
     ax2.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
@@ -80,4 +88,4 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, s
     if not showing_plots:
         plt.close()
 
-    return annual_fatalities_sum
+    return conflict_gdf_perYear, extent_conflict_merged, fatalities_per_waterProvince, extent_waterProvinces_with_boolFatalities

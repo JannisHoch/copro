@@ -59,9 +59,9 @@ def main(cfg, out_dir=None, safe_plots=False):
 
         print('entering year {}'.format(sim_year) + os.linesep)
 
-        boolean_conflict_gdf = conflict_model.analysis.conflict_in_year_bool(selected_conflict_gdf, extent_gdf, config, sim_year, out_dir, saving_plots=True)
+        conflict_gdf_perYear, extent_conflict_merged, fatalities_per_waterProvince, extent_waterProvinces_with_boolFatalities = conflict_model.analysis.conflict_in_year_bool(selected_conflict_gdf, extent_gdf, config, sim_year, out_dir, saving_plots=True)
 
-        GDP_PPP_gdf = conflict_model.env_vars_nc.rasterstats_GDP_PPP(boolean_conflict_gdf, extent_gdf, config, sim_year, out_dir, saving_plots=True)
+        GDP_PPP_gdf = conflict_model.env_vars_nc.rasterstats_GDP_PPP(extent_waterProvinces_with_boolFatalities, extent_gdf, config, sim_year, out_dir, saving_plots=True)
 
 if __name__ == '__main__':
     main()
