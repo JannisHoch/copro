@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys
 
-def rasterstats_GDP_PPP(gdf, extent_gdf, config, sim_year, out_dir, saving_plots=False, showing_plots=False):
+def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_plots=False, showing_plots=False):
 
     print('calculating zonal statistics per aggregation unit')
     
@@ -22,6 +22,8 @@ def rasterstats_GDP_PPP(gdf, extent_gdf, config, sim_year, out_dir, saving_plots
     years = years[years<=config.getint('settings', 'y_end')]
 
     affine = rio.open(nc_fo).transform
+
+    gdf = gdf_in.copy()
 
     gdf['zonal_stats_min'] = np.nan
     gdf['zonal_stats_max'] = np.nan
