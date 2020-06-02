@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys
 
-def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_plots=False, showing_plots=False):
+def rasterstats_GDP_PPP(gdf_in, config, sim_year, out_dir, saving_plots=False, showing_plots=False):
 
     print('calculating zonal statistics per aggregation unit')
     
@@ -25,9 +25,9 @@ def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_pl
 
     gdf = gdf_in.copy()
 
-    gdf['zonal_stats_min'] = np.nan
-    gdf['zonal_stats_max'] = np.nan
-    gdf['zonal_stats_mean'] = np.nan
+    gdf['zonal_stats_min_' + str(sim_year)] = np.nan
+    gdf['zonal_stats_max_' + str(sim_year)] = np.nan
+    gdf['zonal_stats_mean_' + str(sim_year)] = np.nan
 
     nc_arr = nc_var.sel(time=sim_year)
     nc_arr_vals = nc_arr.values
@@ -37,9 +37,9 @@ def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_pl
     for i in range(len(gdf)):
         prov = gdf.iloc[i]
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats="mean min max")
-        gdf.loc[i, 'zonal_stats_min'] = zonal_stats[0]['min']
-        gdf.loc[i, 'zonal_stats_max'] = zonal_stats[0]['max']
-        gdf.loc[i, 'zonal_stats_mean'] = zonal_stats[0]['mean']
+        gdf.loc[i, 'zonal_stats_min_' + str(sim_year)] = zonal_stats[0]['min']
+        gdf.loc[i, 'zonal_stats_max_' + str(sim_year)] = zonal_stats[0]['max']
+        gdf.loc[i, 'zonal_stats_mean_' + str(sim_year)] = zonal_stats[0]['mean']
 
     print('...DONE' + os.linesep)
 
@@ -48,7 +48,7 @@ def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_pl
     fig.suptitle(str(int(sim_year)), y=0.78)
 
     gdf.plot(ax=axes[0],
-                column='zonal_stats_min',
+                column='zonal_stats_min_' + str(sim_year),
                 vmin=2000,
                 vmax=15000,
                 legend=True,
@@ -56,13 +56,13 @@ def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_pl
                                 'orientation': "vertical",
                                 'shrink': 0.5,
                                 'extend': 'both'})
-    extent_gdf.boundary.plot(ax=axes[0],
+    gdf.boundary.plot(ax=axes[0],
                                 color='0.5',
                                 linestyle=':',
                                 label='water province borders')
 
     gdf.plot(ax=axes[1],
-                column='zonal_stats_max',
+                column='zonal_stats_max_' + str(sim_year),
                 vmin=2000,
                 vmax=15000,
                 legend=True,
@@ -70,13 +70,13 @@ def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_pl
                                 'orientation': "vertical",
                                 'shrink': 0.5,
                                 'extend': 'both'})
-    extent_gdf.boundary.plot(ax=axes[1],
+    gdf.boundary.plot(ax=axes[1],
                                 color='0.5',
                                 linestyle=':',
                                 label='water province borders')
 
     gdf.plot(ax=axes[2],
-                column='zonal_stats_mean',
+                column='zonal_stats_mean_' + str(sim_year),
                 vmin=2000,
                 vmax=15000,
                 legend=True,
@@ -84,7 +84,7 @@ def rasterstats_GDP_PPP(gdf_in, extent_gdf, config, sim_year, out_dir, saving_pl
                                 'orientation': "vertical",
                                 'shrink': 0.5,
                                 'extend': 'both'})
-    extent_gdf.boundary.plot(ax=axes[2],
+    gdf.boundary.plot(ax=axes[2],
                                 color='0.5',
                                 linestyle=':',
                                 label='water province borders')
