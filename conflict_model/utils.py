@@ -44,6 +44,8 @@ def show_versions():
     from xarray import __version__ as xr_version
     from rasterio import __version__ as rio_version
     from sys import version as os_version
+    from seaborn import __version__ as sbs_version
+    from sklearn import __version__ as skl_version
 
     print("Python version: {}".format(os_version))
     print("conflict_model version: {}".format(cm_version))
@@ -52,5 +54,7 @@ def show_versions():
     print("rasterio version: {}".format(rio_version))
     print("pandas version: {}".format(pd_version))
     print("numpy version: {}".format(np_version))
+    print("scikit-learn version: {}".format(skl_version))
     print("matplotlib version: {}".format(mpl_version))
+    print("seaborn version: {}".format(sbs_version))
     print("rasterstats version: {}".format(rstats_version))
