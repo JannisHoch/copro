@@ -4,93 +4,61 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-def conflict_in_year_bool(conflict_gdf, extent_gdf, config, saving_plots=False, showing_plots=False, out_dir=None):
-    """Determins per year the number of fatalities per country and derivates a boolean value whether conflict has occured in one year in one country or not.
+def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, saving_plots=False, showing_plots=False):
+    """Determines whether conflict took place in a region in one year and, if so, assigns a value of 1 to this region.
 
     Arguments:
-        conflict_gdf {geodataframe}: geodataframe containing final selection of georeferenced conflicts
-        extent_gdf {geodataframe}: geodataframe containing country polygons of selected extent
-        config {configuration}: parsed configuration settings
+        conflict_gdf {[type]} -- [description]
+        extent_gdf {[type]} -- [description]
+        config {[type]} -- [description]
+        sim_year {[type]} -- [description]
+        out_dir {[type]} -- [description]
 
     Keyword Arguments:
-        plotting {bool}: whether or not to make annual plots of boolean conflict and conflict fatalities (default: False)
+        saving_plots (bool): whether or not to save the plot (default: False)
+        showing_plots (bool): whether or not to show the plot (default: False)
+
+    Returns:
+        dataframe: dataframe containing column with boolean information about conflict for each year
     """    
+    
+    print('determining whether a conflict took place or not...')
+    
+    out_df = extent_gdf.copy()
 
-    #out_dir
-    #if not set as keyword argument, then taken from cfg-file
-    if out_dir==None:
-        out_dir = config.get('general','output_dir')
-    else:
-        out_dir = out_dir
-    if not os.path.isdir(out_dir):
-            os.makedirs(out_dir)
+    # each year initialize new column with default value 0 (=False)
+    out_df['boolean_conflict_' + str(sim_year)] = 0
+    
+    # select the entries which occured in this year
+    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]   
+    
+    # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
+    data_merged = gpd.sjoin(temp_sel_year, out_df)
+    
+    # determine the aggregated amount of fatalities in one region (e.g. water province)
+    fatalities_per_watProv = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+ 
+    # loop through all regions and check if exists in sub-set
+    # if so, this means that there was conflict and thus assign value 1
+    for i in range(len(out_df)):
+        i_watProv = out_df.iloc[i]['watprovID']
+        if i_watProv in fatalities_per_watProv.index.values:
+            fats = int(fatalities_per_watProv.loc[i_watProv])
+            out_df.loc[i, 'boolean_conflict_' + str(sim_year)] = 1
+    
+    print('...DONE' + os.linesep)
 
-    print('output directory is', out_dir)
+    # plotting
+    fig, ax = plt.subplots(1, 1, figsize=(20,10))
+    ax.set_title('boolean_conflict_' + str(sim_year))
+    out_df.plot(ax=ax, column='boolean_conflict_' + str(sim_year), legend=True, categorical=True)
+    plt.tight_layout()
+    
+    if saving_plots:
+        fn_out = os.path.join(out_dir, 'boolean_conflict_map_' + str(sim_year) + '.png')
+        plt.savefig(fn_out, dpi=300)
 
-    # get all years in the dataframe
-    years = conflict_gdf.year.unique()
+    if not showing_plots:
+        plt.close()
 
-    # go through all years found
-    for year in np.sort(years):
-        
-        # select the entries which occured in this year
-        temp_sel_year = conflict_gdf.loc[conflict_gdf.year == year]
-        
-        # merge this selection with the continent data
-        data_merged = gpd.sjoin(temp_sel_year, extent_gdf, how="inner", op='within')
-        
-        # per country the annual total fatalities are computed and stored in a separate column
-        annual_fatalities_sum = pd.merge(extent_gdf,
-                                         data_merged['best'].groupby(data_merged['watprovID']).sum().\
-                                         to_frame().rename(columns={"best": "best_SUM"}),
-                                         on='watprovID')
-        
-        # if the fatalities exceed 0.0, this entry is assigned a value 1, otherwise 0
-        annual_fatalities_sum['conflict_bool'] = np.where(annual_fatalities_sum['best_SUM']>0.0, 1, 0)
-            
-        fig, (ax1, ax2) = plt.subplots(1,2, figsize=(20,10), sharey=True)
-
-        annual_fatalities_sum.plot(ax=ax1,column='conflict_bool',
-                                        vmin=0,
-                                        vmax=2,
-                                        categorical=True,
-                                        legend=True)
-
-        temp_sel_year.plot(ax=ax1, legend=True, color='r', label='PRIO/UCDP events')
-
-        extent_gdf.boundary.plot(ax=ax1,
-                                    color='0.5',
-                                    linestyle=':',
-                                    label='water province borders')
-
-        ax1.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
-        ax1.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
-        ax1.set_title('conflict_bool ' + str(year))
-
-        ax1.legend()
-        
-        annual_fatalities_sum.plot(ax=ax2, 
-                                   column='best_SUM',
-                                   vmin=0,
-                                   vmax=1500,
-                                   legend=True,
-                                   legend_kwds={'label': "FATALITIES_SUM",
-                                                'orientation': "vertical"},)
-
-        extent_gdf.boundary.plot(ax=ax2,
-                                    color='0.5',
-                                    linestyle=':')
-
-        ax2.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
-        ax2.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
-        ax2.set_title('aggr. fatalities ' + str(year))
-
-        fn_out = os.path.join(out_dir, 'plot' + str(year) + '.png')
-        
-        if saving_plots:
-            plt.savefig(fn_out, dpi=300)
-
-        if not showing_plots:
-            plt.close()
-
-    return 
+    return out_df
