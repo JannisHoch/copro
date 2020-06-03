@@ -9,6 +9,7 @@ requirements = ['Click>=7.0',
                 'pandas>=1.0.3',
                 'rasterio>=1.1.3',
                 'rioxarray>=0.0.26',
+                'rasterstats>=0.14',
                 'geopandas>=0.7.0',
                 'numpy>=1.16.5',
                 'scikit-learn>=0.22.1',]
