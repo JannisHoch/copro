@@ -22,7 +22,7 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year, out_dir, s
         dataframe: dataframe containing column with boolean information about conflict for each year
     """    
     
-    print('determining whether a conflict took place or not...')
+    print('determining whether a conflict took place or not')
     
     out_df = extent_gdf.copy()
 
