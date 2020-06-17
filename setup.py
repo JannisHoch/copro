@@ -4,16 +4,15 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
-    readme = readme_file.read()
-
-with open('HISTORY.rst') as history_file:
-    history = history_file.read()
-
-# with open('requirements_dev.txt') as requirements_file:
-#     requirements = requirements_file.read()
-
-requirements = []
+requirements = ['Click>=7.0', 
+                'xarray>=0.15.1',
+                'pandas>=1.0.3',
+                'rasterio>=1.1.3',
+                'rioxarray>=0.0.26',
+                'rasterstats>=0.14',
+                'geopandas>=0.7.0',
+                'numpy>=1.16.5',
+                'scikit-learn>=0.22.1',]
 
 setup_requirements = ['pytest-runner', ]
 
@@ -37,7 +36,7 @@ setup(
     entry_points={},
     install_requires=requirements,
     license="tba",
-    long_description=readme + '\n\n' + history,
+    long_description='blablabla',
     include_package_data=True,
     keywords='conflict, climate',
     name='conflict_model',

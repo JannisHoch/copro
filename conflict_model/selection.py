@@ -61,7 +61,7 @@ def select_period(gdf, config):
     
     return gdf
 
-def clip_to_continent(gdf, config):
+def clip_to_extent(gdf, config):
     """As the original conflict data has global extent, this function clips the database to those entries which have occured on a specified continent.
 
     Arguments:
@@ -73,14 +73,18 @@ def clip_to_continent(gdf, config):
         geodataframe: geodataframe containing country polygons of selected continent
     """    
     
-    world = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-    continent_gdf = world[world["continent"] == config.get('settings', 'continent')]
+    shp_fo = os.path.join(config.get('general', 'input_dir'), 
+                          config.get('extent', 'shp'))
     
-    print('clipping dataset to continent', str(config.get('settings', 'continent')) + os.linesep)
+    print('reading extent and spatial aggregation level from file {}'.format(shp_fo))
+    extent_gdf = gpd.read_file(shp_fo)
+    print('...DONE' + os.linesep)
+
+    print('clipping datasets to extent')    
+    gdf = gpd.clip(gdf, extent_gdf)
+    print('...DONE' + os.linesep)
     
-    gdf = gpd.clip(gdf, continent_gdf)
-    
-    return gdf, continent_gdf
+    return gdf, extent_gdf
 
 def climate_zoning(gdf, config):
     """Only those conflicts falling in certain climate zones may be of interest and this functions keeps only those falling into the specified zones.
@@ -109,13 +113,14 @@ def climate_zoning(gdf, config):
         code_nr = int(code2class['code'].loc[code2class['class'] == entry])
         code_nrs.append(code_nr)
     
-    print('clipping to climate zones' + os.linesep)
     KG_gdf = KG_gdf.loc[KG_gdf['GRIDCODE'].isin(code_nrs)]
     
     if KG_gdf.crs != 'EPSG:4326':
         KG_gdf = KG_gdf.to_crs('EPSG:4326')
 
+    print('clipping to climate zones{}'.format(look_up_classes))
     gdf = gpd.clip(gdf, KG_gdf.buffer(0))
+    print('...DONE' + os.linesep)
     
     return gdf
 
@@ -138,17 +143,17 @@ def select(gdf, config, plotting=False):
 
     gdf = select_period(gdf, config)
 
-    gdf, continent_gdf = clip_to_continent(gdf, config)
+    gdf, extent_gdf = clip_to_extent(gdf, config)
 
     gdf = climate_zoning(gdf, config)
 
     # if specified, plot the result
     if plotting:
         print('plotting result' + os.linesep)
-        ax = continent_conflict_gdf.plot(figsize=(10,5), legend=True, label='PRIO/UCDP events')
-        continent_gdf.boundary.plot(ax=ax, color='0.5', linestyle=':')
+        ax = gdf.plot(figsize=(10,5), legend=True, label='PRIO/UCDP events')
+        extent_gdf.boundary.plot(ax=ax, color='0.5', linestyle=':')
         plt.legend()
-        ax.set_xlim(continent_gdf.total_bounds[0]-1, continent_gdf.total_bounds[2]+1)
-        ax.set_ylim(continent_gdf.total_bounds[1]-1, continent_gdf.total_bounds[3]+1)
+        ax.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
+        ax.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
 
-    return gdf, continent_gdf
+    return gdf, extent_gdf
