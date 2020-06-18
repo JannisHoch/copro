@@ -11,6 +11,8 @@ import numpy as np
 import seaborn as sbs
 from sklearn import svm, preprocessing, model_selection, metrics
 import matplotlib.pyplot as plt
+from shutil import copyfile
+import csv
 import os, sys
 
 
@@ -20,9 +22,10 @@ def cli():
 
 @click.command()
 @click.argument('cfg',)
-@click.option('-so', '--safe-output', default=False, help='whether or not to save output', type=click.BOOL)
+@click.option('-so', '--safe-output', default=True, help='save output yes/no', type=click.BOOL)
+@click.option('-v', '--verbose', default=False, help='verbose model yes/no', is_flag=True, type=click.BOOL)
 
-def main(cfg, safe_output=False):
+def main(cfg, safe_output=True, verbose=False):
     """
     Runs the conflict_model from command line with several options and the settings cfg-file as argument.
 
@@ -30,6 +33,9 @@ def main(cfg, safe_output=False):
     """
     print('')
     print('#### LETS GET STARTED PEOPLZ! ####' + os.linesep)
+
+    print('safe output: {}'.format(safe_output))
+    print('verbose mode on: {}'.format(verbose) + os.linesep)
 
     if gpd.__version__ < '0.7.0':
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd.__version__))
@@ -44,6 +50,8 @@ def main(cfg, safe_output=False):
         print('saving output to folder {}'.format(out_dir) + os.linesep)
     else:
         print('not saving output' + os.linesep)
+
+    if verbose: copyfile(cfg, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
 
     gdf = conflict_model.utils.get_geodataframe(config)
 
@@ -84,22 +92,42 @@ def main(cfg, safe_output=False):
     X = XY_data[['GDP_PPP', 'ET']].to_numpy()
     Y = XY_data.conflict.astype(int).to_numpy()
 
-    print('scaling data and splitting into trainings and test samples' + os.linesep)
-    X_train, X_test, y_train, y_test = model_selection.train_test_split(preprocessing.scale(X),
+    scaler = preprocessing.MinMaxScaler()
+
+    if verbose:
+        scaler_params = scaler.get_params()
+        out_fo = os.path.join(out_dir, '{}_params.csv'.format(str(scaler).rsplit('(')[0]))
+        w = csv.writer(open(out_fo, "w"))
+        for key, val in scaler_params.items():
+            w.writerow([key, val])
+
+    print('scaling data with {}'.format(str(scaler).rsplit('(')[0]))
+    X_scaled = scaler.fit_transform(X)
+
+    print('splitting into trainings and test samples' + os.linesep)
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(X_scaled,
                                                                         Y,
-                                                                        test_size=0.7)
+                                                                        test_size=1-config.getfloat('machine_learning', 'train_fraction'))
 
     plt.figure(figsize=(10,10))
     sbs.scatterplot(x=X_train[:,0],
                     y=X_train[:,1],  
                     hue=y_train)
 
-    plt.title('n=' + str(len(X_train)))
-    if safe_output:
-        plt.savefig(os.path.join(out_dir, 'scatter_plot.png'), dpi=300)
+    plt.title('training-data scaled with {0}; n_train={1}; n_tot={2}'.format(str(scaler).rsplit('(')[0], len(X_train), len(X_scaled)))
+    plt.xlabel('Variable 1')
+    plt.ylabel('Variable 2')
+    if safe_output: plt.savefig(os.path.join(out_dir, 'scatter_plot_scaled_traindata_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
 
     print('initializing Support Vector Classification model' + os.linesep)
     clf = svm.SVC(class_weight='balanced')
+
+    if verbose:
+        SVC_params = clf.get_params()
+        out_fo = os.path.join(out_dir, 'SVC_params.csv')
+        w = csv.writer(open(out_fo, "w"))
+        for key, val in SVC_params.items():
+            w.writerow([key, val])
 
     print('fitting model with trainings data' + os.linesep)
     clf.fit(X_train, y_train)
@@ -115,8 +143,21 @@ def main(cfg, safe_output=False):
     print("...Recall:", metrics.recall_score(y_test, y_pred))
     print('...Average precision-recall score: {0:0.2f}'.format(metrics.average_precision_score(y_test, y_score)))
 
-    disp = metrics.plot_precision_recall_curve(clf, X_test, y_test)
-    disp.ax_.set_title('2-class Precision-Recall curve: AP={0:0.2f}'.format(metrics.average_precision_score(y_test, y_score)))
+    fig, ax = plt.subplots(1, 1, figsize=(20,10))
+    disp = metrics.plot_precision_recall_curve(clf, X_test, y_test, ax=ax)
+    disp.ax_.set_title('2-class Precision-Recall curve: AP={} with {}'.format(round(metrics.average_precision_score(y_test, y_score),2), str(scaler).rsplit('(')[0]))
+    if safe_output: plt.savefig(os.path.join(out_dir, 'precision_recall_curve_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
+
+    if safe_output:
+        evaluation = {'Accuracy': round(metrics.accuracy_score(y_test, y_pred), 2),
+                    'Precision': round(metrics.precision_score(y_test, y_pred), 2),
+                    'Recall': round(metrics.recall_score(y_test, y_pred), 2),
+                    'Average precision-recall score': round(metrics.average_precision_score(y_test, y_score), 2)}
+
+        out_fo = os.path.join(out_dir, 'evaluation.csv')
+        w = csv.writer(open(out_fo, "w"))
+        for key, val in evaluation.items():
+            w.writerow([key, val])
 
 if __name__ == '__main__':
     main()
