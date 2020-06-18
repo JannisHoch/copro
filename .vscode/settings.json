@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\hoch0001\\AppData\\Local\\Continuum\\anaconda3\\python.exe",
+    "python.pythonPath": "C:\\Users\\hoch0001\\AppData\\Local\\Continuum\\anaconda3\\envs\\conflict_model\\python.exe",
     "restructuredtext.confPath": "${workspaceFolder}\\docs"
 }

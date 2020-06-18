@@ -2,9 +2,9 @@
 
 from . import selection
 from . import utils
-from . import analysis
-from . import env_vars_nc
+from . import get_boolean_conflict
+from . import get_var_from_nc
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.0.1-beta'
+__version__ = '0.0.1'
