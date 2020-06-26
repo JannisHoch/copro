@@ -25,6 +25,6 @@ dependencies:
   - ConfigParser
   - click
   - pip
-  pip:
-   - rasterstats>=0.14.0
+  - pip:
+    - rasterstats>=0.14.0
     
