@@ -7,4 +7,4 @@ from . import get_var_from_nc
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.0.2b1'
+__version__ = '0.0.2b2'
