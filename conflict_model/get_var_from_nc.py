@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys
 
-def nc_with_integer_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
+def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
     By default, the mean value of all cells within a polygon is computed.
     The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
@@ -66,7 +66,7 @@ def nc_with_integer_timestamp(extent_gdf, config, var_name, sim_year, stat_func=
 
     return list_out
 
-def nc_with_continous_regular_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
+def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
     By default, the mean value of all cells within a polygon is computed.
     The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
