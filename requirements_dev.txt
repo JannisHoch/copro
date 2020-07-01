@@ -2,7 +2,7 @@ pip==20.0.2
 click==7.1.2
 configparser==5.0.0
 descartes==1.1.0
-geopandas==0.7.0
+geopandas==0.8.0
 ipython==7.13.0
 matplotlib==3.2.1
 nbconvert==5.6.1
