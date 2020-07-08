@@ -73,7 +73,7 @@ def clip_to_extent(gdf, config):
         geodataframe: geodataframe containing country polygons of selected continent
     """    
     
-    shp_fo = os.path.join(config.get('general', 'input_dir'), 
+    shp_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
                           config.get('extent', 'shp'))
     
     print('reading extent and spatial aggregation level from file {}'.format(shp_fo))
@@ -97,10 +97,10 @@ def climate_zoning(gdf, config):
         geodataframe: geodataframe containing filtered entries
     """    
     
-    Koeppen_Geiger_fo = os.path.join(config.get('general', 'input_dir'),
+    Koeppen_Geiger_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
                                      config.get('climate', 'shp')) 
     
-    code2class_fo = os.path.join(config.get('general', 'input_dir'),
+    code2class_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
                                  config.get('climate', 'code2class'))
     
     look_up_classes = config.get('climate', 'zones').rsplit(',')
