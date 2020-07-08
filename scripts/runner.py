@@ -6,6 +6,7 @@ import click
 from os.path import isdir, dirname, abspath
 from os import makedirs
 import geopandas as gpd
+import xarray as xr
 import pandas as pd
 import numpy as np
 import seaborn as sbs
@@ -23,9 +24,10 @@ def cli():
 @click.command()
 @click.argument('cfg',)
 @click.option('-so', '--safe-output', default=True, help='save output yes/no', type=click.BOOL)
+@click.option('-o', '--output-folder', default=None, help='output folder', type=click.Path())
 @click.option('-v', '--verbose', default=False, help='verbose model yes/no', is_flag=True, type=click.BOOL)
 
-def main(cfg, safe_output=True, verbose=False):
+def main(cfg, safe_output=True, output_folder=None, verbose=False):
     """
     Runs the conflict_model from command line with several options and the settings cfg-file as argument.
 
@@ -41,10 +43,14 @@ def main(cfg, safe_output=True, verbose=False):
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd.__version__))
 
     config = RawConfigParser(allow_no_value=True)
+    config.optionxform = lambda option: option
     config.read(cfg)
 
     if safe_output:
-        out_dir = config.get('general','output_dir')
+        if output_folder == None:
+            out_dir = os.path.abspath(config.get('general','output_dir'))
+        else:
+            out_dir = output_folder
         if not os.path.isdir(out_dir):
             os.makedirs(out_dir)
         print('saving output to folder {}'.format(out_dir) + os.linesep)
@@ -60,39 +66,56 @@ def main(cfg, safe_output=True, verbose=False):
     print('data retrieval period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
     print('')
 
-    X1 = pd.Series(dtype=float)
-    X2 = pd.Series(dtype=float)
-    Y  = pd.Series(dtype=int)
+    XY = {}
+    for key in config.items('env_vars'):
+        XY[str(key[0])] = pd.Series(dtype=float)
+    XY['conflict'] = pd.Series(dtype=int)    
 
     for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1):
-
+    
         print('entering year {}'.format(sim_year) + os.linesep)
-
-        list_boolConflict = conflict_model.get_boolean_conflict.conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year)
-        Y = Y.append(pd.Series(list_boolConflict, dtype=int), ignore_index=True)
         
-        list_GDP_PPP = conflict_model.get_var_from_nc.nc_with_integer_timestamp(extent_gdf, config, 'GDP_per_capita_PPP', sim_year)
-        X1 = X1.append(pd.Series(list_GDP_PPP), ignore_index=True)
+        # go through all keys in dictionary
+        for key, value in XY.items():
+            
+            if key == 'conflict':
+                data_series = value
+                data_list = conflict_model.get_boolean_conflict.conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year)
+                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                XY[key] = data_series
+                
+            else:
+                nc_fo = os.path.join(config.get('general', 'input_dir'), 
+                                    config.get('env_vars', key))
+                
+                print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(key, nc_fo, sim_year))
 
-        if not len(list_GDP_PPP) == len(list_boolConflict):
-            raise AssertionError('length of lists do not match, they are {0} and {1}'.format(len(list_GDP_PPP), len(list_boolConflict)))
-
-        list_Evap = conflict_model.get_var_from_nc.nc_with_continous_regular_timestamp(extent_gdf, config, 'total_evaporation', sim_year)
-        X2 = X2.append(pd.Series(list_Evap), ignore_index=True)
-
-        if not len(list_Evap) == len(list_boolConflict):
-            raise AssertionError('length of lists do not match, they are {0} and {1}'.format(len(list_Evap), len(list_boolConflict)))
-
+                nc_ds = xr.open_dataset(nc_fo)
+                
+                if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                    data_series = value
+                    data_list = conflict_model.get_var_from_nc.nc_with_float_timestamp(extent_gdf, config, key, sim_year)
+                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    XY[key] = data_series
+                    
+                elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                    data_series = value
+                    data_list = conflict_model.get_var_from_nc.nc_with_continous_datetime_timestamp(extent_gdf, config, key, sim_year)
+                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    XY[key] = data_series
+                    
+                else:
+                    raise Warning('this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                
     print('...all data retrieved' + os.linesep)
 
     print('preparing data for Machine Learning model' + os.linesep)
-    XY_data = list(zip(X1, X2, Y))
-    XY_data = pd.DataFrame(XY_data, columns=['GDP_PPP', 'ET', 'conflict'])
-    XY_data = XY_data.dropna()
-    X = XY_data[['GDP_PPP', 'ET']].to_numpy()
-    Y = XY_data.conflict.astype(int).to_numpy()
+    XY = pd.DataFrame.from_dict(XY).dropna()
 
-    scaler = preprocessing.MinMaxScaler()
+    X = XY.to_numpy()[:, :-1]
+    Y = XY.conflict.astype(int).to_numpy()
+
+    scaler = preprocessing.QuantileTransformer()
 
     if verbose:
         scaler_params = scaler.get_params()
@@ -120,7 +143,7 @@ def main(cfg, safe_output=True, verbose=False):
     if safe_output: plt.savefig(os.path.join(out_dir, 'scatter_plot_scaled_traindata_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
 
     print('initializing Support Vector Classification model' + os.linesep)
-    clf = svm.SVC(class_weight='balanced')
+    clf = svm.LinearSVC(class_weight={1:100}, random_state=42, max_iter=10000000)
 
     if verbose:
         SVC_params = clf.get_params()
@@ -150,9 +173,9 @@ def main(cfg, safe_output=True, verbose=False):
 
     if safe_output:
         evaluation = {'Accuracy': round(metrics.accuracy_score(y_test, y_pred), 2),
-                    'Precision': round(metrics.precision_score(y_test, y_pred), 2),
-                    'Recall': round(metrics.recall_score(y_test, y_pred), 2),
-                    'Average precision-recall score': round(metrics.average_precision_score(y_test, y_score), 2)}
+                      'Precision': round(metrics.precision_score(y_test, y_pred), 2),
+                      'Recall': round(metrics.recall_score(y_test, y_pred), 2),
+                      'Average precision-recall score': round(metrics.average_precision_score(y_test, y_score), 2)}
 
         out_fo = os.path.join(out_dir, 'evaluation.csv')
         w = csv.writer(open(out_fo, "w"))
