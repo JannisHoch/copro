@@ -18,7 +18,7 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
     """    
 
     # construct path to file with conflict data
-    conflict_fo = os.path.join(config.get('general', 'input_dir'), 
+    conflict_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
                                config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
