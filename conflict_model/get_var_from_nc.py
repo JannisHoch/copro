@@ -62,8 +62,6 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
         list_out.append(zonal_stats[0][stat_func])
 
-    print('...DONE' + os.linesep)
-
     return list_out
 
 def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
@@ -92,7 +90,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
         list: list containing statistical value per polygon, i.e. with same length as extent_gdf
     """   
     # get path to netCDF-file.
-    nc_fo = os.path.join(config.get('general', 'input_dir'), 
+    nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
                          config.get('env_vars', var_name))
     
     print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
@@ -124,7 +122,5 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
         prov = extent_gdf.iloc[i]
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
         list_out.append(zonal_stats[0][stat_func])
-
-    print('...DONE' + os.linesep)
 
     return list_out
