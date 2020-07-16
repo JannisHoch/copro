@@ -16,6 +16,9 @@ from shutil import copyfile
 import csv
 import os, sys
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 @click.group()
 def cli():
@@ -28,16 +31,22 @@ def cli():
 @click.option('-v', '--verbose', default=False, help='verbose model yes/no', is_flag=True, type=click.BOOL)
 
 def main(cfg, safe_output=True, output_folder=None, verbose=False):
-    """
-    Runs the conflict_model from command line with several options and the settings cfg-file as argument.
+    """Runs the conflict_model from command line with several options and the settings cfg-file as argument.
 
     CFG: path to cfg-file with run settings
-    """
+
+    Args:
+        cfg (str): Path to cfg-file with run settings
+        safe_output (bool, optional): Save output yes/no. Defaults to True.
+        output_folder (str, optional): Output folder. Defaults to None.
+        verbose (bool, optional): Verbose mode on/off. Defaults to False.
+
+    Raises:
+        Warning: [description]
+    """    
+
     print('')
     print('#### LETS GET STARTED PEOPLZ! ####' + os.linesep)
-
-    print('safe output: {}'.format(safe_output))
-    print('verbose mode on: {}'.format(verbose) + os.linesep)
 
     if gpd.__version__ < '0.7.0':
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd.__version__))
@@ -46,16 +55,17 @@ def main(cfg, safe_output=True, output_folder=None, verbose=False):
     config.optionxform = lambda option: option
     config.read(cfg)
 
-    if safe_output:
-        if output_folder == None:
-            out_dir = os.path.abspath(config.get('general','output_dir'))
-        else:
-            out_dir = output_folder
-        if not os.path.isdir(out_dir):
-            os.makedirs(out_dir)
-        print('saving output to folder {}'.format(out_dir) + os.linesep)
+    print('safe output: {}'.format(safe_output))
+    print('sensitivity analysis on: {}'.format(config.getboolean('general', 'sensitivity_analysis')))
+    print('verbose mode on: {}'.format(verbose) + os.linesep)
+
+    if output_folder == None:
+        out_dir = os.path.abspath(config.get('general','output_dir'))
     else:
-        print('not saving output' + os.linesep)
+        out_dir = os.path.abspath(output_folder)
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+    print('output directory is {}'.format(out_dir) + os.linesep)
 
     if verbose: copyfile(cfg, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
 
@@ -73,6 +83,7 @@ def main(cfg, safe_output=True, output_folder=None, verbose=False):
 
     for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1):
     
+        print('')
         print('entering year {}'.format(sim_year) + os.linesep)
         
         # go through all keys in dictionary
@@ -85,10 +96,8 @@ def main(cfg, safe_output=True, output_folder=None, verbose=False):
                 XY[key] = data_series
                 
             else:
-                nc_fo = os.path.join(config.get('general', 'input_dir'), 
+                nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
                                     config.get('env_vars', key))
-                
-                print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(key, nc_fo, sim_year))
 
                 nc_ds = xr.open_dataset(nc_fo)
                 
@@ -115,72 +124,125 @@ def main(cfg, safe_output=True, output_folder=None, verbose=False):
     X = XY.to_numpy()[:, :-1]
     Y = XY.conflict.astype(int).to_numpy()
 
-    scaler = preprocessing.QuantileTransformer()
+    scalers = conflict_model.machine_learning.define_scaling(config)
 
-    if verbose:
-        scaler_params = scaler.get_params()
-        out_fo = os.path.join(out_dir, '{}_params.csv'.format(str(scaler).rsplit('(')[0]))
-        w = csv.writer(open(out_fo, "w"))
-        for key, val in scaler_params.items():
-            w.writerow([key, val])
+    clfs = conflict_model.machine_learning.define_model(config)
 
-    print('scaling data with {}'.format(str(scaler).rsplit('(')[0]))
-    X_scaled = scaler.fit_transform(X)
+    for scaler in scalers:
 
-    print('splitting into trainings and test samples' + os.linesep)
-    X_train, X_test, y_train, y_test = model_selection.train_test_split(X_scaled,
+        print('scaling data with {}'.format(scaler))
+        X_scaled = scaler.fit_transform(X)
+
+        print('splitting into trainings and test samples' + os.linesep)
+        X_train, X_test, y_train, y_test = model_selection.train_test_split(X_scaled,
                                                                         Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction'))
 
-    plt.figure(figsize=(10,10))
-    sbs.scatterplot(x=X_train[:,0],
-                    y=X_train[:,1],  
-                    hue=y_train)
+        for i, key in zip(range(X_train.shape[1]), config.items('env_vars')):
 
-    plt.title('training-data scaled with {0}; n_train={1}; n_tot={2}'.format(str(scaler).rsplit('(')[0], len(X_train), len(X_scaled)))
-    plt.xlabel('Variable 1')
-    plt.ylabel('Variable 2')
-    if safe_output: plt.savefig(os.path.join(out_dir, 'scatter_plot_scaled_traindata_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
+            print('+++ removing data for variable {} +++'.format(key[0]) + os.linesep)
+            X_train_loo = np.delete(X_train, i, axis=1)
+            X_test_loo = np.delete(X_test, i, axis=1)
 
-    print('initializing Support Vector Classification model' + os.linesep)
-    clf = svm.LinearSVC(class_weight={1:100}, random_state=42, max_iter=10000000)
+            sub_out_dir = os.path.join(out_dir, '_excl_'+str(key[0]))
+            if not os.path.isdir(sub_out_dir):
+                os.makedirs(sub_out_dir)
 
-    if verbose:
-        SVC_params = clf.get_params()
-        out_fo = os.path.join(out_dir, 'SVC_params.csv')
-        w = csv.writer(open(out_fo, "w"))
-        for key, val in SVC_params.items():
-            w.writerow([key, val])
+            plt.figure(figsize=(10,10))
+            sbs.scatterplot(x=X_train_loo[:,0],
+                        y=X_train_loo[:,1],  
+                        hue=y_train)
 
-    print('fitting model with trainings data' + os.linesep)
-    clf.fit(X_train, y_train)
+            plt.title('training-data scaled with {0}; n_train={1}; n_tot={2}'.format(str(scaler).rsplit('(')[0], len(X_train_loo), len(X_scaled)))
+            plt.xlabel('Variable 1')
+            plt.ylabel('Variable 2')
+            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'scatter_plot_scaled_traindata_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
 
-    print('making a prediction' + os.linesep)
-    y_pred = clf.predict(X_test)
+            for clf in clfs:
 
-    y_score = clf.decision_function(X_test)
+                print('running ML model {}'.format(clf) + os.linesep)
 
-    print('Model evaluation')
-    print("...Accuracy:", metrics.accuracy_score(y_test, y_pred))
-    print("...Precision:", metrics.precision_score(y_test, y_pred))
-    print("...Recall:", metrics.recall_score(y_test, y_pred))
-    print('...Average precision-recall score: {0:0.2f}'.format(metrics.average_precision_score(y_test, y_score)))
+                print('fitting model with trainings data' + os.linesep)
+                clf.fit(X_train_loo, y_train)
 
-    fig, ax = plt.subplots(1, 1, figsize=(20,10))
-    disp = metrics.plot_precision_recall_curve(clf, X_test, y_test, ax=ax)
-    disp.ax_.set_title('2-class Precision-Recall curve: AP={} with {}'.format(round(metrics.average_precision_score(y_test, y_score),2), str(scaler).rsplit('(')[0]))
-    if safe_output: plt.savefig(os.path.join(out_dir, 'precision_recall_curve_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
+                print('making a prediction' + os.linesep)
+                y_pred = clf.predict(X_test_loo)
+  
+                print('Model evaluation')
+                print("...Accuracy:", metrics.accuracy_score(y_test, y_pred))
+                print("...Precision:", metrics.precision_score(y_test, y_pred))
+                print("...Recall:", metrics.recall_score(y_test, y_pred))
+                try:  
+                    print('...Average precision-recall score: {0:0.2f}'.format(metrics.average_precision_score(y_test, clf.decision_function(X_test_loo))) + os.linesep)
+                except:
+                    print('WARNING: for ML model {} no average precision-recall score can be determined'.format(clf) + os.linesep)
 
-    if safe_output:
-        evaluation = {'Accuracy': round(metrics.accuracy_score(y_test, y_pred), 2),
-                      'Precision': round(metrics.precision_score(y_test, y_pred), 2),
-                      'Recall': round(metrics.recall_score(y_test, y_pred), 2),
-                      'Average precision-recall score': round(metrics.average_precision_score(y_test, y_score), 2)}
+                fig, ax = plt.subplots(1, 1, figsize=(20,10))
+                disp = metrics.plot_precision_recall_curve(clf, X_test_loo, y_test, ax=ax)
+                disp.ax_.set_title('Precision-Recall curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
+                if safe_output: plt.savefig(os.path.join(sub_out_dir, 'precision_recall_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
 
-        out_fo = os.path.join(out_dir, 'evaluation.csv')
-        w = csv.writer(open(out_fo, "w"))
-        for key, val in evaluation.items():
-            w.writerow([key, val])
+                fig, ax = plt.subplots(1, 1, figsize=(15, 7))
+                ax.set_title('confusion matrix with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
+                metrics.plot_confusion_matrix(clf, X_test_loo, y_test, ax=ax)
+                if safe_output: plt.savefig(os.path.join(sub_out_dir, 'confusion_matrix_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
+
+                fig, ax = plt.subplots(1, 1, figsize=(20,10))
+                ax.set_title('ROC curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
+                metrics.plot_roc_curve(clf, X_test_loo, y_test, ax=ax)
+                if safe_output: plt.savefig(os.path.join(sub_out_dir, 'ROC_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
+
+        print('+++ ALL DATA +++' + os.linesep)
+
+        sub_out_dir = os.path.join(out_dir, '_all_data')
+        if not os.path.isdir(sub_out_dir):
+             os.makedirs(sub_out_dir)
+
+        plt.figure(figsize=(20,10))
+        sbs.scatterplot(x=X_train[:,0],
+                        y=X_train[:,1],  
+                        hue=y_train)
+
+        plt.title('training-data scaled with {0}; n_train={1}; n_tot={2}'.format(str(scaler).rsplit('(')[0], len(X_train), len(X_scaled)))
+        plt.xlabel('Variable 1')
+        plt.ylabel('Variable 2')
+        if safe_output: plt.savefig(os.path.join(sub_out_dir, 'scatter_plot_scaled_traindata_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
+
+        for clf in clfs:
+
+            print('running ML model {}'.format(clf) + os.linesep)
+
+            print('fitting model with trainings data' + os.linesep)
+            clf.fit(X_train, y_train)
+
+            print('making a prediction' + os.linesep)
+            y_pred = clf.predict(X_test)
+
+            print('Model evaluation')
+            print("...Accuracy:", metrics.accuracy_score(y_test, y_pred))
+            print("...Precision:", metrics.precision_score(y_test, y_pred))
+            print("...Recall:", metrics.recall_score(y_test, y_pred))
+            try:  
+                print('...Average precision-recall score: {0:0.2f}'.format(metrics.average_precision_score(y_test, clf.decision_function(X_test))) + os.linesep)
+            except:
+                print('WARNING: for ML model {} no average precision-recall score can be determined'.format(clf) + os.linesep)
+
+            fig, ax = plt.subplots(1, 1, figsize=(20,10))
+            disp = metrics.plot_precision_recall_curve(clf, X_test, y_test, ax=ax)
+            disp.ax_.set_title('Precision-Recall curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
+            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'precision_recall_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
+
+            fig, ax = plt.subplots(1, 1, figsize=(15, 7))
+            ax.set_title('confusion matrix with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
+            metrics.plot_confusion_matrix(clf, X_test, y_test, ax=ax)
+            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'confusion_matrix_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
+
+            fig, ax = plt.subplots(1, 1, figsize=(20,10))
+            ax.set_title('ROC curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
+            metrics.plot_roc_curve(clf, X_test, y_test, ax=ax)
+            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'ROC_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
+
+    print('simulation done!')
 
 if __name__ == '__main__':
     main()
