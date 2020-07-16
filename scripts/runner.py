@@ -26,7 +26,7 @@ def cli():
 
 @click.command()
 @click.argument('cfg',)
-@click.option('-so', '--safe-output', default=True, help='save output yes/no', type=click.BOOL)
+@click.option('-so', '--safe-output', default=False, help='save output yes/no', is_flag=True, type=click.BOOL)
 @click.option('-o', '--output-folder', default=None, help='output folder', type=click.Path())
 @click.option('-v', '--verbose', default=False, help='verbose model yes/no', is_flag=True, type=click.BOOL)
 
