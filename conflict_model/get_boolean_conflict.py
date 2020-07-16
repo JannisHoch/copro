@@ -43,7 +43,5 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
             
     if not len(extent_gdf) == len(list_out):
         raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
-    
-    print('...DONE' + os.linesep)
 
     return list_out

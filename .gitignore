@@ -128,8 +128,5 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# run settings
-*/run_setting.cfg
-
 #output folders
 OUT*/
