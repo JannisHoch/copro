@@ -4,6 +4,7 @@ from . import selection
 from . import utils
 from . import get_boolean_conflict
 from . import get_var_from_nc
+from . import machine_learning
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
