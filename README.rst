@@ -19,7 +19,7 @@ To install the conflict model, first clone the code from GitHub. It is advised t
 
     $ git clone https://github.com/JannisHoch/conflict_model.git
     $ cd path/to/conflict_model
-    $ conda-env create -f=environment.yml
+    $ conda env create -f environment.yml
     $ conda activate conflict_model
     $ python setup.py develop
 
@@ -38,6 +38,8 @@ To run the example jupyter notebook, follow these instructions
 
 This automatically executes the notebook and converts it to a html-file, also stored in the example folder.
 
+.. note:: It is of course also possible to execute the notebook cell by cell using jupyter notebook
+
 with runner script
 ^^^^^^^^^^^^^^^^^^
 
@@ -48,14 +50,15 @@ To run the model from command line, a command line script is provided. In the mo
     $ cd path/to/conflict_model/scripts
     $ python runner.py path/to/conflict_model/data/run_setting.cfg
 
-.. note:: by default, no output is stored in the current version of the model!
-
-If output is to be stored in an output map, this currently needs to be specified in the runner scipt explictely (-s option).
-By default, output is stored to the output directory specified in the settings-file. Alternatively, this can be provided via command line too (-o option)
+If output is to be stored in an output map, this currently needs to be specified in the runner scipt explictely (-so option).
+By default, output is stored to the output directory specified in the settings-file. Alternatively, this can be provided via command line too (-o option).
+For some minimal verbose output, please specify this using the -v option.
 
 .. code-block:: console
 
-    $ python runner.py -s True -o path/to/output/folder path/to/conflict_model/data/run_setting.cfg
+    $ python runner.py -o path/to/output/folder path/to/conflict_model/data/run_setting.cfg -so -v
+
+.. note:: for convenience, there is a 'run_script.sh' file executing just this command.
 
 For help, try this if you are in the scripts folder:
 
