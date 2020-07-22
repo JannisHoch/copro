@@ -79,7 +79,7 @@ def make_output_dir(config):
     os.makedirs(out_dir)
     print('for the record, saving output to folder {}'.format(out_dir))
 
-    return 
+    return out_dir
     
 def download_PRIO(config):
 
