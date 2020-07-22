@@ -1,6 +1,10 @@
 import geopandas as gpd
 import pandas as pd
 import os
+import urllib.request
+import zipfile
+from configparser import RawConfigParser
+from shutil import copyfile, rmtree
 
 def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
     """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe. 
@@ -58,3 +62,43 @@ def show_versions():
     print("matplotlib version: {}".format(mpl_version))
     print("seaborn version: {}".format(sbs_version))
     print("rasterstats version: {}".format(rstats_version))
+
+def parse_config(settings_file):
+
+    config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
+    config.optionxform = lambda option: option
+    config.read(settings_file)
+
+    return config
+
+def make_output_dir(config):
+
+    out_dir = os.path.abspath(config.get('general','output_dir'))
+    if os.path.isdir(out_dir):
+        rmtree(out_dir)
+    os.makedirs(out_dir)
+    print('for the record, saving output to folder {}'.format(out_dir))
+
+    return out_dir
+
+def initialize_setup(settings_file):
+
+    config = parse_config(settings_file)
+
+    out_dir = make_output_dir(config)
+
+    copyfile(settings_file, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
+
+def download_PRIO():
+
+    url = 'http://ucdp.uu.se/downloads/ged/ged201-csv.zip'
+
+    filename = 'ged201-csv.zip'
+
+    urllib.request.urlretrieve(url, filename)
+
+    zipfile.ZipFile(filename, 'r').extractall()
+
+
+
+    return config, out_dir
