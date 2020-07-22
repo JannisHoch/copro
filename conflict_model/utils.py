@@ -63,7 +63,7 @@ def show_versions():
     print("seaborn version: {}".format(sbs_version))
     print("rasterstats version: {}".format(rstats_version))
 
-def parse_config(settings_file):
+def parse_settings(settings_file):
 
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
@@ -79,26 +79,40 @@ def make_output_dir(config):
     os.makedirs(out_dir)
     print('for the record, saving output to folder {}'.format(out_dir))
 
-    return out_dir
+    return 
+    
+def download_PRIO(config):
 
-def initialize_setup(settings_file):
-
-    config = parse_config(settings_file)
-
-    out_dir = make_output_dir(config)
-
-    copyfile(settings_file, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
-
-def download_PRIO():
-
+    path = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 'UCDP')
+    
     url = 'http://ucdp.uu.se/downloads/ged/ged201-csv.zip'
+
+    print('')
+    print('no conflict file was specified, hence downloading data from {}'.format(url) + os.linesep)
 
     filename = 'ged201-csv.zip'
 
     urllib.request.urlretrieve(url, filename)
 
-    zipfile.ZipFile(filename, 'r').extractall()
+    csv_fo = zipfile.ZipFile(filename, 'r').namelist()[0]
+    
+    zipfile.ZipFile(filename, 'r').extractall(path=path)
+    
+    path_set = os.path.join(path, csv_fo)
+    
+    config['conflict']['conflict_file'] = path_set
 
+    return
 
+def initiate_setup(settings_file):
+
+    config = parse_settings(settings_file)
+
+    out_dir = make_output_dir(config)
+
+    copyfile(settings_file, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
+
+    if config['conflict']['conflict_file'] == 'download':
+        download_PRIO(config)
 
     return config, out_dir
