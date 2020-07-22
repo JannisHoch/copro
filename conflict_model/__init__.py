@@ -8,4 +8,4 @@ from . import machine_learning
 
 __author__ = """Jannis M. Hoch"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.0.2'
+__version__ = '0.0.3b1'
