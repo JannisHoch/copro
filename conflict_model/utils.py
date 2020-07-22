@@ -87,10 +87,10 @@ def download_PRIO(config):
     
     url = 'http://ucdp.uu.se/downloads/ged/ged201-csv.zip'
 
-    print('')
-    print('no conflict file was specified, hence downloading data from {}'.format(url) + os.linesep)
+    filename = os.path.join(path, 'ged201-csv.zip')
 
-    filename = 'ged201-csv.zip'
+    print('')
+    print('no conflict file was specified, hence downloading data from {} to {}'.format(url, filename) + os.linesep)
 
     urllib.request.urlretrieve(url, filename)
 
