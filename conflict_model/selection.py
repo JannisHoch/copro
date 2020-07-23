@@ -15,7 +15,7 @@ def filter_conflict_properties(gdf, config):
     """    
     
     selection_criteria = {'best': config.getint('conflict', 'min_nr_casualties'),
-                          'type_of_violence': config.getint('conflict', 'type_of_conflict'),
+                          'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(','),
                           'country': config.get('conflict', 'country')}
     
     print('filtering on conflict properties...')
@@ -26,17 +26,13 @@ def filter_conflict_properties(gdf, config):
             print('...passing key', key, 'as it is empty')
             pass
 
-        elif isinstance(selection_criteria[key], (int)):
-            if key == 'type_of_violence':
-                print('...filtering key', key, 'with value', selection_criteria[key])
-                gdf = gdf.loc[(gdf[key] == selection_criteria[key])]
-            else:
-                print('...filtering key', key, 'with lower value', selection_criteria[key])
-                gdf = gdf.loc[(gdf[key] >= selection_criteria[key])]
+        elif key == 'best':
+            print('...filtering key', key, 'with lower value', selection_criteria[key])
+            gdf = gdf.loc[(gdf[key] >= selection_criteria[key])]
 
-        elif (isinstance(selection_criteria[key], (str))):
-            print('...filtering key', key, 'with value', selection_criteria[key] + os.linesep)
-            gdf = gdf.loc[(gdf[key] == selection_criteria[key])]
+        else:
+            print('...filtering key', key, 'with value(s)', selection_criteria[key])
+            gdf = gdf.loc[(gdf[key].isin(selection_criteria[key]))]
 
     return gdf
 
