@@ -1,5 +1,5 @@
 import os
-from sklearn import svm, neighbors, preprocessing
+from sklearn import svm, neighbors, ensemble, preprocessing
 
 def define_scaling(config):
     """[summary]
@@ -58,6 +58,8 @@ def define_model(config):
             clfs = [svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, random_state=42, probability=True, degree=10, gamma=10)]
         elif config.get('machine_learning', 'model') == 'KNeighborsClassifier':
             clfs = [neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance')]
+        elif config.get('machine_learning', 'model') == 'RFClassifier':
+            clfs = [ensemble.RandomForestClassifier(class_weight={1: 100}, random_state=42)]
         else:
             raise ValueError('no supported ML model selected - choose between NuSVC or KNeighborsClassifier')
 
