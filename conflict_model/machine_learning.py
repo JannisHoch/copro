@@ -54,6 +54,8 @@ def define_model(config):
         clfs = [svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, random_state=42, probability=True, degree=10, gamma=10),
                 neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance'),
                 ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)]
+
+        print('sensitivity analysis specified - all supported models chosen for run')
     
     elif not config.getboolean('general', 'sensitivity_analysis'):
         if config.get('machine_learning', 'model') == 'NuSVC':
@@ -63,9 +65,9 @@ def define_model(config):
         elif config.get('machine_learning', 'model') == 'RFClassifier':
             clfs = [ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)]
         else:
-            raise ValueError('no supported ML model selected - choose between NuSVC or KNeighborsClassifier')
+            raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
 
-    print('chosen ML model is {}'.format(clfs[0]))
+        print('chosen ML model is {}'.format(clfs[0]))
 
     return clfs
 
