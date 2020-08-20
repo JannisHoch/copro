@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 from sklearn import svm, neighbors, ensemble, preprocessing
 
 def define_scaling(config):
@@ -67,3 +68,42 @@ def define_model(config):
     print('chosen ML model is {}'.format(clfs[0]))
 
     return clfs
+
+#TODO: it may make sense to have the entire XY process chain as object-oriented code
+
+def initiate_XY_data(config):
+    """[summary]
+
+    Args:
+        config ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
+    XY = {}
+    for key in config.items('env_vars'):
+        XY[str(key[0])] = pd.Series(dtype=float)
+    XY['conflict'] = pd.Series(dtype=int)
+
+    return XY
+
+def prepare_XY_data(XY):
+    """[summary]
+
+    Args:
+        XY ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
+
+    XY = pd.DataFrame.from_dict(XY)
+    print('number of data points including missing values:', len(XY))
+    XY = XY.dropna()
+    print('number of data points excluding missing values:', len(XY))
+
+    X = XY.to_numpy()[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
+    Y = XY.conflict.astype(int).to_numpy()
+
+    return X, Y
