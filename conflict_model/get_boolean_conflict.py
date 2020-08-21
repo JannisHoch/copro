@@ -45,3 +45,31 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
         raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
 
     return list_out
+
+def get_conflict_geometry(extent_gdf): 
+    """Extracts geometry information for each polygon from geodataframe and saves in list.
+
+    Args:
+        extent_gdf ([type]): [description]
+
+    Raises:
+        AssertionError: [description]
+
+    Returns:
+        [type]: [description]
+    """    
+    
+    print('listing the geometry of all geographical units')
+
+    # initiatie empty list
+    list_geometry = []
+    # loop through all polygons
+    for i in range(len(extent_gdf)):
+        # append geometry of each polygon to list
+        list_geometry.append(extent_gdf.iloc[i]['geometry'])
+
+    # in the end, the same number of polygons should be in geodataframe and list        
+    if not len(extent_gdf) == len(list_geometry):
+        raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
+        
+    return list_geometry
