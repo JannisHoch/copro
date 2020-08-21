@@ -76,6 +76,11 @@ def clip_to_extent(gdf, config):
     extent_gdf = gpd.read_file(shp_fo)
     print('...DONE' + os.linesep)
 
+    print('fixing invalid geometries')
+    # extent_gdf = extent_gdf.loc[extent_gdf['geometry'].is_valid, :]
+    extent_gdf.geometry = extent_gdf.buffer(0)
+    print('...DONE' + os.linesep)
+
     print('clipping datasets to extent')    
     gdf = gpd.clip(gdf, extent_gdf)
     print('...DONE' + os.linesep)
@@ -119,10 +124,10 @@ def climate_zoning(gdf, extent_gdf, config):
     print('...DONE' + os.linesep)
 
     print('clipping polygons to climate zones {}'.format(look_up_classes))
-    extent_gdf = gpd.clip(extent_gdf.buffer(0), KG_gdf.buffer(0))
+    extent_active_polys_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
     print('...DONE' + os.linesep)
     
-    return gdf, extent_gdf
+    return gdf, extent_active_polys_gdf
 
 def select(gdf, config, plotting=False):
     """Filtering the original global conflict dataset based on a) conflict properties, b) time period, c) continent, and d) climate zone.
@@ -145,7 +150,7 @@ def select(gdf, config, plotting=False):
 
     gdf, extent_gdf = clip_to_extent(gdf, config)
 
-    gdf, extent_gdf = climate_zoning(gdf, extent_gdf, config)
+    gdf, extent_active_polys_gdf = climate_zoning(gdf, extent_gdf, config)
 
     # if specified, plot the result
     if plotting:
@@ -156,4 +161,4 @@ def select(gdf, config, plotting=False):
         ax.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
         ax.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
 
-    return gdf, extent_gdf
+    return gdf, extent_gdf, extent_active_polys_gdf
