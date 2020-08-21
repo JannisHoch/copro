@@ -82,7 +82,7 @@ def clip_to_extent(gdf, config):
     
     return gdf, extent_gdf
 
-def climate_zoning(gdf, config):
+def climate_zoning(gdf, extent_gdf, config):
     """Only those conflicts falling in certain climate zones may be of interest and this functions keeps only those falling into the specified zones.
 
     Arguments:
@@ -114,11 +114,15 @@ def climate_zoning(gdf, config):
     if KG_gdf.crs != 'EPSG:4326':
         KG_gdf = KG_gdf.to_crs('EPSG:4326')
 
-    print('clipping to climate zones{}'.format(look_up_classes))
+    print('clipping conflicts to climate zones {}'.format(look_up_classes))
     gdf = gpd.clip(gdf, KG_gdf.buffer(0))
     print('...DONE' + os.linesep)
+
+    print('clipping polygons to climate zones {}'.format(look_up_classes))
+    extent_gdf = gpd.clip(extent_gdf.buffer(0), KG_gdf.buffer(0))
+    print('...DONE' + os.linesep)
     
-    return gdf
+    return gdf, extent_gdf
 
 def select(gdf, config, plotting=False):
     """Filtering the original global conflict dataset based on a) conflict properties, b) time period, c) continent, and d) climate zone.
@@ -141,7 +145,7 @@ def select(gdf, config, plotting=False):
 
     gdf, extent_gdf = clip_to_extent(gdf, config)
 
-    gdf = climate_zoning(gdf, config)
+    gdf, extent_gdf = climate_zoning(gdf, extent_gdf, config)
 
     # if specified, plot the result
     if plotting:
