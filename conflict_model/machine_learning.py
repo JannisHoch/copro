@@ -87,6 +87,7 @@ def initiate_XY_data(config):
     for key in config.items('env_vars'):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=int)
+    XY['conflict_geometry'] = pd.Series()
 
     return XY
 
