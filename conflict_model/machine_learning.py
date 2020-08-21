@@ -106,7 +106,8 @@ def prepare_XY_data(XY):
     XY = XY.dropna()
     print('number of data points excluding missing values:', len(XY))
 
-    X = XY.to_numpy()[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
+    X = XY.to_numpy()[:, :-2] # since conflict is the last column, we know that all previous columns must be variable values
     Y = XY.conflict.astype(int).to_numpy()
+    Y_geom = XY.conflict_geometry.to_numpy()
 
-    return X, Y
+    return X, Y, Y_geom
