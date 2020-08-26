@@ -104,28 +104,40 @@ def climate_zoning(gdf, extent_gdf, config):
     code2class_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
                                  config.get('climate', 'code2class'))
     
-    look_up_classes = config.get('climate', 'zones').rsplit(',')
-    
     KG_gdf = gpd.read_file(Koeppen_Geiger_fo)
     code2class = pd.read_csv(code2class_fo, sep='\t')
     
-    code_nrs = []
-    for entry in look_up_classes:
-        code_nr = int(code2class['code'].loc[code2class['class'] == entry])
-        code_nrs.append(code_nr)
-    
-    KG_gdf = KG_gdf.loc[KG_gdf['GRIDCODE'].isin(code_nrs)]
-    
-    if KG_gdf.crs != 'EPSG:4326':
-        KG_gdf = KG_gdf.to_crs('EPSG:4326')
+    if config.get('climate', 'zones') is not None:
 
-    print('clipping conflicts to climate zones {}'.format(look_up_classes))
-    gdf = gpd.clip(gdf, KG_gdf.buffer(0))
-    print('...DONE' + os.linesep)
+        look_up_classes = config.get('climate', 'zones').rsplit(',')
 
-    print('clipping polygons to climate zones {}'.format(look_up_classes))
-    extent_active_polys_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
-    print('...DONE' + os.linesep)
+        code_nrs = []
+        for entry in look_up_classes:
+            code_nr = int(code2class['code'].loc[code2class['class'] == entry])
+            code_nrs.append(code_nr)
+    
+        KG_gdf = KG_gdf.loc[KG_gdf['GRIDCODE'].isin(code_nrs)]
+        
+        if KG_gdf.crs != 'EPSG:4326':
+            KG_gdf = KG_gdf.to_crs('EPSG:4326')
+
+        print('clipping conflicts to climate zones {}'.format(look_up_classes))
+        gdf = gpd.clip(gdf, KG_gdf.buffer(0))
+        print('...DONE' + os.linesep)
+
+        print('clipping polygons to climate zones {}'.format(look_up_classes))
+        extent_active_polys_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
+        print('...DONE' + os.linesep)
+
+    elif config.get('climate', 'zones') is None:
+
+        gdf = gdf
+        extent_gdf = extent_gdf
+
+    else:
+
+        raise ValueError('no supported climate zone specified - either specify abbreviations of Koeppen-Geiger zones for selection or None for no selection')
+
     
     return gdf, extent_active_polys_gdf
 
