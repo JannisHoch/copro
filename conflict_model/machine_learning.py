@@ -91,7 +91,7 @@ def initiate_XY_data(config):
 
     return XY
 
-def prepare_XY_data(XY):
+def split_XY_data(XY):
     """[summary]
 
     Args:
@@ -106,8 +106,16 @@ def prepare_XY_data(XY):
     XY = XY.dropna()
     print('number of data points excluding missing values:', len(XY))
 
-    X = XY.to_numpy()[:, :-2] # since conflict is the last column, we know that all previous columns must be variable values
+    X = XY.to_numpy()[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
     Y = XY.conflict.astype(int).to_numpy()
-    Y_geom = XY.conflict_geometry.to_numpy()
 
-    return X, Y, Y_geom
+    return X, Y
+
+def split_X_geometry(X):
+
+    # first column corresponds to geometry information
+    X_geom = X[:, 0]
+    # all other colums represent variable values
+    X = X[:, 1:]
+
+    return X_geom, X
