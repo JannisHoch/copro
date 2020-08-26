@@ -88,15 +88,19 @@ def clip_to_extent(gdf, config):
     return gdf, extent_gdf
 
 def climate_zoning(gdf, extent_gdf, config):
-    """Only those conflicts falling in certain climate zones may be of interest and this functions keeps only those falling into the specified zones.
+    """[summary]
 
-    Arguments:
-        gdf {geodataframe}: geodataframe containing entries with conflicts
-        config {configuration}: parsed configuration settings
+    Args:
+        gdf ([type]): [description]
+        extent_gdf ([type]): [description]
+        config ([type]): [description]
+
+    Raises:
+        ValueError: [description]
 
     Returns:
-        geodataframe: geodataframe containing filtered entries
-    """    
+        [type]: [description]
+    """
     
     Koeppen_Geiger_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
                                      config.get('climate', 'shp')) 
@@ -107,7 +111,7 @@ def climate_zoning(gdf, extent_gdf, config):
     KG_gdf = gpd.read_file(Koeppen_Geiger_fo)
     code2class = pd.read_csv(code2class_fo, sep='\t')
     
-    if config.get('climate', 'zones') is not None:
+    if config.get('climate', 'zones') != 'None':
 
         look_up_classes = config.get('climate', 'zones').rsplit(',')
 
@@ -129,10 +133,10 @@ def climate_zoning(gdf, extent_gdf, config):
         extent_active_polys_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
         print('...DONE' + os.linesep)
 
-    elif config.get('climate', 'zones') is None:
+    elif config.get('climate', 'zones') == 'None':
 
-        gdf = gdf
-        extent_gdf = extent_gdf
+        gdf = gdf.copy()
+        extent_active_polys_gdf = extent_gdf.copy()
 
     else:
 
