@@ -76,22 +76,31 @@ def clip_to_extent(gdf, config):
     extent_gdf = gpd.read_file(shp_fo)
     print('...DONE' + os.linesep)
 
+    print('fixing invalid geometries')
+    # extent_gdf = extent_gdf.loc[extent_gdf['geometry'].is_valid, :]
+    extent_gdf.geometry = extent_gdf.buffer(0)
+    print('...DONE' + os.linesep)
+
     print('clipping datasets to extent')    
     gdf = gpd.clip(gdf, extent_gdf)
     print('...DONE' + os.linesep)
     
     return gdf, extent_gdf
 
-def climate_zoning(gdf, config):
-    """Only those conflicts falling in certain climate zones may be of interest and this functions keeps only those falling into the specified zones.
+def climate_zoning(gdf, extent_gdf, config):
+    """[summary]
 
-    Arguments:
-        gdf {geodataframe}: geodataframe containing entries with conflicts
-        config {configuration}: parsed configuration settings
+    Args:
+        gdf ([type]): [description]
+        extent_gdf ([type]): [description]
+        config ([type]): [description]
+
+    Raises:
+        ValueError: [description]
 
     Returns:
-        geodataframe: geodataframe containing filtered entries
-    """    
+        [type]: [description]
+    """
     
     Koeppen_Geiger_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
                                      config.get('climate', 'shp')) 
@@ -99,26 +108,42 @@ def climate_zoning(gdf, config):
     code2class_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
                                  config.get('climate', 'code2class'))
     
-    look_up_classes = config.get('climate', 'zones').rsplit(',')
-    
     KG_gdf = gpd.read_file(Koeppen_Geiger_fo)
     code2class = pd.read_csv(code2class_fo, sep='\t')
     
-    code_nrs = []
-    for entry in look_up_classes:
-        code_nr = int(code2class['code'].loc[code2class['class'] == entry])
-        code_nrs.append(code_nr)
-    
-    KG_gdf = KG_gdf.loc[KG_gdf['GRIDCODE'].isin(code_nrs)]
-    
-    if KG_gdf.crs != 'EPSG:4326':
-        KG_gdf = KG_gdf.to_crs('EPSG:4326')
+    if config.get('climate', 'zones') != 'None':
 
-    print('clipping to climate zones{}'.format(look_up_classes))
-    gdf = gpd.clip(gdf, KG_gdf.buffer(0))
-    print('...DONE' + os.linesep)
+        look_up_classes = config.get('climate', 'zones').rsplit(',')
+
+        code_nrs = []
+        for entry in look_up_classes:
+            code_nr = int(code2class['code'].loc[code2class['class'] == entry])
+            code_nrs.append(code_nr)
     
-    return gdf
+        KG_gdf = KG_gdf.loc[KG_gdf['GRIDCODE'].isin(code_nrs)]
+        
+        if KG_gdf.crs != 'EPSG:4326':
+            KG_gdf = KG_gdf.to_crs('EPSG:4326')
+
+        print('clipping conflicts to climate zones {}'.format(look_up_classes))
+        gdf = gpd.clip(gdf, KG_gdf.buffer(0))
+        print('...DONE' + os.linesep)
+
+        print('clipping polygons to climate zones {}'.format(look_up_classes))
+        extent_active_polys_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
+        print('...DONE' + os.linesep)
+
+    elif config.get('climate', 'zones') == 'None':
+
+        gdf = gdf.copy()
+        extent_active_polys_gdf = extent_gdf.copy()
+
+    else:
+
+        raise ValueError('no supported climate zone specified - either specify abbreviations of Koeppen-Geiger zones for selection or None for no selection')
+
+    
+    return gdf, extent_active_polys_gdf
 
 def select(gdf, config, plotting=False):
     """Filtering the original global conflict dataset based on a) conflict properties, b) time period, c) continent, and d) climate zone.
@@ -141,7 +166,7 @@ def select(gdf, config, plotting=False):
 
     gdf, extent_gdf = clip_to_extent(gdf, config)
 
-    gdf = climate_zoning(gdf, config)
+    gdf, extent_active_polys_gdf = climate_zoning(gdf, extent_gdf, config)
 
     # if specified, plot the result
     if plotting:
@@ -152,4 +177,4 @@ def select(gdf, config, plotting=False):
         ax.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
         ax.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
 
-    return gdf, extent_gdf
+    return gdf, extent_gdf, extent_active_polys_gdf
