@@ -1,6 +1,7 @@
 import os
 import pandas as pd
-from sklearn import svm, neighbors, ensemble, preprocessing
+import numpy as np
+from sklearn import svm, neighbors, ensemble, preprocessing, model_selection
 
 def define_scaling(config):
     """[summary]
@@ -73,49 +74,37 @@ def define_model(config):
 
 #TODO: it may make sense to have the entire XY process chain as object-oriented code
 
-def initiate_XY_data(config):
+def split_scale_train_test_split(X, Y, config, scaler):
     """[summary]
 
     Args:
+        X ([type]): [description]
+        Y ([type]): [description]
         config ([type]): [description]
+        scaler ([type]): [description]
 
     Returns:
         [type]: [description]
     """    
 
-    XY = {}
-    XY['conflict_geometry'] = pd.Series()
-    for key in config.items('env_vars'):
-        XY[str(key[0])] = pd.Series(dtype=float)
-    XY['conflict'] = pd.Series(dtype=int)
-
-    return XY
-
-def split_XY_data(XY):
-    """[summary]
-
-    Args:
-        XY ([type]): [description]
-
-    Returns:
-        [type]: [description]
-    """    
-
-    XY = pd.DataFrame.from_dict(XY)
-    print('number of data points including missing values:', len(XY))
-    XY = XY.dropna()
-    print('number of data points excluding missing values:', len(XY))
-
-    X = XY.to_numpy()[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
-    Y = XY.conflict.astype(int).to_numpy()
-
-    return X, Y
-
-def split_X_geometry(X):
-
-    # first column corresponds to geometry information
+    ##- separate arrays for geomety and variable values
     X_geom = X[:, 0]
-    # all other colums represent variable values
-    X = X[:, 1:]
+    X_data = X[: , 1:]
 
-    return X_geom, X
+    ##- scaling only the variable values
+    X_f = scaler.fit_transform(X_data)
+
+    ##- combining geometry and scaled variable values
+    X_s = np.column_stack((X_geom, X_f))
+
+    ##- splitting in train and test samples
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(X_s,
+                                                                        Y,
+                                                                        test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
+
+    X_train_geom = X_train[:, 0]
+    X_test_geom = X_test[:, 0]
+    X_train = X_train[: , 1:]
+    X_test = X_test[: , 1:]
+
+    return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom
