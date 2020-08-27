@@ -73,3 +73,25 @@ def get_conflict_geometry(extent_gdf):
         raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
         
     return list_geometry
+
+def get_pred_conflict_geometry(X_test_geom, y_test, y_pred):
+    """[summary]
+
+    Args:
+        X_test_geom ([type]): [description]
+        y_test ([type]): [description]
+        y_pred ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """   
+
+    arr = np.column_stack((X_test_geom, y_test, y_pred))
+
+    df = pd.DataFrame(arr, columns=['geometry', 'y_test', 'y_pred'])
+
+    df['hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] == 1), 1, 0)
+
+    gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
+
+    return df, gdf
