@@ -4,7 +4,9 @@ def all_data():
 
     return
 
-def leave_one_out():
+def leave_one_out(X, Y, config, scalers):
+
+    print('### LEAVE ONE OUT MODEL ###' + os.linesep)
 
     return
 
