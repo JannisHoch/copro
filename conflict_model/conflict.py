@@ -90,7 +90,7 @@ def get_pred_conflict_geometry(X_test_geom, y_test, y_pred):
 
     df = pd.DataFrame(arr, columns=['geometry', 'y_test', 'y_pred'])
 
-    df['hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] == 1), 1, 0)
+    df['hit'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
     gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
 
