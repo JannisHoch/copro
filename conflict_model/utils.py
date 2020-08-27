@@ -1,6 +1,6 @@
 import geopandas as gpd
 import pandas as pd
-import os
+import os, sys
 import urllib.request
 import zipfile
 from configparser import RawConfigParser
@@ -39,6 +39,9 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
     return gdf
 
 def show_versions():
+    """[summary]
+    """ 
+       
     from conflict_model import __version__ as cm_version
     from geopandas import __version__ as gpd_version
     from pandas import __version__ as pd_version
@@ -50,6 +53,10 @@ def show_versions():
     from sys import version as os_version
     from seaborn import __version__ as sbs_version
     from sklearn import __version__ as skl_version
+
+    #- Geopandas versions lower than 0.7.0 do not yet have the clip function
+    if gpd_version < '0.7.0':
+        sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd_version))
 
     print("Python version: {}".format(os_version))
     print("conflict_model version: {}".format(cm_version))
