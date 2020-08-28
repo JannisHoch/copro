@@ -15,8 +15,7 @@ def filter_conflict_properties(gdf, config):
     """    
     
     selection_criteria = {'best': config.getint('conflict', 'min_nr_casualties'),
-                          'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(','),
-                          'country': config.get('conflict', 'country')}
+                          'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(',')}
     
     print('filtering on conflict properties...')
     
@@ -77,11 +76,10 @@ def clip_to_extent(gdf, config):
     print('...DONE' + os.linesep)
 
     print('fixing invalid geometries')
-    # extent_gdf = extent_gdf.loc[extent_gdf['geometry'].is_valid, :]
     extent_gdf.geometry = extent_gdf.buffer(0)
     print('...DONE' + os.linesep)
 
-    print('clipping datasets to extent')    
+    print('clipping clipping conflict dataset to extent')    
     gdf = gpd.clip(gdf, extent_gdf)
     print('...DONE' + os.linesep)
     
