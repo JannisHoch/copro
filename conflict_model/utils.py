@@ -1,10 +1,12 @@
 import geopandas as gpd
 import pandas as pd
+import numpy as np
 import os, sys
 import urllib.request
 import zipfile
 from configparser import RawConfigParser
 from shutil import copyfile, rmtree
+from sklearn import utils
 
 def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
     """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe. 
@@ -123,3 +125,17 @@ def initiate_setup(settings_file):
         download_PRIO(config)
 
     return config, out_dir
+
+def create_artificial_Y(Y):
+
+    arr_1 = np.ones(len(np.where(Y != 0)[0]))
+    arr_0 = np.zeros(int(len(Y) - len(np.where(Y != 0)[0])))
+    Y_r_1 = np.append(arr_1, arr_0)
+
+    assert len(Y), len(Y_r_1)
+
+    Y_r = utils.shuffle(Y_r_1, random_state=42)
+
+    assert len(np.where(Y_r != 0)[0]), len(np.where(Y != 0)[0])
+
+    return Y_r
