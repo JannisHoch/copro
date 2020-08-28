@@ -1,4 +1,4 @@
-from conflict_model import machine_learning, conflict, utils
+from conflict_model import machine_learning, conflict, utils, evaluation
 import numpy as np
 
 import os, sys
@@ -35,7 +35,7 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
             
             y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-            machine_learning.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
+            evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
 
             y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
@@ -77,7 +77,7 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, clf)
 
-        machine_learning.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, sub_sub_out_dir)
+        evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, sub_sub_out_dir)
 
         y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
@@ -119,7 +119,7 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_svmod, y_train, X_test_svmod, clf)
 
-        machine_learning.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, sub_sub_out_dir)
+        evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, sub_sub_out_dir)
 
         y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
@@ -152,7 +152,7 @@ def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
 
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-    machine_learning.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_out_dir)
+    evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_out_dir)
 
     y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
