@@ -29,13 +29,19 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
     
     # determine the aggregated amount of fatalities in one region (e.g. water province)
-    fatalities_per_watProv = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+    try:
+        fatalities_per_watProv = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+    except:
+        fatalities_per_watProv = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i in range(len(extent_gdf)):
-        i_watProv = extent_gdf.iloc[i]['watprovID']
+        try:
+            i_watProv = extent_gdf.iloc[i]['watprovID']
+        except:
+            i_watProv = extent_gdf.iloc[i]['name']
         if i_watProv in fatalities_per_watProv.index.values:
             list_out.append(1)
         else:
@@ -90,7 +96,7 @@ def get_pred_conflict_geometry(X_test_geom, y_test, y_pred):
 
     df = pd.DataFrame(arr, columns=['geometry', 'y_test', 'y_pred'])
 
-    df['conflict_hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] ==1), 1, 0)
+    df['conflict_hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] ==1), 1, np.nan)
 
     df['overall_hit'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
