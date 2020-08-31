@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
+from conflict_model import conflict
 
 def define_scaling(config):
     """[summary]
@@ -89,8 +90,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
     """    
 
     ##- separate arrays for geomety and variable values
-    X_geom = X[:, 0]
-    X_data = X[: , 1:]
+    X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
     ##- scaling only the variable values
     X_f = scaler.fit_transform(X_data)
