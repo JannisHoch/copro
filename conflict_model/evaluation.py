@@ -36,3 +36,22 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
     metrics.plot_roc_curve(clf, X_test, y_test, ax=ax)
     plt.savefig(os.path.join(out_dir, 'ROC_curve.png'), dpi=300)               
     plt.close()
+
+def get_average_hit(df, global_df):
+
+    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'ID_count'})
+    ID_count['ID'] = ID_count.index.values
+    ID_count.set_index(ID_count.ID, inplace=True)
+    ID_count = ID_count.drop('ID', axis=1)
+
+    hit_count = df.overall_hit.groupby(df.ID).sum().to_frame().rename(columns={'overall_hit':'total_hits'})
+
+    df_temp = pd.merge(ID_count, hit_count, on='ID')
+
+    df_temp['average_hit'] = df_temp.total_hits / df_temp.ID_count
+
+    df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
+
+    gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
+
+    return df_hit, gdf_hit
