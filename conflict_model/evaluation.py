@@ -1,5 +1,7 @@
 import os, sys
 from sklearn import metrics
+import pandas as pd
+import geopandas as gpd
 import matplotlib.pyplot as plt
 
 def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
