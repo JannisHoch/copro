@@ -16,7 +16,8 @@ def initiate_XY_data(config):
     """    
 
     XY = {}
-    XY['conflict_geometry'] = pd.Series()
+    XY['poly_ID'] = pd.Series()
+    XY['poly_geometry'] = pd.Series()
     for key in config.items('env_vars'):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=int)
@@ -39,12 +40,12 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
         [type]: [description]
     """    
 
-    print('reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')) + os.linesep)
+    if config.getboolean('general', 'verbose'): print('reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')) + os.linesep)
 
     # go through all simulation years as specified in config-file
     for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1):
 
-        print('entering year {}'.format(sim_year) + os.linesep)
+        if config.getboolean('general', 'verbose'): print('entering year {}'.format(sim_year) + os.linesep)
 
         # go through all keys in dictionary
         for key, value in XY.items(): 
@@ -56,10 +57,17 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
-            elif key == 'conflict_geometry':
+            elif key == 'poly_ID':
             
                 data_series = value
-                data_list = conflict.get_conflict_geometry(extent_active_polys_gdf)
+                data_list = conflict.get_poly_ID(extent_active_polys_gdf)
+                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                XY[key] = data_series
+
+            elif key == 'poly_geometry':
+            
+                data_series = value
+                data_list = conflict.get_poly_geometry(extent_active_polys_gdf)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
@@ -82,7 +90,7 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
                 else:
                     raise Warning('this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-    print('...reading data DONE')
+    if config.getboolean('general', 'verbose'): print('...reading data DONE')
     
     return XY
 

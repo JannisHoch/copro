@@ -92,23 +92,33 @@ def split_scale_train_test_split(X, Y, config, scaler):
     ##- separate arrays for geomety and variable values
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
+    print(len(X_ID), len(X_geom), len(X_data))
+
     ##- scaling only the variable values
-    X_f = scaler.fit_transform(X_data)
+    X_ft = scaler.fit_transform(X_data)
 
     ##- combining geometry and scaled variable values
-    X_s = np.column_stack((X_geom, X_f))
+    X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
     ##- splitting in train and test samples
-    X_train, X_test, y_train, y_test = model_selection.train_test_split(X_s,
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
                                                                         Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
 
-    X_train_geom = X_train[:, 0]
-    X_test_geom = X_test[:, 0]
-    X_train = X_train[: , 1:]
-    X_test = X_test[: , 1:]
+    X_train_ID = X_train[:, 0]
+    X_test_ID =  X_test[:, 0]
+    X_train_geom = X_train[:, 1]
+    X_test_geom = X_test[:, 1]
+    X_train = X_train[:, 2:]
+    X_test = X_test[:, 2:]
 
-    return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom
+    if not len(X_test_ID) == len(X_test):
+        raise AssertionError('lenght X_test_ID does not match lenght X_test - {} vs {}'.format(len(X_test_ID), len(X_test)))
+
+    if not len(X_test_geom) == len(X_test):
+        raise AssertionError('lenght X_test_geom does not match lenght X_test - {} vs {}'.format(len(X_test_geom), len(X_test)))
+
+    return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
 def fit_predict(X_train, y_train, X_test, clf):
     """[summary]

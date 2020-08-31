@@ -52,7 +52,39 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
 
     return list_out
 
-def get_conflict_geometry(extent_gdf): 
+def get_poly_ID(extent_gdf): 
+    """Extracts geometry information for each polygon from geodataframe and saves in list.
+
+    Args:
+        extent_gdf ([type]): [description]
+
+    Raises:
+        AssertionError: [description]
+
+    Returns:
+        [type]: [description]
+    """    
+    
+    print('listing the geometry of all geographical units')
+
+    # initiatie empty list
+    list_ID = []
+
+    # loop through all polygons
+    for i in range(len(extent_gdf)):
+        # append geometry of each polygon to list
+        try:
+            list_ID.append(extent_gdf.iloc[i]['name'])
+        except:
+            list_ID.append(extent_gdf.iloc[i]['watprovID'])
+
+    # in the end, the same number of polygons should be in geodataframe and list        
+    if not len(extent_gdf) == len(list_ID):
+        raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_ID)))
+        
+    return list_ID
+
+def get_poly_geometry(extent_gdf): 
     """Extracts geometry information for each polygon from geodataframe and saves in list.
 
     Args:
@@ -69,13 +101,12 @@ def get_conflict_geometry(extent_gdf):
 
     # initiatie empty list
     list_geometry = []
+
     # loop through all polygons
     for i in range(len(extent_gdf)):
         # append geometry of each polygon to list
-        try:
-            list_geometry.append([extent_gdf.iloc[i]['name'], extent_gdf.iloc[i]['geometry']])
-        except:
-            list_geometry.append([extent_gdf.iloc[i]['watprovID'], extent_gdf.iloc[i]['geometry']])
+        list_geometry.append(extent_gdf.iloc[i]['geometry'])
+
     # in the end, the same number of polygons should be in geodataframe and list        
     if not len(extent_gdf) == len(list_geometry):
         raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
@@ -83,21 +114,22 @@ def get_conflict_geometry(extent_gdf):
     return list_geometry
 
 def split_conflict_geom_data(X):
+    """[summary]
 
-    ##- separate arrays for geomety and variable values
-    X_ID = X[:, 0][0]
-    X_geom = X[:, 0][1]
-    X_data = X[: , 1:]
+    Args:
+        X ([type]): [description]
 
-    print(X_ID)
-    print(X_geom)
-    print(X_data)
+    Returns:
+        [type]: [description]
+    """    
 
-    sys.exit('buh')
+    X_ID = X[:, 0]
+    X_geom = X[:, 1]
+    X_data = X[: , 2:]
 
     return X_ID, X_geom, X_data
 
-def get_pred_conflict_geometry(X_test_geom, y_test, y_pred):
+def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
     """[summary]
 
     Args:
@@ -109,9 +141,9 @@ def get_pred_conflict_geometry(X_test_geom, y_test, y_pred):
         [type]: [description]
     """   
 
-    arr = np.column_stack((X_test_geom, y_test, y_pred))
+    arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred))
 
-    df = pd.DataFrame(arr, columns=['geometry', 'y_test', 'y_pred'])
+    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred'])
 
     df['conflict_hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] ==1), 1, np.nan)
 

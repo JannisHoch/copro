@@ -38,7 +38,7 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
     nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
                          config.get('env_vars', var_name))
 
-    print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
+    if config.getboolean('general', 'verbose'): print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -93,7 +93,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
     nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
                          config.get('env_vars', var_name))
     
-    print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
+    if config.getboolean('general', 'verbose'): print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
