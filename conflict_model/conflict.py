@@ -65,7 +65,7 @@ def get_poly_ID(extent_gdf):
         [type]: [description]
     """    
     
-    print('listing the geometry of all geographical units')
+    print('listing the IDs of all geographical units')
 
     # initiatie empty list
     list_ID = []
@@ -133,6 +133,7 @@ def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
     """[summary]
 
     Args:
+        X_test_ID ([type]): [description]
         X_test_geom ([type]): [description]
         y_test ([type]): [description]
         y_pred ([type]): [description]

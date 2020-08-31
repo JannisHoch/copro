@@ -92,8 +92,6 @@ def split_scale_train_test_split(X, Y, config, scaler):
     ##- separate arrays for geomety and variable values
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
-    print(len(X_ID), len(X_geom), len(X_data))
-
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
@@ -105,12 +103,8 @@ def split_scale_train_test_split(X, Y, config, scaler):
                                                                         Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
 
-    X_train_ID = X_train[:, 0]
-    X_test_ID =  X_test[:, 0]
-    X_train_geom = X_train[:, 1]
-    X_test_geom = X_test[:, 1]
-    X_train = X_train[:, 2:]
-    X_test = X_test[:, 2:]
+    X_train_ID, X_train_geom, X_train = conflict.split_conflict_geom_data(X_train)
+    X_test_ID, X_test_geom, X_test = conflict.split_conflict_geom_data(X_test)
 
     if not len(X_test_ID) == len(X_test):
         raise AssertionError('lenght X_test_ID does not match lenght X_test - {} vs {}'.format(len(X_test_ID), len(X_test)))
