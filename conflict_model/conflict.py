@@ -2,7 +2,7 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import os
+import os, sys
 
 def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year): 
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
@@ -72,13 +72,30 @@ def get_conflict_geometry(extent_gdf):
     # loop through all polygons
     for i in range(len(extent_gdf)):
         # append geometry of each polygon to list
-        list_geometry.append(extent_gdf.iloc[i]['geometry'])
-
+        try:
+            list_geometry.append([extent_gdf.iloc[i]['name'], extent_gdf.iloc[i]['geometry']])
+        except:
+            list_geometry.append([extent_gdf.iloc[i]['watprovID'], extent_gdf.iloc[i]['geometry']])
     # in the end, the same number of polygons should be in geodataframe and list        
     if not len(extent_gdf) == len(list_geometry):
         raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
         
     return list_geometry
+
+def split_conflict_geom_data(X):
+
+    ##- separate arrays for geomety and variable values
+    X_ID = X[:, 0][0]
+    X_geom = X[:, 0][1]
+    X_data = X[: , 1:]
+
+    print(X_ID)
+    print(X_geom)
+    print(X_data)
+
+    sys.exit('buh')
+
+    return X_ID, X_geom, X_data
 
 def get_pred_conflict_geometry(X_test_geom, y_test, y_pred):
     """[summary]

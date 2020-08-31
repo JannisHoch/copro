@@ -9,9 +9,10 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
     if not os.path.isdir(sub_out_dir):
         os.makedirs(sub_out_dir)
 
-    orig_stdout = sys.stdout
-    f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
-    sys.stdout = f
+    if not config.getboolean('general', 'verbose'):
+        orig_stdout = sys.stdout
+        f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
+        sys.stdout = f
 
     print('### USING ALL DATA ###' + os.linesep)
 
@@ -39,8 +40,9 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
 
             y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
-    sys.stdout = orig_stdout
-    f.close() 
+    if not config.getboolean('general', 'verbose'):
+        sys.stdout = orig_stdout
+        f.close() 
 
     return y_df, y_gdf
 
@@ -53,9 +55,10 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
     if not os.path.isdir(sub_out_dir):
         os.makedirs(sub_out_dir)
 
-    orig_stdout = sys.stdout
-    f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
-    sys.stdout = f
+    if not config.getboolean('general', 'verbose'):
+        orig_stdout = sys.stdout
+        f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
+        sys.stdout = f
 
     print('### LEAVE ONE OUT MODEL ###' + os.linesep)
 
@@ -81,8 +84,9 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
 
         y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
-    sys.stdout = orig_stdout
-    f.close()
+    if not config.getboolean('general', 'verbose'):
+        sys.stdout = orig_stdout
+        f.close()
     
     return y_df, y_gdf
 
@@ -95,9 +99,10 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
     if not os.path.isdir(sub_out_dir):
         os.makedirs(sub_out_dir)
 
-    orig_stdout = sys.stdout
-    f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
-    sys.stdout = f
+    if not config.getboolean('general', 'verbose'):
+        orig_stdout = sys.stdout
+        f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
+        sys.stdout = f
 
     print('### SINGLE VARIABLE MODEL ###' + os.linesep)
 
@@ -123,8 +128,9 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
 
         y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
-    sys.stdout = orig_stdout
-    f.close()
+    if not config.getboolean('general', 'verbose'):
+        sys.stdout = orig_stdout
+        f.close()
 
     return y_df, y_gdf
 
@@ -137,9 +143,10 @@ def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
     if not os.path.isdir(sub_out_dir):
         os.makedirs(sub_out_dir)
 
-    orig_stdout = sys.stdout
-    f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
-    sys.stdout = f
+    if not config.getboolean('general', 'verbose'):
+        orig_stdout = sys.stdout
+        f = open(os.path.join(sub_out_dir, 'out.txt'), 'w')
+        sys.stdout = f
 
     print('### DUBBELSTEENMODEL ###' + os.linesep)
 
@@ -156,7 +163,8 @@ def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
 
     y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
 
-    sys.stdout = orig_stdout
-    f.close()
+    if not config.getboolean('general', 'verbose'):
+        sys.stdout = orig_stdout
+        f.close()
 
     return y_df, y_gdf
