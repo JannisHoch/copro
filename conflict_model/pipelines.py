@@ -38,8 +38,6 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
 
             evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
 
-            print(len(X_test_ID), len(X_test_geom))
-
             y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
