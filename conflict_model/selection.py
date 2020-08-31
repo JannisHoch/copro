@@ -2,6 +2,7 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 import os, sys
+from conflict_model import utils
 
 def filter_conflict_properties(gdf, config):
     """filters conflict database according to certain conflict properties such as number of casualties, type of violence or country.
@@ -140,8 +141,9 @@ def climate_zoning(gdf, extent_gdf, config):
 
         raise ValueError('no supported climate zone specified - either specify abbreviations of Koeppen-Geiger zones for selection or None for no selection')
 
-    
-    return gdf, extent_active_polys_gdf
+    global_df = utils.global_ID_geom_info(extent_active_polys_gdf)
+
+    return gdf, extent_active_polys_gdf, global_df
 
 def select(gdf, config, plotting=False):
     """Filtering the original global conflict dataset based on a) conflict properties, b) time period, c) continent, and d) climate zone.
@@ -164,7 +166,7 @@ def select(gdf, config, plotting=False):
 
     gdf, extent_gdf = clip_to_extent(gdf, config)
 
-    gdf, extent_active_polys_gdf = climate_zoning(gdf, extent_gdf, config)
+    gdf, extent_active_polys_gdf, global_df = climate_zoning(gdf, extent_gdf, config)
 
     # if specified, plot the result
     if plotting:
@@ -175,4 +177,4 @@ def select(gdf, config, plotting=False):
         ax.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
         ax.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
 
-    return gdf, extent_gdf, extent_active_polys_gdf
+    return gdf, extent_gdf, extent_active_polys_gdf, global_df

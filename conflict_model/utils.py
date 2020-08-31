@@ -139,3 +139,17 @@ def create_artificial_Y(Y):
     assert len(np.where(Y_r != 0)[0]), len(np.where(Y != 0)[0])
 
     return Y_r
+
+def global_ID_geom_info(gdf):
+
+    try:
+        global_list = np.column_stack((gdf.name.to_numpy(), gdf.geometry.to_numpy()))
+    except:
+        global_list = np.column_stack((gdf.watprovID.to_numpy(), gdf.geometry.to_numpy()))
+
+    df = pd.DataFrame(data=global_list, columns=['ID', 'geometry'])
+
+    df.set_index(df.ID, inplace=True)
+    df = df.drop('ID', axis=1)
+
+    return df
