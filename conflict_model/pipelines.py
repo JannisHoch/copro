@@ -26,7 +26,7 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
         if not os.path.isdir(sub_sub_out_dir):
             os.makedirs(sub_sub_out_dir)
 
-        X_train, X_test, y_train, y_test, X_train_geom, X_test_geom = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+        X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
         for clf in clfs:
 
@@ -38,7 +38,9 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
 
             evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
 
-            y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
+            print(len(X_test_ID), len(X_test_geom))
+
+            y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
@@ -65,7 +67,7 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
     scaler = scalers[0]
     clf = clfs[0]
 
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
     for i, key in zip(range(X_train.shape[1]), config.items('env_vars')):
 
@@ -82,7 +84,7 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
 
         evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, sub_sub_out_dir)
 
-        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
+        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
@@ -109,7 +111,7 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
     scaler = scalers[0]
     clf = clfs[0]
 
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
     for i, key in zip(range(X_train.shape[1]), config.items('env_vars')):
 
@@ -126,7 +128,7 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
 
         evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, sub_sub_out_dir)
 
-        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
+        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
@@ -155,13 +157,13 @@ def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
 
     Y = utils.create_artificial_Y(Y)
 
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
     evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_out_dir)
 
-    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_geom, y_test, y_pred)
+    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
