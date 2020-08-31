@@ -146,7 +146,8 @@ def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
 
     df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred'])
 
-    df['conflict_hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] ==1), 1, np.nan)
+    #TODO: think this through properly
+    # df['conflict_hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] ==1), 1, np.nan)
 
     df['overall_hit'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
