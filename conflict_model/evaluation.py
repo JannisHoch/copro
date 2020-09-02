@@ -19,6 +19,7 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
     print('F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)))
     print('Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])))
     print('Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)))
+    print('ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_pred)))
     print('')
 
     print(metrics.classification_report(y_test, y_pred))
