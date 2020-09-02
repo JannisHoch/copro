@@ -29,7 +29,7 @@ def define_scaling(config):
     else:
         raise ValueError('no supported scaling-algorithm selected - choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer')
 
-    print('chosen scaling method is {}'.format(scaler))
+    if config.get_boolean('general', 'verbose'): print('chosen scaling method is {}'.format(scaler))
 
     return scaler[0]
 
@@ -55,7 +55,7 @@ def define_model(config):
     else:
         raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
 
-    print('chosen ML model is {}'.format(clf))
+    if config.get_boolean('general', 'verbose'): print('chosen ML model is {}'.format(clf))
 
     return clf[0]
 
@@ -77,12 +77,14 @@ def split_scale_train_test_split(X, Y, config, scaler):
     ##- separate arrays for geomety and variable values
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
+    if config.get_boolean('general', 'verbose'): print('fitting and transforming X' + os.linesep)
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
     ##- combining geometry and scaled variable values
     X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
+    if config.get_boolean('general', 'verbose'): print('splitting both X and Y in train and test data' + os.linesep)
     ##- splitting in train and test samples
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
                                                                         Y,
