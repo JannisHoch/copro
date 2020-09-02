@@ -1,3 +1,5 @@
+#TODO: if that remains the only function in this py-file, then better move the function in the click-script and execute there
+
 from conflict_model import pipelines
 
 def run(X, Y, config, scalers, clfs, out_dir):
