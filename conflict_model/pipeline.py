@@ -4,7 +4,7 @@ from conflict_model import models, data, machine_learning
 import os, sys
 
 
-def prepare_XY(config, conflict_gdf, extent_active_polys_gdf):
+def create_XY(config, conflict_gdf, extent_active_polys_gdf):
 
     XY = data.initiate_XY_data(config)
 
