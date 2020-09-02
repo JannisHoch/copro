@@ -145,11 +145,10 @@ def climate_zoning(gdf, extent_gdf, config):
 
     return gdf, extent_active_polys_gdf, global_df
 
-def select(gdf, config, plotting=False):
+def select(config, plotting=False):
     """Filtering the original global conflict dataset based on a) conflict properties, b) time period, c) continent, and d) climate zone.
 
     Arguments:
-        gdf {geodataframe}: geodataframe containing entries with conflicts
         config {configuration}: parsed configuration settings
 
     Keyword Arguments:
@@ -159,6 +158,8 @@ def select(gdf, config, plotting=False):
         geodataframe: geodataframe containing filtered entries
         geodataframe: geodataframe containing country polygons of selected continent
     """    
+
+    gdf = utils.get_geodataframe(config)
 
     gdf = filter_conflict_properties(gdf, config)
 

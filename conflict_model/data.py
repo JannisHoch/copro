@@ -22,6 +22,8 @@ def initiate_XY_data(config):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=int)
 
+    if config.getboolean('general', 'verbose'): print(XY)
+
     return XY
 
 def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
@@ -90,11 +92,11 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
                 else:
                     raise Warning('this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-    if config.getboolean('general', 'verbose'): print('...reading data DONE')
+    if config.getboolean('general', 'verbose'): print('...reading data DONE' + os.linesep)
     
     return XY
 
-def split_XY_data(XY):
+def split_XY_data(XY, config):
     """[summary]
 
     Args:
@@ -105,11 +107,16 @@ def split_XY_data(XY):
     """    
 
     XY = pd.DataFrame.from_dict(XY)
-    print('number of data points including missing values:', len(XY))
+    if config.getboolean('general', 'verbose'): print('number of data points including missing values:', len(XY))
+
     XY = XY.dropna()
-    print('number of data points excluding missing values:', len(XY))
+    if config.getboolean('general', 'verbose'): print('number of data points excluding missing values:', len(XY))
 
     X = XY.to_numpy()[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
     Y = XY.conflict.astype(int).to_numpy()
+
+    if config.getboolean('general', 'verbose'): 
+        fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
+        print('from this, {0} points are equal to 1, i.e. represent conflict occurence. This is a fraction of {1} percent.'.format(len(np.where(Y != 0)[0]), round(fraction_Y_1, 2)))
 
     return X, Y
