@@ -3,7 +3,7 @@ import numpy as np
 
 import os, sys
 
-def all_data(X, Y, config, scalers, clfs, out_dir):
+def all_data(X, Y, config, scaler, clf, out_dir):
 
     sub_out_dir = os.path.join(out_dir, '_all_data')
     if not os.path.isdir(sub_out_dir):
@@ -16,25 +16,21 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
 
     print('### USING ALL DATA ###' + os.linesep)
 
-    for scaler in scalers:
+    sub_sub_out_dir = os.path.join(sub_out_dir, str(scaler).rsplit('(')[0])
+    if not os.path.isdir(sub_sub_out_dir):
+        os.makedirs(sub_sub_out_dir)
 
-        sub_sub_out_dir = os.path.join(sub_out_dir, str(scaler).rsplit('(')[0])
-        if not os.path.isdir(sub_sub_out_dir):
-            os.makedirs(sub_sub_out_dir)
+    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
-        X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+    sub_sub_sub_out_dir = os.path.join(sub_sub_out_dir, str(clf).rsplit('(')[0])
+    if not os.path.isdir(sub_sub_sub_out_dir):
+        os.makedirs(sub_sub_sub_out_dir)
+    
+    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-        for clf in clfs:
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
 
-            sub_sub_sub_out_dir = os.path.join(sub_sub_out_dir, str(clf).rsplit('(')[0])
-            if not os.path.isdir(sub_sub_sub_out_dir):
-                os.makedirs(sub_sub_sub_out_dir)
-            
-            y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
-
-            eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
-
-            y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
@@ -42,7 +38,7 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
 
     return y_df, y_gdf, eval_dict
 
-def leave_one_out(X, Y, config, scalers, clfs, out_dir):
+def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
     sub_out_dir = os.path.join(out_dir, '_leave_one_out_analysis')
     if not os.path.isdir(sub_out_dir):
@@ -54,9 +50,6 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
         sys.stdout = f
 
     print('### LEAVE ONE OUT MODEL ###' + os.linesep)
-
-    scaler = scalers[0]
-    clf = clfs[0]
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
@@ -83,7 +76,7 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
     
     return y_df, y_gdf, eval_dict
 
-def single_variables(X, Y, config, scalers, clfs, out_dir):
+def single_variables(X, Y, config, scaler, clf, out_dir):
 
     sub_out_dir = os.path.join(out_dir, '_single_var_model')
     if not os.path.isdir(sub_out_dir):
@@ -95,9 +88,6 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
         sys.stdout = f
 
     print('### SINGLE VARIABLE MODEL ###' + os.linesep)
-
-    scaler = scalers[0]
-    clf = clfs[0]
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
@@ -124,7 +114,7 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
 
     return y_df, y_gdf, eval_dict
 
-def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
+def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     sub_out_dir = os.path.join(out_dir, '_dubbelsteenmodel')
     if not os.path.isdir(sub_out_dir):
@@ -136,9 +126,6 @@ def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
         sys.stdout = f
 
     print('### DUBBELSTEENMODEL ###' + os.linesep)
-
-    scaler = scalers[0]
-    clf = clfs[0]
 
     Y = utils.create_artificial_Y(Y)
 
