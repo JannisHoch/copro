@@ -16,10 +16,6 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
 
     print('### USING ALL DATA ###' + os.linesep)
 
-    if config.getboolean('general', 'sensitivity_analysis'):
-
-        print('--- sensitivy analysis is ON, all combos of scaler and model are applied ---' + os.linesep)
-
     for scaler in scalers:
 
         sub_sub_out_dir = os.path.join(sub_out_dir, str(scaler).rsplit('(')[0])
@@ -47,9 +43,6 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
     return y_df, y_gdf, eval_dict
 
 def leave_one_out(X, Y, config, scalers, clfs, out_dir):
-
-    if (len(scalers) > 1) or (len(clfs) > 1):
-        raise ValueError('not supported with sensitivity analysis model - please select only one scaling and one model technique.')
 
     sub_out_dir = os.path.join(out_dir, '_leave_one_out_analysis')
     if not os.path.isdir(sub_out_dir):
@@ -92,9 +85,6 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
 
 def single_variables(X, Y, config, scalers, clfs, out_dir):
 
-    if (len(scalers) > 1) or (len(clfs) > 1):
-        raise ValueError('not supported with sensitivity analysis model - please select only one scaling and one model technique.')
-
     sub_out_dir = os.path.join(out_dir, '_single_var_model')
     if not os.path.isdir(sub_out_dir):
         os.makedirs(sub_out_dir)
@@ -135,9 +125,6 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
     return y_df, y_gdf, eval_dict
 
 def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
-
-    if (len(scalers) > 1) or (len(clfs) > 1):
-        raise ValueError('not supported with sensitivity analysis model - please select only one scaling and one model technique.')
 
     sub_out_dir = os.path.join(out_dir, '_dubbelsteenmodel')
     if not os.path.isdir(sub_out_dir):
