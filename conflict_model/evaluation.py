@@ -2,7 +2,25 @@ import os, sys
 from sklearn import metrics
 import pandas as pd
 import geopandas as gpd
+import numpy as np
 import matplotlib.pyplot as plt
+
+def init_out_dict():
+
+    scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score']
+
+    out_dict = {}
+    for score in scores:
+        out_dict[score] = list()
+
+    return scores, out_dict
+
+def fill_out_dict(out_dict, eval_dict):
+
+    for key in out_dict:
+        out_dict[key].append(eval_dict[key])
+
+    return out_dict
 
 def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
     """[summary]
@@ -45,7 +63,8 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
                  'Recall': metrics.recall_score(y_test, y_pred),
                  'F1 score': metrics.f1_score(y_test, y_pred),
                  'Cohen-Kappa score': metrics.cohen_kappa_score(y_test, y_pred),
-                 'Brier loss score': metrics.brier_score_loss(y_test, y_prob[:, 1])
+                 'Brier loss score': metrics.brier_score_loss(y_test, y_prob[:, 1]),
+                 'ROC AUC score': metrics.roc_auc_score(y_test, y_pred),
                 }
 
     return eval_dict
@@ -80,3 +99,16 @@ def get_average_hit(df, global_df):
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
     return df_hit, gdf_hit
+
+def plot_ROC_n_times(clf, X, Y, trps, aucs):
+
+    fig, ax = plt.subplots()
+    clf.fit(X, y)
+    viz = metrics.plot_roc_curve(clf, X, Y, alpha=0.3, lw=1, ax=ax)
+    interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
+    interp_tpr[0] = 0.0
+    tprs.append(interp_tpr)
+    aucs.append(viz.roc_auc)
+
+
+    return ax, trps, aucs

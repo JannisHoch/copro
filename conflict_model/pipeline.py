@@ -1,6 +1,6 @@
 #TODO: if that remains the only function in this py-file, then better move the function in the click-script and execute there
 
-from conflict_model import models, data, machine_learning
+from conflict_model import models, data, machine_learning, evaluation
 import os, sys
 
 
