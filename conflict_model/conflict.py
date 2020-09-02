@@ -19,8 +19,6 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
     Returns:
         list: list containing 0/1 per polygon depending on conflict occurence
     """    
-    
-    print('determining whether a conflict took place or not')
 
     # select the entries which occured in this year
     temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]   
@@ -64,8 +62,6 @@ def get_poly_ID(extent_gdf):
     Returns:
         [type]: [description]
     """    
-    
-    print('listing the IDs of all geographical units')
 
     # initiatie empty list
     list_ID = []

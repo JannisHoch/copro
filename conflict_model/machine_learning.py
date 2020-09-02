@@ -29,7 +29,7 @@ def define_scaling(config):
     else:
         raise ValueError('no supported scaling-algorithm selected - choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer')
 
-    print('chosen scaling method is {}'.format(scalers[0]))
+    print('chosen scaling method is {}'.format(scaler))
 
     return scaler[0]
 
@@ -55,7 +55,7 @@ def define_model(config):
     else:
         raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
 
-    print('chosen ML model is {}'.format(clfs[0]))
+    print('chosen ML model is {}'.format(clf))
 
     return clf[0]
 
