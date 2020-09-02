@@ -22,7 +22,7 @@ def initiate_XY_data(config):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=int)
 
-    if config.getboolean('general', 'verbose'): print(XY)
+    if config.getboolean('general', 'verbose'): print('{}'.format(XY) + os.linesep)
 
     return XY
 
