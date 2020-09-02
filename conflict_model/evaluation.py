@@ -39,6 +39,16 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
     plt.savefig(os.path.join(out_dir, 'ROC_curve.png'), dpi=300)               
     plt.close()
 
+    eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
+                 'Precision': metrics.precision_score(y_test, y_pred),
+                 'Recall': metrics.recall_score(y_test, y_pred),
+                 'F1 score': metrics.f1_score(y_test, y_pred),
+                 'Cohen-Kappa score': metrics.cohen_kappa_score(y_test, y_pred),
+                 'Brier loss score': metrics.brier_score_loss(y_test, y_prob[:, 1])
+                }
+
+    return eval_dict
+
 def get_average_hit(df, global_df):
 
     #- create a dataframe containing the number of occurence per ID

@@ -36,7 +36,7 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
             
             y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-            evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
+            eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
 
             y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
@@ -44,7 +44,7 @@ def all_data(X, Y, config, scalers, clfs, out_dir):
         sys.stdout = orig_stdout
         f.close() 
 
-    return y_df, y_gdf
+    return y_df, y_gdf, eval_dict
 
 def leave_one_out(X, Y, config, scalers, clfs, out_dir):
 
@@ -80,7 +80,7 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, clf)
 
-        evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, sub_sub_out_dir)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, sub_sub_out_dir)
 
         y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
@@ -88,7 +88,7 @@ def leave_one_out(X, Y, config, scalers, clfs, out_dir):
         sys.stdout = orig_stdout
         f.close()
     
-    return y_df, y_gdf
+    return y_df, y_gdf, eval_dict
 
 def single_variables(X, Y, config, scalers, clfs, out_dir):
 
@@ -124,7 +124,7 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_svmod, y_train, X_test_svmod, clf)
 
-        evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, sub_sub_out_dir)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, sub_sub_out_dir)
 
         y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
@@ -132,7 +132,7 @@ def single_variables(X, Y, config, scalers, clfs, out_dir):
         sys.stdout = orig_stdout
         f.close()
 
-    return y_df, y_gdf
+    return y_df, y_gdf, eval_dict
 
 def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
 
@@ -159,7 +159,7 @@ def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
 
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-    evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_out_dir)
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_out_dir)
 
     y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
@@ -167,4 +167,4 @@ def dubbelsteen(X, Y, config, scalers, clfs, out_dir):
         sys.stdout = orig_stdout
         f.close()
 
-    return y_df, y_gdf
+    return y_df, y_gdf, eval_dict
