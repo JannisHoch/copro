@@ -13,7 +13,11 @@ def init_out_dict():
     for score in scores:
         out_dict[score] = list()
 
-    return scores, out_dict
+    return out_dict
+
+def init_out_df():
+
+    return pd.DataFrame()
 
 def fill_out_dict(out_dict, eval_dict):
 
@@ -21,6 +25,12 @@ def fill_out_dict(out_dict, eval_dict):
         out_dict[key].append(eval_dict[key])
 
     return out_dict
+
+def fill_out_df(out_df, y_df):
+
+    out_df = out_df.append(y_df, ignore_index=True)
+
+    return out_df
 
 def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
     """[summary]
