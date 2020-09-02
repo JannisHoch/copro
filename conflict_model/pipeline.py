@@ -35,7 +35,7 @@ def run(X, Y, config, scaler, clf, out_dir):
     else:
         raise ValueError('the specified model type in the cfg-file is invalid - specify either 1, 2, 3 or 4.')
 
-    return y_df, y_gdf, eval_dict
+    return y_df, eval_dict
 
 def evaluate():
 
