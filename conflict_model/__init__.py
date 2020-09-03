@@ -6,9 +6,9 @@ from . import conflict
 from . import variables
 from . import machine_learning
 from . import data
-from . import pipelines
+from . import pipeline
 from . import evaluation
-from . import model
+from . import models
 
 __author__ = """Jannis M. Hoch, Niko Wanders, Sophie de Bruin"""
 __email__ = 'j.m.hoch@uu.nl'
