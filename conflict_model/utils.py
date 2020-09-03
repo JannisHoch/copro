@@ -28,10 +28,10 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
                                config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
-    print('reading csv file to dataframe {}'.format(conflict_fo) + os.linesep)
+    if config.getboolean('general', 'verbose'): print('reading csv file to dataframe {}'.format(conflict_fo) + os.linesep)
     df = pd.read_csv(conflict_fo)
 
-    print('translating to geopandas dataframe' + os.linesep)
+    if config.getboolean('general', 'verbose'): print('translating to geopandas dataframe' + os.linesep)
     gdf = gpd.GeoDataFrame(df,
                           geometry=gpd.points_from_xy(df[longitude], df[latitude]),
                           crs=crs)
