@@ -1,14 +1,26 @@
 #TODO: if that remains the only function in this py-file, then better move the function in the click-script and execute there
 
 from conflict_model import models, data, machine_learning, evaluation
+import numpy as np
 import os, sys
 
 
 def create_XY(config, conflict_gdf, extent_active_polys_gdf):
 
-    XY = data.initiate_XY_data(config)
+    if config.get('pre_calc', 'XY') is '':
 
-    XY = data.fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf)
+        XY = data.initiate_XY_data(config)
+
+        XY = data.fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf)
+
+        np.save(os.path.join(config.get('general', 'input_dir'), 'XY.npy'), XY, allow_pickle=False)
+
+    else:
+
+        if config.getboolean('general', 'verbose'): 
+            print('loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))) + os.linesep)
+
+        XY = np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=False)
 
     X, Y = data.split_XY_data(XY, config)
 
