@@ -151,3 +151,14 @@ def global_ID_geom_info(gdf):
     df = df.drop('ID', axis=1)
 
     return df
+
+def get_conflict_datapoints_only(X_df, y_df):
+
+    df = pd.concat([X_df, y_df], axis=1)
+    df = df.loc[df.y_test==1]
+
+    X1_df = df[df.columns[:len(X_df.columns)]]
+    y1_df = df[df.columns[len(X_df.columns):]]
+
+    return X1_df, y1_df
+
