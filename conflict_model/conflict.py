@@ -19,8 +19,6 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
     Returns:
         list: list containing 0/1 per polygon depending on conflict occurence
     """    
-    
-    print('determining whether a conflict took place or not')
 
     # select the entries which occured in this year
     temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]   
@@ -64,8 +62,6 @@ def get_poly_ID(extent_gdf):
     Returns:
         [type]: [description]
     """    
-    
-    print('listing the IDs of all geographical units')
 
     # initiatie empty list
     list_ID = []
@@ -151,6 +147,4 @@ def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
 
     df['overall_hit'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
-    gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
-
-    return df, gdf
+    return df

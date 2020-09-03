@@ -28,16 +28,14 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
                                config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
-    print('reading csv file to dataframe {}'.format(conflict_fo))
+    if config.getboolean('general', 'verbose'): print('reading csv file to dataframe {}'.format(conflict_fo) + os.linesep)
     df = pd.read_csv(conflict_fo)
-    print('...DONE' + os.linesep)
 
-    print('translating to geopandas dataframe')
+    if config.getboolean('general', 'verbose'): print('translating to geopandas dataframe' + os.linesep)
     gdf = gpd.GeoDataFrame(df,
                           geometry=gpd.points_from_xy(df[longitude], df[latitude]),
                           crs=crs)
-    print('...DONE' + os.linesep)
-    
+
     return gdf
 
 def show_versions():
@@ -86,7 +84,7 @@ def make_output_dir(config):
     if os.path.isdir(out_dir):
         rmtree(out_dir)
     os.makedirs(out_dir)
-    print('for the record, saving output to folder {}'.format(out_dir))
+    print('saving output to folder {}'.format(out_dir))
 
     return out_dir
     
