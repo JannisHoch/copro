@@ -25,7 +25,7 @@ def prepare_ML(config):
 def run(X, Y, config, scaler, clf, out_dir):
 
     if config.getint('general', 'model') == 1:
-        y_df, y_gdf, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir)
+        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir)
     elif config.getint('general', 'model') == 2:
         y_df, y_gdf, eval_dict = models.leave_one_out(X, Y, config, scaler, clf, out_dir)
     elif config.getint('general', 'model') == 3:
@@ -35,7 +35,7 @@ def run(X, Y, config, scaler, clf, out_dir):
     else:
         raise ValueError('the specified model type in the cfg-file is invalid - specify either 1, 2, 3 or 4.')
 
-    return y_df, eval_dict
+    return X_df, y_df, eval_dict
 
 def evaluate():
 

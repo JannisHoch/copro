@@ -125,7 +125,7 @@ def split_conflict_geom_data(X):
 
     return X_ID, X_geom, X_data
 
-def get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test, y_test, y_pred):
+def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
     """[summary]
 
     Args:
@@ -138,15 +138,13 @@ def get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test, y_test, y_pred):
         [type]: [description]
     """   
 
-    arr = np.column_stack((X_test_ID, X_test_geom, X_test, y_test, y_pred))
+    arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred))
 
-    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'X_test', 'y_test', 'y_pred'])
+    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred'])
 
     #TODO: think this through properly
     # df['conflict_hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] ==1), 1, np.nan)
 
     df['overall_hit'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
-    gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
-
-    return df, gdf
+    return df
