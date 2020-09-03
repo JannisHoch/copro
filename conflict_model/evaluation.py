@@ -96,24 +96,6 @@ def get_average_hit(df, global_df):
 
     return df_hit, gdf_hit
 
-def plot_ROC_curve(clf, X_test, y_test, **kwargs):
-
-    disp = metrics.plot_roc_curve(clf, X_test, y_test, **kwargs)
-
-    return disp 
-    
-def plot_confusion_matrix(clf, X_test, y_test, **kwargs):
-
-    disp = metrics.plot_confusion_matrix(clf, X_test, y_test, **kwargs)
-
-    return disp
-
-def plot_precision_recall_curve(clf, X_test, y_test, **kwargs):
-
-    disp = metrics.plot_precision_recall_curve(clf, X_test, y_test, **kwargs)
-
-    return disp
-
 def init_out_ROC_curve():
 
     tprs = []
