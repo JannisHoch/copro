@@ -1,4 +1,5 @@
 from conflict_model import machine_learning, conflict, utils, evaluation
+import pandas as pd
 import numpy as np
 
 import os, sys
@@ -30,13 +31,15 @@ def all_data(X, Y, config, scaler, clf, out_dir):
 
     eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf)
 
-    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test, y_test, y_pred)
+    y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+
+    X_df = pd.DataFrame(X_test)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close() 
 
-    return y_df, y_gdf, eval_dict
+    return X_df, y_df, eval_dict
 
 def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
@@ -68,13 +71,13 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
         eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf)
 
-        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test_loo, y_test, y_pred)
+        y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
     
-    return y_df, y_gdf, eval_dict
+    return y_df, eval_dict
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
 
@@ -106,13 +109,13 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
         eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf)
 
-        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test_svmod, y_test, y_pred)
+        y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
 
-    return y_df, y_gdf, eval_dict
+    return y_df, eval_dict
 
 def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
@@ -135,10 +138,10 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf)
 
-    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test, y_test, y_pred)
+    y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
 
-    return y_df, y_gdf, eval_dict
+    return y_df, eval_dict
