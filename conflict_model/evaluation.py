@@ -32,7 +32,7 @@ def fill_out_df(out_df, y_df):
 
     return out_df
 
-def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
+def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf):
     """[summary]
 
     Args:
@@ -52,21 +52,6 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, out_dir):
 
     print(metrics.classification_report(y_test, y_pred))
     print('')
-
-    fig, ax = plt.subplots(1, 1, figsize=(20,10))
-    disp = metrics.plot_precision_recall_curve(clf, X_test, y_test, ax=ax)
-    plt.savefig(os.path.join(out_dir, 'precision_recall_curve.png'), dpi=300)
-    plt.close()
-    
-    fig, ax = plt.subplots(1, 1, figsize=(8, 7))
-    metrics.plot_confusion_matrix(clf, X_test, y_test, ax=ax)
-    plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'), dpi=300)
-    plt.close()
-
-    fig, ax = plt.subplots(1, 1, figsize=(20,10))
-    metrics.plot_roc_curve(clf, X_test, y_test, ax=ax)
-    plt.savefig(os.path.join(out_dir, 'ROC_curve.png'), dpi=300)               
-    plt.close()
 
     eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
@@ -110,15 +95,34 @@ def get_average_hit(df, global_df):
 
     return df_hit, gdf_hit
 
-def plot_ROC_n_times(clf, X, Y, trps, aucs):
+def plot_ROC_curve(clf, X_test, y_test, **kwargs):
 
-    fig, ax = plt.subplots()
-    clf.fit(X, y)
-    viz = metrics.plot_roc_curve(clf, X, Y, alpha=0.3, lw=1, ax=ax)
-    interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
-    interp_tpr[0] = 0.0
-    tprs.append(interp_tpr)
-    aucs.append(viz.roc_auc)
+    disp = metrics.plot_roc_curve(clf, X_test, y_test, **kwargs)
+
+    return disp 
+    
+def plot_confusion_matrix(clf, X_test, y_test, **kwargs):
+
+    disp = metrics.plot_confusion_matrix(clf, X_test, y_test, **kwargs)
+
+    return disp
+
+def plot_precision_recall_curve(clf, X_test, y_test, **kwargs):
+
+    disp = metrics.plot_precision_recall_curve(clf, X_test, y_test, **kwargs)
+
+    return disp
 
 
-    return ax, trps, aucs
+# def plot_ROC_n_times(clf, X, Y, trps, aucs):
+
+#     fig, ax = plt.subplots()
+#     clf.fit(X, y)
+#     viz = metrics.plot_roc_curve(clf, X, Y, alpha=0.3, lw=1, ax=ax)
+#     interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
+#     interp_tpr[0] = 0.0
+#     tprs.append(interp_tpr)
+#     aucs.append(viz.roc_auc)
+
+
+#     return ax, trps, aucs
