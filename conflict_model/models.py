@@ -28,9 +28,9 @@ def all_data(X, Y, config, scaler, clf, out_dir):
     
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_sub_sub_out_dir)
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf)
 
-    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
@@ -66,9 +66,9 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, clf)
 
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, sub_sub_out_dir)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf)
 
-        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test_loo, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
@@ -104,9 +104,9 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_svmod, y_train, X_test_svmod, clf)
 
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, sub_sub_out_dir)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf)
 
-        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+        y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test_svmod, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
@@ -133,9 +133,9 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, sub_out_dir)
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf)
 
-    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+    y_df, y_gdf = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, X_test, y_test, y_pred)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
