@@ -29,7 +29,7 @@ def all_data(X, Y, config, scaler, clf, out_dir):
     
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf)
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
 
     y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
