@@ -47,7 +47,7 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
     # go through all simulation years as specified in config-file
     for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1):
 
-        if config.getboolean('general', 'verbose'): print('entering year {}'.format(sim_year) + os.linesep)
+        if config.getboolean('general', 'verbose'): print(os.linesep + 'entering year {}'.format(sim_year) + os.linesep)
 
         # go through all keys in dictionary
         for key, value in XY.items(): 
