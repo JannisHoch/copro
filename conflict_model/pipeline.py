@@ -22,7 +22,7 @@ def create_XY(config, conflict_gdf, extent_active_polys_gdf):
 
         if config.getboolean('general', 'verbose'): 
             print('loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))) + os.linesep)
-            np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
+            XY = np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
         
     X, Y = data.split_XY_data(XY, config)    
 
