@@ -1,20 +1,10 @@
 import conflict_model 
 
-from configparser import RawConfigParser
-
 import click
-from os.path import isdir, dirname, abspath
-from os import makedirs
-import geopandas as gpd
-import xarray as xr
 import pandas as pd
 import numpy as np
-import seaborn as sbs
-from sklearn import svm, preprocessing, model_selection, metrics
-import matplotlib.pyplot as plt
-from shutil import copyfile
-import csv
 import os, sys
+import matplotlib.pyplot as plt
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -25,224 +15,102 @@ def cli():
     pass
 
 @click.command()
-@click.argument('cfg',)
-@click.option('-so', '--safe-output', default=False, help='save output yes/no', is_flag=True, type=click.BOOL)
-@click.option('-o', '--output-folder', default=None, help='output folder', type=click.Path())
-@click.option('-v', '--verbose', default=False, help='verbose model yes/no', is_flag=True, type=click.BOOL)
+@click.argument('cfg', type=click.Path())
 
-def main(cfg, safe_output=True, output_folder=None, verbose=False):
-    """Runs the conflict_model from command line with several options and the settings cfg-file as argument.
-
-    CFG: path to cfg-file with run settings
+def main(cfg):   
+    """Main command line script to execute the model. All settings are read from cfg-file.
 
     Args:
-        cfg (str): Path to cfg-file with run settings
-        safe_output (bool, optional): Save output yes/no. Defaults to True.
-        output_folder (str, optional): Output folder. Defaults to None.
-        verbose (bool, optional): Verbose mode on/off. Defaults to False.
-
-    Raises:
-        Warning: [description]
+        CFG (str): (relative) path to cfg-file
     """    
 
     print('')
     print('#### LETS GET STARTED PEOPLZ! ####' + os.linesep)
 
-    if gpd.__version__ < '0.7.0':
-        sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd.__version__))
+    #- parsing settings-file and getting path to output folder
+    config, out_dir = conflict_model.utils.initiate_setup(cfg)
 
-    config = RawConfigParser(allow_no_value=True)
-    config.optionxform = lambda option: option
-    config.read(cfg)
+    print('verbose mode on: {}'.format(config.getboolean('general', 'verbose')) + os.linesep)
 
-    print('safe output: {}'.format(safe_output))
-    print('sensitivity analysis on: {}'.format(config.getboolean('general', 'sensitivity_analysis')))
-    print('verbose mode on: {}'.format(verbose) + os.linesep)
+    #- selecting conflicts and getting area-of-interest and aggregation level
+    conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = conflict_model.selection.select(config)
+    #- plot selected conflicts and polygons
+    conflict_model.plots.plot_active_polys(conflict_gdf, extent_gdf, extent_active_polys_gdf, config, out_dir)
 
-    if output_folder == None:
-        out_dir = os.path.abspath(config.get('general','output_dir'))
-    else:
-        out_dir = os.path.abspath(output_folder)
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
-    print('output directory is {}'.format(out_dir) + os.linesep)
+    #- create X and Y arrays by reading conflict and variable files;
+    #- or by loading a pre-computed array (npy-file)
+    X, Y = conflict_model.pipeline.create_XY(config, conflict_gdf, extent_active_polys_gdf)
 
-    if verbose: copyfile(cfg, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
+    #- defining scaling and model algorithms
+    scaler, clf = conflict_model.pipeline.prepare_ML(config)
 
-    gdf = conflict_model.utils.get_geodataframe(config)
+    #- initializing output variables
+    #TODO: put all this into one function
+    out_X_df = conflict_model.evaluation.init_out_df()
+    out_X1_df = conflict_model.evaluation.init_out_df()
+    out_y_df = conflict_model.evaluation.init_out_df()
+    out_y1_df = conflict_model.evaluation.init_out_df()
+    out_dict = conflict_model.evaluation.init_out_dict()
+    trps, aucs, mean_fpr = conflict_model.evaluation.init_out_ROC_curve()
 
-    conflict_gdf, extent_gdf = conflict_model.selection.select(gdf, config)
+    #- create plot instance for ROC plots
+    fig, (ax1) = plt.subplots(1, 1, figsize=(20,10))
 
-    print('data retrieval period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
-    print('')
-
-    XY = {}
-    for key in config.items('env_vars'):
-        XY[str(key[0])] = pd.Series(dtype=float)
-    XY['conflict'] = pd.Series(dtype=int)    
-
-    for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1):
-    
-        print('')
-        print('entering year {}'.format(sim_year) + os.linesep)
+    #- go through all n model executions
+    for n in range(config.getint('settings', 'n_runs')):
         
-        # go through all keys in dictionary
-        for key, value in XY.items():
-            
-            if key == 'conflict':
-                data_series = value
-                data_list = conflict_model.get_boolean_conflict.conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year)
-                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                XY[key] = data_series
-                
-            else:
-                nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                                    config.get('env_vars', key))
+        if config.getboolean('general', 'verbose'):
+            print('run {} of {}'.format(n+1, config.getint('settings', 'n_runs')) + os.linesep)
 
-                nc_ds = xr.open_dataset(nc_fo)
-                
-                if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
-                    data_series = value
-                    data_list = conflict_model.get_var_from_nc.nc_with_float_timestamp(extent_gdf, config, key, sim_year)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                    XY[key] = data_series
-                    
-                elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                    data_series = value
-                    data_list = conflict_model.get_var_from_nc.nc_with_continous_datetime_timestamp(extent_gdf, config, key, sim_year)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                    XY[key] = data_series
-                    
-                else:
-                    raise Warning('this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
-                
-    print('...all data retrieved' + os.linesep)
+        #- run machine learning model and return outputs
+        X_df, y_df, eval_dict = conflict_model.pipeline.run(X, Y, config, scaler, clf, out_dir)
+        
+        #- select sub-dataset with only datapoints with observed conflicts
+        X1_df, y1_df = conflict_model.utils.get_conflict_datapoints_only(X_df, y_df)
+        
+        #- append per model execution
+        #TODO: put all this into one function
+        out_X_df = conflict_model.evaluation.fill_out_df(out_X_df, X_df)
+        out_X1_df = conflict_model.evaluation.fill_out_df(out_X1_df, X1_df)
+        out_y_df = conflict_model.evaluation.fill_out_df(out_y_df, y_df)
+        out_y1_df = conflict_model.evaluation.fill_out_df(out_y1_df, y1_df)
+        out_dict = conflict_model.evaluation.fill_out_dict(out_dict, eval_dict)
 
-    print('preparing data for Machine Learning model' + os.linesep)
-    XY = pd.DataFrame.from_dict(XY).dropna()
+        #- plot ROC curve per model execution
+        tprs, aucs = conflict_model.evaluation.plot_ROC_curve_n_times(ax1, clf, X_df.to_numpy(), y_df.y_test.to_list(),
+                                                                    trps, aucs, mean_fpr)
 
-    X = XY.to_numpy()[:, :-1]
-    Y = XY.conflict.astype(int).to_numpy()
+    #- plot mean ROC curve
+    conflict_model.evaluation.plot_ROC_curve_n_mean(ax1, tprs, aucs, mean_fpr)
+    #- save plot
+    plt.savefig(os.path.join(out_dir, 'ROC_curve_per_run.png'), dpi=300)
 
-    scalers = conflict_model.machine_learning.define_scaling(config)
+    #- print mean values of all evaluation metrics
+    for key in out_dict:
+        if config.getboolean('general', 'verbose'):
+            print('average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config.getint('settings', 'n_runs'), np.mean(out_dict[key])))
 
-    clfs = conflict_model.machine_learning.define_model(config)
+    #- plot distribution of all evaluation metrics
+    conflict_model.plots.plot_metrics_distribution(out_dict, out_dir)
 
-    for scaler in scalers:
+    #- compute average correct prediction per polygon for all data points as well as conflicty-only
+    df_hit, gdf_hit = conflict_model.evaluation.get_average_hit(out_y_df, global_df)
+    df_hit_1, gdf_hit_1 = conflict_model.evaluation.get_average_hit(out_y1_df, global_df)
 
-        print('scaling data with {}'.format(scaler))
-        X_scaled = scaler.fit_transform(X)
+    #- for both, plot number of predictions made per polygon and overall distribution
+    conflict_model.plots.plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir)
+    conflict_model.plots.plot_nr_and_dist_pred(df_hit_1, gdf_hit_1, extent_active_polys_gdf, out_dir, suffix='conflicts_only')
 
-        print('splitting into trainings and test samples' + os.linesep)
-        X_train, X_test, y_train, y_test = model_selection.train_test_split(X_scaled,
-                                                                        Y,
-                                                                        test_size=1-config.getfloat('machine_learning', 'train_fraction'))
+    #- for both, plot average correct prediction and number of conflicht per polygon
+    conflict_model.plots.plot_frac_and_nr_conf(gdf_hit, extent_active_polys_gdf, out_dir)
+    conflict_model.plots.plot_frac_and_nr_conf(gdf_hit_1, extent_active_polys_gdf, out_dir, suffix='conflicts_only')
 
-        for i, key in zip(range(X_train.shape[1]), config.items('env_vars')):
+    #- for both, plot distribution of average correct predictions
+    conflict_model.plots.plot_frac_pred(gdf_hit, gdf_hit_1, out_dir)
 
-            print('+++ removing data for variable {} +++'.format(key[0]) + os.linesep)
-            X_train_loo = np.delete(X_train, i, axis=1)
-            X_test_loo = np.delete(X_test, i, axis=1)
-
-            sub_out_dir = os.path.join(out_dir, '_excl_'+str(key[0]))
-            if not os.path.isdir(sub_out_dir):
-                os.makedirs(sub_out_dir)
-
-            plt.figure(figsize=(10,10))
-            sbs.scatterplot(x=X_train_loo[:,0],
-                        y=X_train_loo[:,1],  
-                        hue=y_train)
-
-            plt.title('training-data scaled with {0}; n_train={1}; n_tot={2}'.format(str(scaler).rsplit('(')[0], len(X_train_loo), len(X_scaled)))
-            plt.xlabel('Variable 1')
-            plt.ylabel('Variable 2')
-            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'scatter_plot_scaled_traindata_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
-
-            for clf in clfs:
-
-                print('running ML model {}'.format(clf) + os.linesep)
-
-                print('fitting model with trainings data' + os.linesep)
-                clf.fit(X_train_loo, y_train)
-
-                print('making a prediction' + os.linesep)
-                y_pred = clf.predict(X_test_loo)
-  
-                print('Model evaluation')
-                print("...Accuracy:", metrics.accuracy_score(y_test, y_pred))
-                print("...Precision:", metrics.precision_score(y_test, y_pred))
-                print("...Recall:", metrics.recall_score(y_test, y_pred))
-                try:  
-                    print('...Average precision-recall score: {0:0.2f}'.format(metrics.average_precision_score(y_test, clf.decision_function(X_test_loo))) + os.linesep)
-                except:
-                    print('WARNING: for ML model {} no average precision-recall score can be determined'.format(clf) + os.linesep)
-
-                fig, ax = plt.subplots(1, 1, figsize=(20,10))
-                disp = metrics.plot_precision_recall_curve(clf, X_test_loo, y_test, ax=ax)
-                disp.ax_.set_title('Precision-Recall curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
-                if safe_output: plt.savefig(os.path.join(sub_out_dir, 'precision_recall_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
-
-                fig, ax = plt.subplots(1, 1, figsize=(15, 7))
-                ax.set_title('confusion matrix with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
-                metrics.plot_confusion_matrix(clf, X_test_loo, y_test, ax=ax)
-                if safe_output: plt.savefig(os.path.join(sub_out_dir, 'confusion_matrix_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
-
-                fig, ax = plt.subplots(1, 1, figsize=(20,10))
-                ax.set_title('ROC curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
-                metrics.plot_roc_curve(clf, X_test_loo, y_test, ax=ax)
-                if safe_output: plt.savefig(os.path.join(sub_out_dir, 'ROC_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
-
-        print('+++ ALL DATA +++' + os.linesep)
-
-        sub_out_dir = os.path.join(out_dir, '_all_data')
-        if not os.path.isdir(sub_out_dir):
-             os.makedirs(sub_out_dir)
-
-        plt.figure(figsize=(20,10))
-        sbs.scatterplot(x=X_train[:,0],
-                        y=X_train[:,1],  
-                        hue=y_train)
-
-        plt.title('training-data scaled with {0}; n_train={1}; n_tot={2}'.format(str(scaler).rsplit('(')[0], len(X_train), len(X_scaled)))
-        plt.xlabel('Variable 1')
-        plt.ylabel('Variable 2')
-        if safe_output: plt.savefig(os.path.join(sub_out_dir, 'scatter_plot_scaled_traindata_{}.png'.format(str(scaler).rsplit('(')[0])), dpi=300)
-
-        for clf in clfs:
-
-            print('running ML model {}'.format(clf) + os.linesep)
-
-            print('fitting model with trainings data' + os.linesep)
-            clf.fit(X_train, y_train)
-
-            print('making a prediction' + os.linesep)
-            y_pred = clf.predict(X_test)
-
-            print('Model evaluation')
-            print("...Accuracy:", metrics.accuracy_score(y_test, y_pred))
-            print("...Precision:", metrics.precision_score(y_test, y_pred))
-            print("...Recall:", metrics.recall_score(y_test, y_pred))
-            try:  
-                print('...Average precision-recall score: {0:0.2f}'.format(metrics.average_precision_score(y_test, clf.decision_function(X_test))) + os.linesep)
-            except:
-                print('WARNING: for ML model {} no average precision-recall score can be determined'.format(clf) + os.linesep)
-
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            disp = metrics.plot_precision_recall_curve(clf, X_test, y_test, ax=ax)
-            disp.ax_.set_title('Precision-Recall curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
-            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'precision_recall_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
-
-            fig, ax = plt.subplots(1, 1, figsize=(15, 7))
-            ax.set_title('confusion matrix with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
-            metrics.plot_confusion_matrix(clf, X_test, y_test, ax=ax)
-            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'confusion_matrix_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
-
-            fig, ax = plt.subplots(1, 1, figsize=(20,10))
-            ax.set_title('ROC curve with {} and {}'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0]))
-            metrics.plot_roc_curve(clf, X_test, y_test, ax=ax)
-            if safe_output: plt.savefig(os.path.join(sub_out_dir, 'ROC_curve_{}+{}.png'.format(str(scaler).rsplit('(')[0], str(clf).rsplit('(')[0])), dpi=300)
-
-    print('simulation done!')
+    #- save some dataframes to file
+    df_hit.to_csv(os.path.join(out_dir, 'df_hit.csv'))
+    pd.DataFrame.from_dict(out_dict).to_csv(os.path.join(out_dir, 'out_dict.csv'), index=False)
 
 if __name__ == '__main__':
     main()

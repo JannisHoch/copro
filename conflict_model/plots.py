@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import geopandas as gpd
 import seaborn as sbs
+import os, sys
 
 def plot_active_polys(conflict_gdf, extent_gdf, extent_active_polys_gdf, config, out_dir):
 
@@ -65,7 +66,7 @@ def plot_frac_and_nr_conf(gdf_hit, extent_active_polys_gdf, out_dir, suffix=''):
 
     return
 
-def plot_frac_pred(gdf_hit, gdf_hit_1, out_dict):
+def plot_frac_pred(gdf_hit, gdf_hit_1, out_dir):
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
     sbs.distplot(gdf_hit.average_hit, ax=ax1)
