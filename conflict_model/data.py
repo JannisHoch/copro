@@ -94,19 +94,18 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
 
     if config.getboolean('general', 'verbose'): print('...reading data DONE' + os.linesep)
     
-    return XY
+    return pd.DataFrame.from_dict(XY)
 
 def split_XY_data(XY, config):
     """[summary]
 
     Args:
-        XY ([type]): [description]
+        XY (dataframe): [description]
 
     Returns:
         [type]: [description]
     """    
 
-    XY = pd.DataFrame.from_dict(XY)
     if config.getboolean('general', 'verbose'): print('number of data points including missing values:', len(XY))
 
     XY = XY.dropna()
