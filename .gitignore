@@ -130,3 +130,6 @@ dmypy.json
 
 #output folders
 OUT*/
+
+#latest UCDP file too large for commit
+*ged201*

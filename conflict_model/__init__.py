@@ -2,10 +2,15 @@
 
 from . import selection
 from . import utils
-from . import get_boolean_conflict
-from . import get_var_from_nc
+from . import conflict
+from . import variables
 from . import machine_learning
+from . import data
+from . import pipeline
+from . import evaluation
+from . import models
+from . import plots
 
-__author__ = """Jannis M. Hoch"""
+__author__ = """Jannis M. Hoch, Niko Wanders, Sophie de Bruin"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
