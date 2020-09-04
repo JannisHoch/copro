@@ -16,14 +16,14 @@ def create_XY(config, conflict_gdf, extent_active_polys_gdf):
         if config.getboolean('general', 'verbose'): 
             print('saving XY data to file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.ftr'))) + os.linesep)
         
-        XY.to_csv(os.path.join(config.get('general', 'input_dir'), 'XY.gzip'), compression='gzip', index=False)
+        XY.to_pickle(os.path.join(config.get('general', 'input_dir'), 'XY.gzip'), compression='gzip')
 
     else:
 
         if config.getboolean('general', 'verbose'): 
             print('loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))) + os.linesep)
 
-        XY = pd.read_csv(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY'))))
+        XY = pd.read_pickle(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY'))))
 
     X, Y = data.split_XY_data(XY, config)
 
