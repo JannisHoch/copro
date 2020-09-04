@@ -13,14 +13,16 @@ def create_XY(config, conflict_gdf, extent_active_polys_gdf):
 
         XY = data.fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf)
 
-        np.save(os.path.join(config.get('general', 'input_dir'), 'XY.npy'), XY, allow_pickle=False)
+        if config.getboolean('general', 'verbose'): 
+            print('loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy'))) + os.linesep)
+            np.save(os.path.join(config.get('general', 'input_dir'), 'XY.npy'), XY, allow_pickle=True)
 
     else:
 
         if config.getboolean('general', 'verbose'): 
             print('loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))) + os.linesep)
 
-        XY = np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=False)
+        XY = np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
 
     X, Y = data.split_XY_data(XY, config)
 
