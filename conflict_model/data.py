@@ -39,7 +39,7 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
         Warning: [description]
 
     Returns:
-        [type]: [description]
+        array: [description]
     """    
 
     if config.getboolean('general', 'verbose'): print('reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')) + os.linesep)
@@ -94,25 +94,28 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
 
     if config.getboolean('general', 'verbose'): print('...reading data DONE' + os.linesep)
     
-    return pd.DataFrame.from_dict(XY)
+    return pd.DataFrame.from_dict(XY).to_numpy()
 
 def split_XY_data(XY, config):
     """[summary]
 
     Args:
-        XY (dataframe): [description]
+        XY (array): [description]
 
     Returns:
         [type]: [description]
     """    
 
+    XY = pd.DataFrame(XY)
     if config.getboolean('general', 'verbose'): print('number of data points including missing values:', len(XY))
 
     XY = XY.dropna()
     if config.getboolean('general', 'verbose'): print('number of data points excluding missing values:', len(XY))
 
-    X = XY.to_numpy()[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
-    Y = XY.conflict.astype(int).to_numpy()
+    XY = XY.to_numpy()
+    X = XY[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
+    Y = XY[:, -1]
+    Y = Y.astype(int)
 
     if config.getboolean('general', 'verbose'): 
         fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)

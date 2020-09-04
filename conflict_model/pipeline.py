@@ -1,6 +1,7 @@
 #TODO: if that remains the only function in this py-file, then better move the function in the click-script and execute there
 
 from conflict_model import models, data, machine_learning, evaluation
+import pandas as pd
 import numpy as np
 import os, sys
 
@@ -14,18 +15,16 @@ def create_XY(config, conflict_gdf, extent_active_polys_gdf):
         XY = data.fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf)
 
         if config.getboolean('general', 'verbose'): 
-            print('saving XY data to file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.ftr'))) + os.linesep)
-        
-        XY.to_pickle(os.path.join(config.get('general', 'input_dir'), 'XY.gzip'), compression='gzip')
+            print('saving XY data by default to file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy'))) + os.linesep)
+            np.save(os.path.join(config.get('general', 'input_dir'),'XY'), XY)
 
     else:
 
         if config.getboolean('general', 'verbose'): 
             print('loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))) + os.linesep)
-
-        XY = pd.read_pickle(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY'))))
-
-    X, Y = data.split_XY_data(XY, config)
+            np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
+        
+    X, Y = data.split_XY_data(XY, config)    
 
     return X, Y
 
