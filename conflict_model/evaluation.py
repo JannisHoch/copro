@@ -136,3 +136,11 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
     ax.legend(loc="lower right")
 
     return
+
+def correlation_matrix(df):
+
+    df = df.drop('geometry', axis=1)
+    df = df.corr()
+    df
+
+    return df
