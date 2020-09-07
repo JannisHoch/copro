@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 import seaborn as sbs
 import os, sys
+from conflict_model import evaluation
 
 def plot_active_polys(conflict_gdf, extent_gdf, extent_active_polys_gdf, config, out_dir):
 
@@ -74,3 +75,23 @@ def plot_frac_pred(gdf_hit, gdf_hit_1, out_dir):
     plt.savefig(os.path.join(out_dir, 'distribution_average_hit.png'), dpi=300)
 
     return
+
+def plot_scatterdata(df_hit, out_dir):
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 10))
+    sbs.scatterplot(data=df_hit, x='ID_count', y='average_hit', ax=ax1)
+    sbs.scatterplot(data=df_hit, x='total_hits', y='average_hit', ax=ax2)
+    sbs.scatterplot(data=df_hit, x='nr_of_test_confl', y='average_hit', ax=ax3)
+    plt.savefig(os.path.join(out_dir, 'scatterplot_analysis_all_data'), dpi=300)
+
+    fig, ax = plt.subplots(1, 1, figsize=(20, 10))
+    sbs.scatterplot(data=df_hit, x='total_hits', y='average_hit', hue='nr_of_test_confl', size='nr_of_test_confl', ax=ax)
+    plt.savefig(os.path.join(out_dir, 'scatterplot_total_hits_and_average_hit.png'), dpi=300)
+
+def plot_correlation_matrix(df, out_dir):
+
+    df_corr = evaluation.correlation_matrix(df)
+
+    fig, (ax1) = plt.subplots(1, 1, figsize=(20, 10))
+    sbs.heatmap(df_corr, cmap='YlGnBu', annot=True, cbar=False, ax=ax1)
+    plt.savefig(os.path.join(out_dir, 'correlation_matrix.png'), dpi=300)
