@@ -66,7 +66,7 @@ def plot_frac_and_nr_conf(gdf_hit, extent_active_polys_gdf, out_dir, suffix=''):
     gdf_hit.plot(ax=ax3, column='chance_pred_confl', legend=True, cmap='Blues', 
                  legend_kwds={'label': "chance of conflict", 'orientation': "horizontal"})
     extent_active_polys_gdf.boundary.plot(ax=ax3, color='0.5')
-    plt.savefig(os.path.join(out_dir, 'output_evaluation_{}.png',format(suffix)), dpi=300)
+    plt.savefig(os.path.join(out_dir, 'output_evaluation_{}.png'.format(suffix)), dpi=300)
 
     return
 
