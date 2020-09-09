@@ -110,6 +110,8 @@ def main(cfg):
 
     conflict_model.plots.plot_scatterdata(df_hit, out_dir)
 
+    conflict_model.plots.plot_categories(gdf_hit, out_dir)
+
     #- save some dataframes to file
     df_hit.to_csv(os.path.join(out_dir, 'df_hit.csv'))
     pd.DataFrame.from_dict(out_dict).to_csv(os.path.join(out_dir, 'out_dict.csv'), index=False)
