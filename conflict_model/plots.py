@@ -92,7 +92,7 @@ def plot_correlation_matrix(df, out_dir):
     sbs.heatmap(df_corr, cmap='YlGnBu', annot=True, cbar=False, ax=ax1)
     plt.savefig(os.path.join(out_dir, 'correlation_matrix.png'), dpi=300)
 
-def plot_categories(gdf_hit, out_dir, mode='median')
+def plot_categories(gdf_hit, out_dir, mode='median'):
 
     gdf = evaluation.categorize_polys(gdf_hit, mode)
 
