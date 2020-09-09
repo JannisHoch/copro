@@ -56,14 +56,17 @@ def plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir, suf
 
 def plot_frac_and_nr_conf(gdf_hit, extent_active_polys_gdf, out_dir, suffix=''):
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
-    gdf_hit.plot(ax=ax1, column='average_hit', legend=True, figsize=(20,10))
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 10))
+    gdf_hit.plot(ax=ax1, column='average_hit', legend=True, 
+                 legend_kwds={'label': "average correct predictions", 'orientation': "horizontal"})
     extent_active_polys_gdf.boundary.plot(ax=ax1, color='0.5')
-    ax1.set_title('fraction of all correct predictions made')
-    gdf_hit.plot(ax=ax2, column='nr_of_test_confl', legend=True, cmap='Reds')
+    gdf_hit.plot(ax=ax2, column='nr_of_test_confl', legend=True, cmap='Reds', 
+                 legend_kwds={'label': "nr of conflicts per polygon", 'orientation': "horizontal"})
     extent_active_polys_gdf.boundary.plot(ax=ax2, color='0.5')
-    ax2.set_title('nr of conflicts per polygon')
-    plt.savefig(os.path.join(out_dir, 'average_hit_precision' + str(suffix) + '.png'), dpi=300)
+    gdf_hit.plot(ax=ax3, column='chance_pred_confl', legend=True, cmap='Blues', 
+                 legend_kwds={'label': "chance of conflict", 'orientation': "horizontal"})
+    extent_active_polys_gdf.boundary.plot(ax=ax3, color='0.5')
+    plt.savefig(os.path.join(out_dir, 'output_evaluation_{}.png',format(suffix)), dpi=300)
 
     return
 

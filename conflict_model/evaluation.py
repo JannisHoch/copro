@@ -82,11 +82,17 @@ def get_average_hit(df, global_df):
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
     hit_count['nr_of_test_confl'] = df.y_test.groupby(df.ID).sum()
 
+    #- per polygon ID, compute sum of all conflict data points and add to dataframe
+    hit_count['nr_of_pred_confl'] = df.y_pred.groupby(df.ID).sum()
+
     #- merge the two dataframes with ID as key
     df_temp = pd.merge(ID_count, hit_count, on='ID')
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
     df_temp['average_hit'] = df_temp.total_hits / df_temp.ID_count
+
+    #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
+    df_temp['chance_pred_confl'] = df_temp.nr_of_pred_confl / df_temp.ID_count
 
     #- merge with global dataframe containing IDs and geometry, and keep only those polygons occuring in test sample
     df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
