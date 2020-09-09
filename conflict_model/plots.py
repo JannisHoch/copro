@@ -82,7 +82,7 @@ def plot_scatterdata(df_hit, out_dir):
     sbs.scatterplot(data=df_hit, x='ID_count', y='average_hit', ax=ax1)
     sbs.scatterplot(data=df_hit, x='ID_count', y='nr_of_test_confl', ax=ax2)
     sbs.scatterplot(data=df_hit, x='nr_of_test_confl', y='average_hit', ax=ax3)
-    plt.savefig(os.path.join(out_dir, 'scatterplot_analysis_all_data'), dpi=300)
+    plt.savefig(os.path.join(out_dir, 'scatterplot_analysis_all_data.png'), dpi=300)
 
 def plot_correlation_matrix(df, out_dir):
 
@@ -91,3 +91,13 @@ def plot_correlation_matrix(df, out_dir):
     fig, (ax1) = plt.subplots(1, 1, figsize=(20, 10))
     sbs.heatmap(df_corr, cmap='YlGnBu', annot=True, cbar=False, ax=ax1)
     plt.savefig(os.path.join(out_dir, 'correlation_matrix.png'), dpi=300)
+
+def plot_categories(gdf_hit, out_dir, mode='median')
+
+    gdf = evaluation.categorize_polys(gdf_hit, mode)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+    gdf_hit.plot(column='main_category', categorical=True, legend=True, ax=ax1, cmap='copper')
+    gdf_hit.plot(column='sub_category', categorical=True, legend=True, ax=ax2, cmap='copper')
+    plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300)
+    

@@ -144,3 +144,30 @@ def correlation_matrix(df):
     df
 
     return df
+
+def categorize_polys(gdf_hit, mode='median'):
+
+    if mode == 'median':
+        average_hit_median = gdf_hit.average_hit.median()
+        nr_confl_median = gdf_hit.nr_of_test_confl.median()
+    elif mode == 'mean':
+        average_hit_median = gdf_hit.average_hit.mean()
+        nr_confl_median = gdf_hit.nr_of_test_confl.mean()
+    else:
+        raise ValueError('specified mode not supported - use either median (default) or mean')
+
+    gdf_hit['main_category'] = ''
+    gdf_hit['main_category'].loc[gdf_hit.average_hit >= average_hit_median] = 'H'
+    gdf_hit['main_category'].loc[gdf_hit.average_hit < average_hit_median] = 'L'
+
+    gdf_hit['sub_category'] = ''
+    gdf_hit['sub_category'].loc[(gdf_hit.average_hit >= average_hit_median) & 
+                        (gdf_hit.nr_of_test_confl >= nr_confl_median)] = 'HH'
+    gdf_hit['sub_category'].loc[(gdf_hit.average_hit >= average_hit_median) & 
+                        (gdf_hit.nr_of_test_confl < nr_confl_median)] = 'HL'
+    gdf_hit['sub_category'].loc[(gdf_hit.average_hit < average_hit_median) & 
+                        (gdf_hit.nr_of_test_confl >= nr_confl_median)] = 'LH'
+    gdf_hit['sub_category'].loc[(gdf_hit.average_hit < average_hit_median) & 
+                        (gdf_hit.nr_of_test_confl < nr_confl_median)] = 'LL'
+
+    return gdf_hit
