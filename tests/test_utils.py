@@ -1,9 +1,12 @@
 import pytest
+import numpy as np
 from conflict_model import utils
 
-Y = [1, 0, 0, 0, 0, 1]
 
-def test_create_artificial_Y(Y):
+
+def test_create_artificial_Y():
+
+    Y = [1, 0, 0, 0, 0, 1]
     
     Y_r = utils.create_artificial_Y(Y)
 
