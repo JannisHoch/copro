@@ -130,11 +130,7 @@ def create_artificial_Y(Y):
     arr_0 = np.zeros(int(len(Y) - len(np.where(Y != 0)[0])))
     Y_r_1 = np.append(arr_1, arr_0)
 
-    assert len(Y), len(Y_r_1)
-
     Y_r = utils.shuffle(Y_r_1, random_state=42)
-
-    assert len(np.where(Y_r != 0)[0]), len(np.where(Y != 0)[0])
 
     return Y_r
 

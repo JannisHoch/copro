@@ -1,9 +1,10 @@
 import pytest
-import conflict_model
+import conflict_model import utils
 
-def test_something():
+Y = [1, 0, 0, 0, 0, 1]
 
-    a=1
-    b=2
+def create_artificial_Y(Y):
+    
+    Y_r = utils.create_artificial_Y(Y)
 
-    assert(a!=b)
+    assert len(np.where(Y_r != 0)[0]) == len(np.where(Y != 0)[0])
