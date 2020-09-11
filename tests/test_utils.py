@@ -1,5 +1,5 @@
 import pytest
-import conflict_model import utils
+from conflict_model import utils
 
 Y = [1, 0, 0, 0, 0, 1]
 
