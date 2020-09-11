@@ -7,6 +7,8 @@ Conflict Model UU/PBL
    :caption: Contents:
 
    readme
+   workflow
+   API Docs <api/index>
 
 Indices and tables
 ==================
