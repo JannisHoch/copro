@@ -2,9 +2,9 @@
 Overview
 ===============
 
-conflict_model
+The conflict_model
 ----------------
-(Machine learning) model for mapping environmental drivers of conflict risk
+(Machine learning) model for mapping environmental drivers of conflict risk.
 
 .. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?token=BnX1oxxHRbyd1dPyXAp2&branch=dev
     :target: https://travis-ci.com/JannisHoch/conflict_model
@@ -12,7 +12,10 @@ conflict_model
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
     :target: https://github.com/JannisHoch/conflict_model/blob/dev/LICENSE
 
-installation
+.. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
+    :target: https://github.com/ellerbrock/open-source-badges/
+
+Installation
 ----------------
 
 To install the conflict model, first clone the code from GitHub. It is advised to create an individual python environment first. 
@@ -26,10 +29,10 @@ You can then install the model package into this environment.
     $ conda activate conflict_model
     $ python setup.py develop
 
-execution
+Execution
 ----------------
 
-example notebook
+Example notebook
 ^^^^^^^^^^^^^^^^^^
 
 To run the example jupyter notebook, follow these instructions
@@ -41,9 +44,9 @@ To run the example jupyter notebook, follow these instructions
 
 This automatically executes the notebook and converts it to a html-file, also stored in the example folder.
 
-.. note:: It is of course also possible to execute the notebook cell by cell using jupyter notebook.
+It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 
-with runner script
+Runner script
 ^^^^^^^^^^^^^^^^^^
 
 To run the model from command line, a command line script is provided. 
@@ -56,11 +59,11 @@ All data and settings are retrieved from the settings-file which needs to be pro
 
 By default, output is stored to the output directory specified in the settings-file. 
 
-authors
+Authors
 ----------------
 
 * Jannis M. Hoch (Utrecht University)
 * Sophie de Bruin (Utrecht University, PBL)
 * Niko Wanders (Utrecht University)
 
-corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
+Corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)

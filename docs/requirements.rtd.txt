@@ -26,3 +26,4 @@ descartes==1.1.0
 ConfigParser==5.0.0
 git+https://github.com/pandas-dev/pydata-sphinx-theme.git@master
 rasterstats==0.14.0
+seaborn==0.10.1

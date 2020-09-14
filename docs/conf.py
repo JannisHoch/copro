@@ -14,6 +14,7 @@
 
 import os
 import sys
+from datetime import datetime
 
 from mock import Mock as MagicMock
 
@@ -25,7 +26,7 @@ class Mock(MagicMock):
             return Mock()
 
 # Mock modules so that we can build on readthedocs.org
-MOCK_MODULES = []
+MOCK_MODULES = ['seaborn']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
@@ -84,7 +85,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'conflict_model'
-copyright = "2020, Jannis M. Hoch"
+copyright = f"2020-{datetime.now().year}"
 author = "Jannis M. Hoch"
 
 # The version info for the project you're documenting, acts as replacement
@@ -123,18 +124,18 @@ autosummary_generate = True
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'pydata_sphinx_theme'
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'pydata_sphinx_theme'
+# html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {
-#     "github_url": "https://github.com/JannisHoch/pcrglobwb_utils",
-#     "use_edit_page_button": False
-# }
-html_theme_options = {}
+
+html_theme_options = {
+    "github_url": "https://github.com/JannisHoch/conflict_model",
+    "use_edit_page_button": False,
+    "search_bar_position": "sidebar"
+}
 
 autosummary_generate = True
 # numpydoc_show_class_members = False
