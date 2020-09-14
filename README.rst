@@ -4,7 +4,7 @@ Overview
 
 The conflict_model
 ----------------
-(Machine learning) model for mapping environmental drivers of conflict risk
+(Machine learning) model for mapping environmental drivers of conflict risk.
 
 .. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?token=BnX1oxxHRbyd1dPyXAp2&branch=dev
     :target: https://travis-ci.com/JannisHoch/conflict_model
@@ -44,9 +44,7 @@ To run the example jupyter notebook, follow these instructions
 
 This automatically executes the notebook and converts it to a html-file, also stored in the example folder.
 
-.. note:: 
-
-    It is of course also possible to execute the notebook cell by cell using jupyter notebook.
+It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 
 Runner script
 ^^^^^^^^^^^^^^^^^^
