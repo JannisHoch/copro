@@ -51,17 +51,17 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
     return list_out
 
 def get_poly_ID(extent_gdf): 
-    """Extracts geometry information for each polygon from geodataframe and saves in list.
+    """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'name' or 'watprovID'.
 
     Args:
-        extent_gdf ([type]): [description]
+        extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons.
 
     Raises:
-        AssertionError: [description]
+        AssertionError: error raised if length of output list does not match length of input geo-dataframe.
 
     Returns:
-        [type]: [description]
-    """    
+        list: list containing a unique identifier extracted from geo-dataframe for each polygon used in the model.
+    """  
 
     # initiatie empty list
     list_ID = []
@@ -81,16 +81,16 @@ def get_poly_ID(extent_gdf):
     return list_ID
 
 def get_poly_geometry(extent_gdf): 
-    """Extracts geometry information for each polygon from geodataframe and saves in list.
+    """Extracts geometry information for each polygon from geodataframe and saves to list. The geometry column in geodataframe must be named 'geometry'.
 
     Args:
-        extent_gdf ([type]): [description]
+        extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons with geometry information.
 
     Raises:
-        AssertionError: [description]
+        AssertionError: error raised if length of output list does not match length of input geo-dataframe.
 
     Returns:
-        [type]: [description]
+        list: list containing the geometry information extracted from geo-dataframe for each polygon used in the model.
     """    
     
     print('listing the geometry of all geographical units')
@@ -110,13 +110,13 @@ def get_poly_geometry(extent_gdf):
     return list_geometry
 
 def split_conflict_geom_data(X):
-    """[summary]
+    """Separates the unique identifier and geometry information from the variable-containing X-array.
 
     Args:
-        X ([type]): [description]
+        X (array): variable-containing X-array.
 
     Returns:
-        [type]: [description]
+        arrays: seperate arrays with ID, geometry, and  actual data 
     """    
 
     X_ID = X[:, 0]
@@ -126,25 +126,24 @@ def split_conflict_geom_data(X):
     return X_ID, X_geom, X_data
 
 def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
-    """[summary]
+    """Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe. 
+    Contains therefore only the data points used in the test-sample, not in the training-sample. 
+    Additionally computes whether a correct prediction was made in column 'correct_pred'.
 
     Args:
-        X_test_ID ([type]): [description]
-        X_test_geom ([type]): [description]
-        y_test ([type]): [description]
-        y_pred ([type]): [description]
+        X_test_ID (list): list containing the unique identifier per data point.
+        X_test_geom (list): list containing the geometry per data point.
+        y_test (list): list containing test-data.
+        y_pred (list): list containing predictions.
 
     Returns:
-        [type]: [description]
+        dataframe: dataframe with each input list as column plus computed 'correct_pred'.
     """   
 
     arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred))
 
     df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred'])
 
-    #TODO: think this through properly
-    # df['conflict_hit'] = np.where((df['y_test'] == 1) & (df['y_pred'] ==1), 1, np.nan)
-
-    df['overall_hit'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
+    df['correct_pred'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
     return df

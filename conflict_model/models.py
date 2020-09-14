@@ -5,6 +5,21 @@ import numpy as np
 import os, sys
 
 def all_data(X, Y, config, scaler, clf, out_dir):
+    """Main model workflow when all data is used. The model workflow is executed for each model simulation.
+
+    Args:
+        X (array): array containing the variable values plus unique identifer and geometry information.
+        Y (array): array containing merely the binary conflict classifier data.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        scaler (scaler): the specified scaling method instance.
+        clf (classifier): the specified model instance.
+        out_dir (str): path to output folder.
+
+    Returns:
+        dataframe: containing the test-data X-array values.
+        datatrame: containing model output on polygon-basis.
+        dict: dictionary containing evaluation metrics per simulation.
+    """    
 
     if not config.getboolean('general', 'verbose'):
         orig_stdout = sys.stdout
@@ -30,6 +45,22 @@ def all_data(X, Y, config, scaler, clf, out_dir):
     return X_df, y_df, eval_dict
 
 def leave_one_out(X, Y, config, scaler, clf, out_dir):
+    """Model workflow when each variable is left out from analysis once.
+    Not tested yet for more than one simulation!
+
+    Args:
+        X (array): array containing the variable values plus unique identifer and geometry information.
+        Y (array): array containing merely the binary conflict classifier data.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        scaler (scaler): the specified scaling method instance.
+        clf (classifier): the specified model instance.
+        out_dir (str): path to output folder.
+
+    Returns:
+        dataframe: containing the test-data X-array values.
+        datatrame: containing model output on polygon-basis.
+        dict: dictionary containing evaluation metrics per simulation.
+    """    
 
     if not config.getboolean('general', 'verbose'):
         orig_stdout = sys.stdout
@@ -53,17 +84,35 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, clf)
 
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, config)
 
         y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
+        X_df = pd.DataFrame(X_test)
+    
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
     
-    return y_df, eval_dict
+    return X_df, y_df, eval_dict
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
+    """Model workflow when the model is based on only one single variable.
+    Not tested yet for more than one simulation!
+
+    Args:
+        X (array): array containing the variable values plus unique identifer and geometry information.
+        Y (array): array containing merely the binary conflict classifier data.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        scaler (scaler): the specified scaling method instance.
+        clf (classifier): the specified model instance.
+        out_dir (str): path to output folder.
+
+    Returns:
+        dataframe: containing the test-data X-array values.
+        datatrame: containing model output on polygon-basis.
+        dict: dictionary containing evaluation metrics per simulation.
+    """    
 
     if not config.getboolean('general', 'verbose'):
         orig_stdout = sys.stdout
@@ -87,17 +136,36 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
         y_pred, y_prob = machine_learning.fit_predict(X_train_svmod, y_train, X_test_svmod, clf)
 
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, config)
 
         y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+
+        X_df = pd.DataFrame(X_test)
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
 
-    return y_df, eval_dict
+    return X_df, y_df, eval_dict
 
 def dubbelsteen(X, Y, config, scaler, clf, out_dir):
+    """Model workflow when the relation between variables and conflict is based on randomness.
+    Thereby, the fraction of actual conflict is equal to observations, but the location in array is randomized by shuffling.
+    The model workflow is executed for each model simulation.
+
+    Args:
+        X (array): array containing the variable values plus unique identifer and geometry information.
+        Y (array): array containing merely the binary conflict classifier data.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        scaler (scaler): the specified scaling method instance.
+        clf (classifier): the specified model instance.
+        out_dir (str): path to output folder.
+
+    Returns:
+        dataframe: containing the test-data X-array values.
+        datatrame: containing model output on polygon-basis.
+        dict: dictionary containing evaluation metrics per simulation.
+    """    
 
     if not config.getboolean('general', 'verbose'):
         orig_stdout = sys.stdout
@@ -112,12 +180,14 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf)
 
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf)
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
 
     y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
+    X_df = pd.DataFrame(X_test)
+    
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
 
-    return y_df, eval_dict
+    return X_df, y_df, eval_dict

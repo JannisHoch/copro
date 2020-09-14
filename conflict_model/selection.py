@@ -5,14 +5,14 @@ import os, sys
 from conflict_model import utils
 
 def filter_conflict_properties(gdf, config):
-    """filters conflict database according to certain conflict properties such as number of casualties, type of violence or country.
+    """Filters conflict database according to certain conflict properties such as number of casualties, type of violence or country.
 
-    Arguments:
-        gdf {geodataframe}: geodataframe containing entries with conflicts
-        config {configuration}: parsed configuration settings
+    Args:
+        gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        geodataframe: geodataframe containing filtered entries
+        geo-dataframe: geo-dataframe containing filtered entries.
     """    
     
     selection_criteria = {'best': config.getint('conflict', 'min_nr_casualties'),
@@ -37,14 +37,14 @@ def filter_conflict_properties(gdf, config):
     return gdf
 
 def select_period(gdf, config):
-    """Reducing the geodataframe to those entries falling into a specified time period.
+    """Reducing the geo-dataframe to those entries falling into a specified time period.
 
-    Arguments:
-        gdf {geodataframe}: geodataframe containing entries with conflicts
-        config {configuration}: parsed configuration settings
+    Args:
+        gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        geodataframe: geodataframe containing filtered entries
+        geo-dataframe: geo-dataframe containing filtered entries.
     """    
 
     t0 = config.getint('settings', 'y_start')
@@ -59,13 +59,13 @@ def select_period(gdf, config):
 def clip_to_extent(gdf, config):
     """As the original conflict data has global extent, this function clips the database to those entries which have occured on a specified continent.
 
-    Arguments:
-        gdf {geodataframe}: geodataframe containing entries with conflicts
-        config {configuration}: parsed configuration settings
+    Args:
+        gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        geodataframe: geodataframe containing filtered entries
-        geodataframe: geodataframe containing country polygons of selected continent
+        geo-dataframe: geo-dataframe containing filtered entries.
+        geo-dataframe: geo-dataframe containing country polygons of selected continent.
     """    
     
     shp_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
@@ -83,18 +83,20 @@ def clip_to_extent(gdf, config):
     return gdf, extent_gdf
 
 def climate_zoning(gdf, extent_gdf, config):
-    """[summary]
+    """This function allows for selecting only those conflicts and polygons falling in specified climate zones.
 
     Args:
-        gdf ([type]): [description]
-        extent_gdf ([type]): [description]
-        config ([type]): [description]
+        gdf (geo-dataframe): geo-dataframe containing conflict data.
+        extent_gdf (geo-dataframe): all polygons of study area.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Raises:
-        ValueError: [description]
+        ValueError: raised if a climate zone is specified which is not found in Koeppen-Geiger classification.
 
     Returns:
-        [type]: [description]
+        geo-dataframe: conflict data clipped to climate zones.
+        geo-dataframe: polygons of study area clipped to climate zones.
+        dataframe: global look-up dataframe linking polygon ID with geometry information.
     """
     
     Koeppen_Geiger_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
@@ -124,34 +126,33 @@ def climate_zoning(gdf, extent_gdf, config):
         gdf = gpd.clip(gdf, KG_gdf.buffer(0))
 
         if config.getboolean('general', 'verbose'): print('clipping polygons to climate zones {}'.format(look_up_classes) + os.linesep)
-        extent_active_polys_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
+        polygon_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
 
     elif config.get('climate', 'zones') == 'None':
 
         gdf = gdf.copy()
-        extent_active_polys_gdf = extent_gdf.copy()
+        polygon_gdf = extent_gdf.copy()
 
     else:
 
         raise ValueError('no supported climate zone specified - either specify abbreviations of Koeppen-Geiger zones for selection or None for no selection')
 
-    global_df = utils.global_ID_geom_info(extent_active_polys_gdf)
+    global_df = utils.global_ID_geom_info(polygon_gdf)
 
-    return gdf, extent_active_polys_gdf, global_df
+    return gdf, polygon_gdf, global_df
 
-def select(config, plotting=False):
-    """Filtering the original global conflict dataset based on a) conflict properties, b) time period, c) continent, and d) climate zone.
+def select(config):
+    """Main function performing the selection steps.
 
-    Arguments:
-        config {configuration}: parsed configuration settings
-
-    Keyword Arguments:
-        plotting {bool}: whether or not to plot the resulting selection (default: False)
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        geodataframe: geodataframe containing filtered entries
-        geodataframe: geodataframe containing country polygons of selected continent
-    """    
+        geo-dataframe: remaining conflict data after selection process.
+        geo-dataframe: all polygons of the study area.
+        geo-dataframe: remaining polygons after selection process.
+        dataframe: global look-up dataframe linking polygon ID with geometry information.
+    """  
 
     gdf = utils.get_geodataframe(config)
 
@@ -161,14 +162,6 @@ def select(config, plotting=False):
 
     gdf, extent_gdf = clip_to_extent(gdf, config)
 
-    gdf, extent_active_polys_gdf, global_df = climate_zoning(gdf, extent_gdf, config)
+    gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config)
 
-    # if specified, plot the result
-    if plotting:
-        ax = gdf.plot(figsize=(10,5), legend=True, label='PRIO/UCDP events')
-        extent_gdf.boundary.plot(ax=ax, color='0.5', linestyle=':')
-        plt.legend()
-        ax.set_xlim(extent_gdf.total_bounds[0]-1, extent_gdf.total_bounds[2]+1)
-        ax.set_ylim(extent_gdf.total_bounds[1]-1, extent_gdf.total_bounds[3]+1)
-
-    return gdf, extent_gdf, extent_active_polys_gdf, global_df
+    return gdf, extent_gdf, polygon_gdf, global_df

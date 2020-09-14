@@ -1,4 +1,4 @@
-"""Top-level package for pcrglobwb_utils."""
+"""Top-level package."""
 
 from . import selection
 from . import utils

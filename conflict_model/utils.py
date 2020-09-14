@@ -9,19 +9,17 @@ from shutil import copyfile, rmtree
 from sklearn import utils
 
 def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
-    """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe. 
+    """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe.
 
-    Arguments:
-        config {configuration}: parsed configuration settings
-
-    Keyword Arguments:
-        longitude {str}: column name with longitude coordinates (default: 'longitude')
-        latitude {str}: column name with latitude coordinates (default: 'latitude')
-        crs {str}: coordinate system to be used for georeferencing (default: 'EPSG:4326')
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        longitude (str, optional): column name with longitude coordinates. Defaults to 'longitude'.
+        latitude (str, optional): column name with latitude coordinates. Defaults to 'latitude'.
+        crs (str, optional): coordinate system to be used for georeferencing. Defaults to 'EPSG:4326'.
 
     Returns:
-        gdf {geodataframe}: geodataframe containing entries with conflicts
-    """    
+        geo-dataframe: ge-referenced conflict data.
+    """     
 
     # construct path to file with conflict data
     conflict_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
@@ -39,7 +37,7 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
     return gdf
 
 def show_versions():
-    """[summary]
+    """Prints the version numbers by the main python-packages used.
     """ 
        
     from conflict_model import __version__ as cm_version
@@ -71,6 +69,14 @@ def show_versions():
     print("rasterstats version: {}".format(rstats_version))
 
 def parse_settings(settings_file):
+    """Reads the model configuration file.
+
+    Args:
+        settings_file (str): path to settings-file (cfg-file).
+
+    Returns:
+        ConfigParser-object: parsed model configuration.
+    """    
 
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
@@ -79,6 +85,14 @@ def parse_settings(settings_file):
     return config
 
 def make_output_dir(config):
+    """Creates the output folder at location specfied in cfg-file.
+
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+
+    Returns:
+        str: path to output folder
+    """    
 
     out_dir = os.path.abspath(config.get('general','output_dir'))
     if os.path.isdir(out_dir):
@@ -89,6 +103,11 @@ def make_output_dir(config):
     return out_dir
     
 def download_PRIO(config):
+    """If specfied in cfg-file, the PRIO/UCDP data is directly downloaded and used as model input.
+
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+    """    
 
     path = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 'UCDP')
     
@@ -112,6 +131,15 @@ def download_PRIO(config):
     return
 
 def initiate_setup(settings_file):
+    """Initiates the model set-up. It parses the cfg-file, creates an output folder, copies the cfg-file to the output folder, and, if specified, downloads conflict data.
+
+    Args:
+        settings_file (str): path to settings-file (cfg-file).
+
+    Returns:
+        ConfigParser-object: parsed model configuration.
+        out_dir: path to output folder
+    """    
 
     config = parse_settings(settings_file)
 
@@ -125,6 +153,14 @@ def initiate_setup(settings_file):
     return config, out_dir
 
 def create_artificial_Y(Y):
+    """Creates an array with identical percentage of conflict points as input array.
+
+    Args:
+        Y (array): original array containing binary conflict classifier data.
+
+    Returns:
+        array: array with reshuffled conflict classifier data.
+    """    
 
     arr_1 = np.ones(len(np.where(Y != 0)[0]))
     arr_0 = np.zeros(int(len(Y) - len(np.where(Y != 0)[0])))
@@ -135,6 +171,15 @@ def create_artificial_Y(Y):
     return Y_r
 
 def global_ID_geom_info(gdf):
+    """Retrieves unique ID and geometry information from geo-dataframe for a global look-up dataframe. 
+    The IDs currently supported are 'name' or 'watprovID'.
+
+    Args:
+        gdf (geo-dataframe): containing all polygons used in the model.
+
+    Returns:
+        dataframe: look-up dataframe associated ID with geometry
+    """    
 
     try:
         global_list = np.column_stack((gdf.name.to_numpy(), gdf.geometry.to_numpy()))
@@ -149,6 +194,16 @@ def global_ID_geom_info(gdf):
     return df
 
 def get_conflict_datapoints_only(X_df, y_df):
+    """Filters out only those polygons where conflict was actually observed in the test-sample.
+
+    Args:
+        X_df (dataframe): variable values per polygon.
+        y_df (dataframe): conflict data per polygon.
+
+    Returns:
+        dataframe: variable values for polyons where conflict was observed.
+        dataframe: conflict data for polyons where conflict was observed.
+    """    
 
     df = pd.concat([X_df, y_df], axis=1)
     df = df.loc[df.y_test==1]
