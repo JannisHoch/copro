@@ -94,8 +94,8 @@ def main(cfg):
     conflict_model.plots.plot_metrics_distribution(out_dict, out_dir)
 
     #- compute average correct prediction per polygon for all data points as well as conflicty-only
-    df_hit, gdf_hit = conflict_model.evaluation.get_average_hit(out_y_df, global_df)
-    df_hit_1, gdf_hit_1 = conflict_model.evaluation.get_average_hit(out_y1_df, global_df)
+    df_hit, gdf_hit = conflict_model.evaluation.polygon_model_accuracy(out_y_df, global_df)
+    df_hit_1, gdf_hit_1 = conflict_model.evaluation.polygon_model_accuracy(out_y1_df, global_df)
 
     #- for both, plot number of predictions made per polygon and overall distribution
     conflict_model.plots.plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir)
