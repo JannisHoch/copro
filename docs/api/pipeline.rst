@@ -3,7 +3,7 @@ The modelling pipelines
 
 Different model pipelines are executed based on user specification.
 
-.. automodule:: conflict_data
+.. automodule:: conflict_model
 
 .. currentmodule:: pipeline
 
