@@ -6,8 +6,9 @@ Conflict Model UU/PBL
    :maxdepth: 2
    :caption: Contents:
 
-   readme
-   workflow
+   Welcome
+   Installation
+   Execution
    API Docs <api/index>
 
 Indices and tables
