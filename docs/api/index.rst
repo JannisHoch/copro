@@ -9,4 +9,4 @@ There are function to get the variable and conflict data:
 .. toctree::
     :maxdepth: 1
 
-    XY.rst
+    pipeline.rst
