@@ -86,7 +86,7 @@ def plot_frac_and_nr_conf(gdf, polygon_gdf, out_dir, suffix=''):
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
         out_dir (str): path to output folder.
         suffix (str, optional): suffix that can be used to discriminate between different analyses. Defaults to ''.
-    """    
+    """   
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 10))
     gdf.plot(ax=ax1, column='chance_correct_pred', legend=True, 
@@ -95,7 +95,7 @@ def plot_frac_and_nr_conf(gdf, polygon_gdf, out_dir, suffix=''):
     gdf.plot(ax=ax2, column='nr_test_confl', legend=True, cmap='Reds', 
                  legend_kwds={'label': "nr of conflicts per polygon", 'orientation': "horizontal"})
     polygon_gdf.boundary.plot(ax=ax2, color='0.5')
-    gdf.plot(ax=ax3, column='chance_pred_confl', legend=True, cmap='Blues', 
+    gdf.plot(ax=ax3, column='chance_correct_confl_pred', legend=True, cmap='Blues', 
                  legend_kwds={'label': "chance correct conflict prediction", 'orientation': "horizontal"})
     polygon_gdf.boundary.plot(ax=ax3, color='0.5')
     plt.savefig(os.path.join(out_dir, 'output_evaluation_{}.png'.format(suffix)), dpi=300)
