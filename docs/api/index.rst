@@ -38,3 +38,20 @@ Various modelling approaches can be chosen, depending on the envisaged analysis.
 .. note::
 
     the 'leave_one_out' and 'single_variables' models are only tested in beta-state.
+
+Selecting polygons and conflicts
+--------------------------------
+Not all polygons and conflicts stored in the input data may be used for an analysis. 
+Based on various settings, a sub-dataset can be selected.
+
+.. currentmodule:: conflict_model
+
+.. autosummary::
+   :toctree: generated/
+   :nosignatures:
+
+   selection.select
+   selection.filter_conflict_properties
+   selection.select_period
+   selection.clip_to_extent
+   selection.climate_zoning

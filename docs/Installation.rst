@@ -1,6 +1,9 @@
 Installation
 =========================
 
+From GitHub
+-------------
+
 To install the conflict model, first clone the code from GitHub. It is advised to create an individual python environment first. 
 You can then install the model package into this environment.
 
@@ -11,3 +14,10 @@ You can then install the model package into this environment.
     $ conda env create -f environment.yml
     $ conda activate conflict_model
     $ python setup.py develop
+
+From PyPI
+------------
+
+.. todo::
+
+    This is not yet supported.
