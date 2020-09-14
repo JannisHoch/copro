@@ -26,7 +26,7 @@ class Mock(MagicMock):
             return Mock()
 
 # Mock modules so that we can build on readthedocs.org
-MOCK_MODULES = []
+MOCK_MODULES = ['seaborn']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
@@ -85,7 +85,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'conflict_model'
-copyright = f"2020-{datetime.now().year}
+copyright = f"2020-{datetime.now().year}"
 author = "Jannis M. Hoch"
 
 # The version info for the project you're documenting, acts as replacement
