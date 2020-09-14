@@ -6,14 +6,16 @@ import os, sys
 
 
 def initiate_XY_data(config):
-    """[summary]
+    """Initiates an empty dictionary to contain the XY-data for each polygon. 
+    By default, the first column is for the polygon ID, the second for polygon geometry, and the last for binary conflict data (i.e. the Y-data).
+    Every column in between corresponds to the variables providing in the cfg-file (i.e. the X-data).
 
     Args:
-        config ([type]): [description]
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        [type]: [description]
-    """    
+        dict: emtpy dictionary containing the variable values (X) and binary conflict data (Y) plus meta-data.
+    """
 
     XY = {}
     XY['poly_ID'] = pd.Series()
@@ -26,20 +28,22 @@ def initiate_XY_data(config):
 
     return XY
 
-def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
-    """[summary]
+def fill_XY(XY, config, conflict_gdf, polygon_gdf):
+    """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
+    The number of rows should therefore equal to number simulation years times number of polygons.
+    At end of last simulation year, the dictionary is converted to a numpy-array.
 
     Args:
-        XY ([type]): [description]
-        config ([type]): [description]
-        conflict_gdf ([type]): [description]
-        extent_active_polys_gdf ([type]): [description]
+        XY (dict): initiated, i.e. empty, XY-dictionary
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
+        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
 
     Raises:
-        Warning: [description]
+        Warning: a warning is raised if the datetime-format of the netCDF-file does not match conventions and/or supported formats.
 
     Returns:
-        array: [description]
+        array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """    
 
     if config.getboolean('general', 'verbose'): print('reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')) + os.linesep)
@@ -55,21 +59,21 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
             if key == 'conflict':
             
                 data_series = value
-                data_list = conflict.conflict_in_year_bool(conflict_gdf, extent_active_polys_gdf, config, sim_year)
+                data_list = conflict.conflict_in_year_bool(conflict_gdf, polygon_gdf, config, sim_year)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
             elif key == 'poly_ID':
             
                 data_series = value
-                data_list = conflict.get_poly_ID(extent_active_polys_gdf)
+                data_list = conflict.get_poly_ID(polygon_gdf)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
             elif key == 'poly_geometry':
             
                 data_series = value
-                data_list = conflict.get_poly_geometry(extent_active_polys_gdf)
+                data_list = conflict.get_poly_geometry(polygon_gdf)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
@@ -79,13 +83,13 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
                 
                 if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                     data_series = value
-                    data_list = variables.nc_with_float_timestamp(extent_active_polys_gdf, config, key, sim_year)
+                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, key, sim_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
                     
                 elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                     data_series = value
-                    data_list = variables.nc_with_continous_datetime_timestamp(extent_active_polys_gdf, config, key, sim_year)
+                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, key, sim_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
                     
@@ -97,13 +101,14 @@ def fill_XY(XY, config, conflict_gdf, extent_active_polys_gdf):
     return pd.DataFrame.from_dict(XY).to_numpy()
 
 def split_XY_data(XY, config):
-    """[summary]
+    """Separates the XY-array into array containing information about variable values (X-array) and conflict data (Y-array).
+    Thereby, the X-array also contains the information about unique identifier and polygon geometry.
 
     Args:
-        XY (array): [description]
+        XY (array): array containing variable values and conflict data
 
     Returns:
-        [type]: [description]
+        arrays: two separate arrays, the X-array and Y-array
     """    
 
     XY = pd.DataFrame(XY)
