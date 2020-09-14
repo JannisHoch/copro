@@ -124,7 +124,7 @@ def polygon_model_accuracy(df, global_df):
     ID_count = ID_count.drop('ID', axis=1)
 
     #- per polygon ID, compute sum of overall correct predictions and rename column name
-    hit_count = df.overall_hit.groupby(df.ID).sum().to_frame()
+    hit_count = df.correct_pred.groupby(df.ID).sum().to_frame()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
     hit_count['nr_test_confl'] = df.y_test.groupby(df.ID).sum()
