@@ -12,6 +12,9 @@ This is the documentation website of the 'conflict_model', a (machine learning) 
 .. image:: https://readthedocs.org/projects/conflict-model/badge/?version=dev
     :target: https://conflict-model.readthedocs.io/en/dev/?badge=dev
 
+.. image:: https://img.shields.io/github/v/release/JannisHoch/conflict_model
+    :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.3
+
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
 
