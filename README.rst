@@ -10,7 +10,7 @@ conflict_model
     :target: https://travis-ci.com/JannisHoch/conflict_model
 
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
-    :target: https://lbesson.mit-license.org/
+    :target: https://github.com/JannisHoch/conflict_model/blob/dev/LICENSE
 
 installation
 ----------------
