@@ -12,8 +12,8 @@ The conflict_model
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
     :target: https://github.com/JannisHoch/conflict_model/blob/dev/LICENSE
 
-.. image:: https://readthedocs.org/projects/conflict-model/badge/?version=stable
-    :target: https://conflict-model.readthedocs.io/en/stable/?badge=stable
+.. image:: https://readthedocs.org/projects/conflict-model/badge/?version=dev
+    :target: https://conflict-model.readthedocs.io/en/dev/?badge=dev
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/conflict_model
     :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.3
