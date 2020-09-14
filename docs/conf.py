@@ -156,6 +156,10 @@ html_static_path = ['_static']
 html_css_files = [
     'css/custom.css',]
 
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "_static/GLOFRIMlogo2.png"
+
 
 # -- Options for HTMLHelp output ---------------------------------------
 
