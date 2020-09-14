@@ -21,10 +21,11 @@ The main goal of this model is to apply machine learning techniques to make proj
 objective in mind, we put a lot of emphasis on making it flexible. We hope that other, related questions about climate and conflict can be tackled as well, and that our process
 understanding is deepend further.
 
+Contents
+---------------
 .. toctree::
    :numbered:
    :maxdepth: 2
-   :caption: Contents:
 
    Installation
    Execution
