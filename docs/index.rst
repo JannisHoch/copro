@@ -34,6 +34,7 @@ Contents
    Execution
    Model settings <model_settings>
    Workflow <workflow>
+   Examples <examples/index>
    API Docs <api/index>
 
 Authors
