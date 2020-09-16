@@ -1,7 +1,7 @@
 
-Examples
-========
-This page provides a short example in Jupyter Notebooks. 
+Workflow
+=========
+This page provides a short example workflow in Jupyter Notebooks. 
 
 .. toctree::
     :maxdepth: 1
@@ -9,3 +9,7 @@ This page provides a short example in Jupyter Notebooks.
     :glob:
 
     ./*
+
+.. todo::
+
+    sub-divide the main notebook in logical steps and create per step an individual notebook.
