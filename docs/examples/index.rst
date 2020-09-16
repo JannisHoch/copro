@@ -1,7 +1,7 @@
 
-Examples
-========
-This page provides a short example in Jupyter Notebooks. 
+Workflow
+=========
+This page provides a short example workflow in Jupyter Notebooks. 
 
 .. toctree::
     :maxdepth: 1
