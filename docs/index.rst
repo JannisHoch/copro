@@ -32,6 +32,8 @@ Contents
 
    Installation
    Execution
+   Model settings <model_settings>
+   Workflow <workflow>
    API Docs <api/index>
 
 Authors
@@ -44,7 +46,7 @@ Authors
 Corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
 
 Indices and tables
-----------------
+-------------------
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
