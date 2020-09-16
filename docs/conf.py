@@ -62,7 +62,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autosectionlabel']
+    'sphinx.ext.autosectionlabel',
+    'nbsphinx',
+    'nbsphinx_link']
 
 napoleon_google_docstring = True
 napoleon_numpy_docstring = False
