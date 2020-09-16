@@ -33,7 +33,6 @@ Contents
    Installation
    Execution
    Model settings <model_settings>
-   Test <../../example/example_notebook.ipynb>
    Workflow <examples/index>
    API Docs <api/index>
 
