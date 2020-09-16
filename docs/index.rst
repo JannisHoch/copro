@@ -33,8 +33,7 @@ Contents
    Installation
    Execution
    Model settings <model_settings>
-   Workflow <workflow>
-   Examples <examples/index>
+   Workflow <examples/index>
    API Docs <api/index>
 
 Authors
