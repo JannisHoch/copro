@@ -233,7 +233,7 @@ def correlation_matrix(df):
 
     return df
 
-def categorize_polys(gdf_hit, mode='median'):
+def categorize_polys(gdf_hit, category='sub', mode='median'):
     """Categorizes polygons depending on the computed chance of correct predictions as main category, and number of conflicts in test-dat per polygon as sub-category.
     This can help to identify polygons where model predictions can be trust more, particularly with respect to correct predictions of conflict areas.
     
@@ -249,6 +249,7 @@ def categorize_polys(gdf_hit, mode='median'):
 
     Args:
         gdf_hit (geo-dataframe): geo-dataframe containing model evaluation per unique polygon.
+        category (str, optional): Which categories to define, either main or sub. Defaults to 'sub'.
         mode (str, optional): Statistical mode used to determine categorization threshold. Defaults to 'median'.
 
     Raises:
@@ -267,18 +268,20 @@ def categorize_polys(gdf_hit, mode='median'):
     else:
         raise ValueError('specified mode not supported - use either median (default) or mean')
 
-    gdf_hit['main_category'] = ''
-    gdf_hit['main_category'].loc[gdf_hit.chance_correct_pred >= average_hit_median] = 'H'
-    gdf_hit['main_category'].loc[gdf_hit.chance_correct_pred < average_hit_median] = 'L'
+    gdf_hit['category'] = ''
 
-    gdf_hit['sub_category'] = ''
-    gdf_hit['sub_category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
-                        (gdf_hit.nr_test_confl >= nr_confl_median)] = 'HH'
-    gdf_hit['sub_category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
-                        (gdf_hit.nr_test_confl < nr_confl_median)] = 'HL'
-    gdf_hit['sub_category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
-                        (gdf_hit.nr_test_confl >= nr_confl_median)] = 'LH'
-    gdf_hit['sub_category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
-                        (gdf_hit.nr_test_confl < nr_confl_median)] = 'LL'
+    if category == 'main':
+        gdf_hit['category'].loc[gdf_hit.chance_correct_pred >= average_hit_median] = 'H'
+        gdf_hit['category'].loc[gdf_hit.chance_correct_pred < average_hit_median] = 'L'
+
+    if category == 'sub':
+        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
+                            (gdf_hit.nr_test_confl >= nr_confl_median)] = 'HH'
+        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
+                            (gdf_hit.nr_test_confl < nr_confl_median)] = 'HL'
+        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
+                            (gdf_hit.nr_test_confl >= nr_confl_median)] = 'LH'
+        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
+                            (gdf_hit.nr_test_confl < nr_confl_median)] = 'LL'
 
     return gdf_hit
