@@ -136,3 +136,6 @@ OUT*/
 
 # sphinx
 generated*
+
+# article related stuff
+_paper/*
