@@ -1,1 +1,0 @@
-jupyter nbconvert --to html --ExecutePreprocessor.allow_errors=True --ExecutePreprocessor.timeout=-1 --ExecutePreprocessor.kernel_name="python3" --execute example_notebook.ipynb
