@@ -147,7 +147,7 @@ def plot_correlation_matrix(df, out_dir):
     sbs.heatmap(df_corr, cmap='YlGnBu', annot=True, cbar=False, ax=ax1)
     plt.savefig(os.path.join(out_dir, 'correlation_matrix.png'), dpi=300)
 
-def plot_categories(gdf, out_dir, mode='median'):
+def plot_categories(gdf, out_dir, category='sub', mode='median'):
     """Plots the categorization of polygons based on chance of correct prediction and number of conflicts.
 
     Main categories are:
@@ -166,10 +166,9 @@ def plot_categories(gdf, out_dir, mode='median'):
         mode (str, optional): Statistical mode used to determine categorization threshold. Defaults to 'median'.
     """    
 
-    gdf = evaluation.categorize_polys(gdf, mode)
+    gdf = evaluation.categorize_polys(gdf, category, mode)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
-    gdf.plot(column='main_category', categorical=True, legend=True, ax=ax1, cmap='copper')
-    gdf.plot(column='sub_category', categorical=True, legend=True, ax=ax2, cmap='copper')
+    fig, ax = plt.subplots(1, 1, figsize=(20, 10))
+    gdf.plot(column='category', categorical=True, legend=True, ax=ax, cmap='copper')
     plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300)
     
