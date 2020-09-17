@@ -5,7 +5,7 @@ import os, sys
 import urllib.request
 import zipfile
 from configparser import RawConfigParser
-from shutil import copyfile, rmtree
+from shutil import copyfile
 from sklearn import utils
 
 def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
@@ -95,9 +95,8 @@ def make_output_dir(config):
     """    
 
     out_dir = os.path.abspath(config.get('general','output_dir'))
-    if os.path.isdir(out_dir):
-        rmtree(out_dir)
-    os.makedirs(out_dir)
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
     print('saving output to folder {}'.format(out_dir))
 
     return out_dir
