@@ -109,6 +109,9 @@ def download_PRIO(config):
     """    
 
     path = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 'UCDP')
+
+    if not os.path.isdir(path):
+        os.mkdir(path)
     
     url = 'http://ucdp.uu.se/downloads/ged/ged201-csv.zip'
 
