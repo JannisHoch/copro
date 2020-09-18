@@ -139,3 +139,6 @@ generated*
 
 # article related stuff
 _paper/*
+
+# convertd htmls
+example/*.html
