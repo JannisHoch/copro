@@ -1,6 +1,12 @@
 Model execution
 =========================
 
+To be able to run the model, the conda environment has to be activated first.
+
+.. code-block:: console
+
+    $ conda activate conflict_model
+
 Example notebook
 -----------------
 
