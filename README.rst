@@ -65,6 +65,10 @@ All data and settings are retrieved from the settings-file which needs to be pro
 
 By default, output is stored to the output directory specified in the settings-file. 
 
+Extended documentation
+-----------------------
+Extended model and API documentation can be found at http://conflict-model.rtfd.io/
+
 Authors
 ----------------
 
