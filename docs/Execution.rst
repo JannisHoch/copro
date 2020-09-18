@@ -10,14 +10,13 @@ To be able to run the model, the conda environment has to be activated first.
 Example notebook
 -----------------
 
-To run the example jupyter notebook, follow these instructions
+There are jupyter notebooks available to guide you through the model application process (also see :ref:`workflow`).
+They can all be run and converted to htmls by executing the provided shell-script.
 
 .. code-block:: console
 
     $ cd path/to/conflict_model/example
     $ sh run.sh
-
-This automatically executes the notebook and converts it to a html-file, also stored in the example folder.
 
 It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 

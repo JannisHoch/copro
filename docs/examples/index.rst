@@ -1,6 +1,8 @@
+.. _workflow:
 
 Workflow
 =========
+
 This page provides a short example workflow in Jupyter Notebooks. 
 
 .. toctree::
@@ -9,7 +11,3 @@ This page provides a short example workflow in Jupyter Notebooks.
     :glob:
 
     ./*
-
-.. todo::
-
-    sub-divide the main notebook in logical steps and create per step an individual notebook.
