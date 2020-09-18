@@ -14,6 +14,7 @@ Interface (API) of 'conflict_model'.
    machine_learning
    variables
    XYdata
+   conflict
    evaluation
    plotting
    utils
