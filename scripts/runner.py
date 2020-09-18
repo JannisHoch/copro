@@ -94,8 +94,8 @@ def main(cfg):
     conflict_model.plots.plot_metrics_distribution(out_dict, out_dir)
 
     #- compute average correct prediction per polygon for all data points as well as conflicty-only
-    df_hit, gdf_hit = conflict_model.evaluation.get_average_hit(out_y_df, global_df)
-    df_hit_1, gdf_hit_1 = conflict_model.evaluation.get_average_hit(out_y1_df, global_df)
+    df_hit, gdf_hit = conflict_model.evaluation.polygon_model_accuracy(out_y_df, global_df)
+    df_hit_1, gdf_hit_1 = conflict_model.evaluation.polygon_model_accuracy(out_y1_df, global_df)
 
     #- for both, plot number of predictions made per polygon and overall distribution
     conflict_model.plots.plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir)
@@ -107,6 +107,10 @@ def main(cfg):
 
     #- for both, plot distribution of average correct predictions
     conflict_model.plots.plot_frac_pred(gdf_hit, gdf_hit_1, out_dir)
+
+    conflict_model.plots.plot_scatterdata(df_hit, out_dir)
+
+    conflict_model.plots.plot_categories(gdf_hit, out_dir)
 
     #- save some dataframes to file
     df_hit.to_csv(os.path.join(out_dir, 'df_hit.csv'))

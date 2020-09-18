@@ -133,3 +133,12 @@ OUT*/
 
 #latest UCDP file too large for commit
 *ged201*
+
+# sphinx
+generated*
+
+# article related stuff
+_paper/*
+
+# convertd htmls
+example/*.html

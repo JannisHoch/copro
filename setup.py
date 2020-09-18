@@ -5,13 +5,13 @@
 from setuptools import setup, find_packages
 
 requirements = ['Click>=7.0', 
-                'xarray>=0.15.1',
-                'pandas>=1.0.3',
-                'rasterio>=1.1.3',
+                'xarray==0.15.1',
+                'pandas==1.0.3',
+                'rasterio==1.1.0',
                 'rioxarray>=0.0.26',
-                'rasterstats>=0.14',
-                'geopandas>=0.7.0',
-                'numpy>=1.16.5',
+                'rasterstats==0.14',
+                'geopandas==0.8.0',
+                'numpy==1.18.1',
                 'scikit-learn>=0.22.1',]
 
 setup_requirements = ['pytest-runner', ]
@@ -45,6 +45,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/JannisHoch/conflict_model',
-    version='0.0.3',
+    version='0.0.4',
     zip_safe=False,
 )

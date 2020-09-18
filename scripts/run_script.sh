@@ -1,1 +1,1 @@
-python runner.py ../data/run_setting.cfg
+python runner.py ../example/example_settings.cfg

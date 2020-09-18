@@ -2,18 +2,30 @@
 Overview
 ===============
 
-conflict_model
+The conflict_model
 ----------------
-(Machine learning) model for mapping environmental drivers of conflict risk
+(Machine learning) model for mapping environmental drivers of conflict risk.
 
 .. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?token=BnX1oxxHRbyd1dPyXAp2&branch=dev
     :target: https://travis-ci.com/JannisHoch/conflict_model
 
+.. image:: https://img.shields.io/badge/License-MIT-blue.svg
+    :target: https://github.com/JannisHoch/conflict_model/blob/dev/LICENSE
 
-installation
+.. image:: https://readthedocs.org/projects/conflict-model/badge/?version=dev
+    :target: https://conflict-model.readthedocs.io/en/dev/?badge=dev
+
+.. image:: https://img.shields.io/github/v/release/JannisHoch/conflict_model
+    :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.3
+
+.. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
+    :target: https://github.com/ellerbrock/open-source-badges/
+
+Installation
 ----------------
 
-To install the conflict model, first clone the code from GitHub. It is advised to create an individual python environment first. Then go to the model folder and install the model.
+To install the conflict model, first clone the code from GitHub. It is advised to create an individual python environment first. 
+You can then install the model package into this environment.
 
 .. code-block:: console
 
@@ -23,10 +35,10 @@ To install the conflict model, first clone the code from GitHub. It is advised t
     $ conda activate conflict_model
     $ python setup.py develop
 
-execution
+Execution
 ----------------
 
-example notebook
+Example notebook
 ^^^^^^^^^^^^^^^^^^
 
 To run the example jupyter notebook, follow these instructions
@@ -38,43 +50,26 @@ To run the example jupyter notebook, follow these instructions
 
 This automatically executes the notebook and converts it to a html-file, also stored in the example folder.
 
-.. note:: It is of course also possible to execute the notebook cell by cell using jupyter notebook
+It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 
-with runner script
+Runner script
 ^^^^^^^^^^^^^^^^^^
 
-To run the model from command line, a command line script is provided. In the most basic version, all data is taken from the settings-file.
+To run the model from command line, a command line script is provided. 
+All data and settings are retrieved from the settings-file which needs to be provided as inline argument.
 
 .. code-block:: console
 
     $ cd path/to/conflict_model/scripts
     $ python runner.py path/to/conflict_model/data/run_setting.cfg
 
-If output is to be stored in an output map, this currently needs to be specified in the runner scipt explictely (-so option).
-By default, output is stored to the output directory specified in the settings-file. Alternatively, this can be provided via command line too (-o option).
-For some minimal verbose output, please specify this using the -v option.
+By default, output is stored to the output directory specified in the settings-file. 
 
-.. code-block:: console
-
-    $ python runner.py -o path/to/output/folder path/to/conflict_model/data/run_setting.cfg -so -v
-
-.. note:: for convenience, there is a 'run_script.sh' file executing just this command.
-
-For help, try this if you are in the scripts folder:
-
-.. code-block:: console
-
-    $ python runner.py --help
-
-authors
+Authors
 ----------------
 
 * Jannis M. Hoch (Utrecht University)
 * Sophie de Bruin (Utrecht University, PBL)
 * Niko Wanders (Utrecht University)
 
-corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
-
-license
-----------------
-tba
+Corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)

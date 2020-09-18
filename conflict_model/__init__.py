@@ -1,4 +1,4 @@
-"""Top-level package for pcrglobwb_utils."""
+"""Top-level package."""
 
 from . import selection
 from . import utils
@@ -13,4 +13,4 @@ from . import plots
 
 __author__ = """Jannis M. Hoch, Niko Wanders, Sophie de Bruin"""
 __email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.0.3'
+__version__ = '0.0.4'
