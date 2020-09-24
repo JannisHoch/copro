@@ -59,6 +59,9 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
                  'ROC AUC score': metrics.roc_auc_score(y_test, y_prob[:, 1]),
                 }
 
+    # out = pd.DataFrame().from_dict(eval_dict)
+    # out.to_csv(os.path.join(out_dir, 'eval_dict.csv'))
+
     return eval_dict
 
 def fill_out_dict(out_dict, eval_dict):
@@ -101,7 +104,7 @@ def fill_out_df(out_df, y_df):
 
     return out_df
 
-def polygon_model_accuracy(df, global_df):
+def polygon_model_accuracy(df, global_df, out_dir):
     """Determines a range of model accuracy values for each polygon.
     Reduces dataframe with results from each simulation to values per unique polygon identifier.
     Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and conflict-only data.
@@ -109,6 +112,7 @@ def polygon_model_accuracy(df, global_df):
     Args:
         df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
+        out_dir (str): path to output folder. If None, output is not saved.
 
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
@@ -147,6 +151,9 @@ def polygon_model_accuracy(df, global_df):
     #- convert to geodataframe
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
+    if out_dir != None:
+        gdf_hit.to_file(os.path.join(out_dir, 'output_per_polygon.shp'))
+
     return df_hit, gdf_hit
 
 def init_out_ROC_curve():
@@ -162,62 +169,7 @@ def init_out_ROC_curve():
 
     return tprs, aucs, mean_fpr
 
-def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwargs):
-    """Plots the ROC-curve per model simulation to a pre-initiated matplotlib-instance.
-
-    Args:
-        ax (axis): axis of pre-initaited matplotlib-instance
-        clf (classifier): sklearn-classifier used in the simulation.
-        X_test (array): array containing test-sample variable values.
-        y_test (list): list containing test-sample conflict data.
-        tprs (list): list with false positive rates.
-        aucs (list): list with area-under-curve values.
-        mean_fpr (array): array with mean false positive rate.
-
-    Returns:
-        list: lists with true positive rates and area-under-curve values per plot.
-    """    
-
-    viz = metrics.plot_roc_curve(clf, X_test, y_test, ax=ax,
-                            	 alpha=0.15, color='b', lw=1, label=None, **kwargs)
-
-    interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
-    interp_tpr[0] = 0.0
-    tprs.append(interp_tpr)
-    aucs.append(viz.roc_auc)
-
-    return tprs, aucs
-
-def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
-    """Plots the mean ROC-curve to a pre-initiated matplotlib-instance.
-
-    Args:
-        ax (axis): axis of pre-initaited matplotlib-instance
-        tprs (list): list with false positive rates.
-        aucs (list): list with area-under-curve values.
-        mean_fpr (array): array with mean false positive rate.
-    """    
-
-    mean_tpr = np.mean(tprs, axis=0)
-    mean_tpr[-1] = 1.0
-    mean_auc = metrics.auc(mean_fpr, mean_tpr)
-    std_auc = np.std(aucs)
-    ax.plot(mean_fpr, mean_tpr, color='r',
-            label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
-            lw=2, alpha=.8, **kwargs)
-
-    std_tpr = np.std(tprs, axis=0)
-    tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
-    tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
-    ax.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2, label=None, **kwargs)
-
-    ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05], **kwargs)
-
-    ax.legend(loc="lower right")
-
-    return
-
-def correlation_matrix(df):
+def calc_correlation_matrix(df):
     """Computes the correlation matrix for a dataframe.
 
     Args:
@@ -285,3 +237,46 @@ def categorize_polys(gdf_hit, category='sub', mode='median'):
                             (gdf_hit.nr_test_confl < nr_confl_median)] = 'LL'
 
     return gdf_hit
+
+def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
+    """Determines the mean, median, and standard deviation of correct chance of prediction (CCP) for k parts of the overall output dataframe.
+    Instead of evaluating the overall output dataframe at once, this can give a better feeling of the variation in CCP between model repetitions.
+
+    Args:
+        y_df (dataframe): output dataframe containing results of all simulations.
+        global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
+        out_dir (str): path to output folder. If None, output is not saved.
+        k (int, optional): number of chunks in which y_df will be split. Defaults to 10.
+
+    Returns:
+        geodataframe: geodataframe containing mean, median, and standard deviation per polygon.
+    """    
+
+    ks = np.array_split(y_df, k)
+
+    df = pd.DataFrame()
+
+    for i in range(len(ks)):
+
+        ks_i = ks[i]
+
+        df_hit, gdf_hit = polygon_model_accuracy(ks_i, global_df, out_dir=None)
+
+        temp_df = pd.DataFrame(data=pd.concat([df_hit.chance_correct_pred], axis=1))
+
+        df = pd.concat([df, temp_df], axis=1)
+
+    df['mean_CCP'] = round(df.mean(axis=1),2)
+    df['median_CCP'] = round(df.median(axis=1),2)
+    df['std_CCP'] = round(df.std(axis=1), 2)
+
+    df = pd.merge(df, global_df, on='ID')
+
+    df = df.drop(columns=['chance_correct_pred'])
+
+    gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
+
+    if out_dir != None:
+        gdf.to_file(os.path.join(out_dir, 'kFold_CCP_stats.shp'))
+
+    return gdf
