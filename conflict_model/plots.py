@@ -49,7 +49,7 @@ def plot_metrics_distribution(out_dict, out_dir, **kwargs):
 
     return
 
-def plot_nr_and_dist_pred(df, gdf, polygon_gdf, out_dir, suffix='', **kwargs):
+def plot_nr_and_dist_pred(df, gdf, polygon_gdf, out_dir, **kwargs):
     """Plots the number of number of predictions made per unique polygon, and the overall value distribution.
 
     Args:
@@ -68,11 +68,11 @@ def plot_nr_and_dist_pred(df, gdf, polygon_gdf, out_dir, suffix='', **kwargs):
     sbs.distplot(df.ID_count.values, ax=ax2)
     ax2.set_title('distribution of predictions')
 
-    plt.savefig(os.path.join(out_dir, 'analyis_predictions' + str(suffix) + '.png'), dpi=300)
+    plt.savefig(os.path.join(out_dir, 'analyis_predictions.png'), dpi=300)
 
     return
 
-def plot_predictiveness(gdf, polygon_gdf, out_dir, suffix=''):
+def plot_predictiveness(gdf, polygon_gdf, out_dir):
     """Creates (1,3)-subplot showing per polygon the chance of correct prediction, the number of conflicts, and the chance of correct conflict prediction.
 
     Args:
@@ -93,7 +93,7 @@ def plot_predictiveness(gdf, polygon_gdf, out_dir, suffix=''):
                  legend_kwds={'label': "chance correct conflict prediction", 'orientation': "horizontal"})
     polygon_gdf.boundary.plot(ax=ax3, color='0.5')
 
-    plt.savefig(os.path.join(out_dir, 'model_predictivness_{}.png'.format(suffix)), dpi=300)
+    plt.savefig(os.path.join(out_dir, 'model_predictivness.png', dpi=300))
 
     return
 
@@ -192,13 +192,16 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
 
     return
 
-def plot_kFold_polygon_analysis(gdf, out_dir, **kwargs):
+def plot_kFold_polygon_analysis(y_df, global_df, out_dir, **kwargs):
     """Determines the mean and standard deviation of correct chance of prediction (CCP) per polygon.
 
     Args:
-        gdf (geodataframe): geodataframe containing statistical information.
+        y_df (dataframe): output dataframe containing results of all simulations.
+        global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
         out_dir (str): path to output folder.
     """    
+
+    gdf = evaluation.calc_kFold_polygon_analysis(y_df, global_df, out_dir)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, **kwargs)
     gdf.plot(column='mean_CCP', ax=ax1, legend=True)

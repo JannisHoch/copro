@@ -16,3 +16,5 @@ Auxiliary functions
    utils.create_artificial_Y
    utils.global_ID_geom_info
    utils.get_conflict_datapoints_only
+   utils.save_to_csv
+   utils.save_to_npy

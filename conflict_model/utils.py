@@ -215,3 +215,37 @@ def get_conflict_datapoints_only(X_df, y_df):
 
     return X1_df, y1_df
 
+def save_to_csv(arg, out_dir, fname):
+    """Saves an argument (either dictionary or dataframe) to csv-file.
+
+    Args:
+        arg (dict or dataframe): dictionary or dataframe to be saved.
+        out_dir (str): path to output folder.
+        fname (str): name of stored item.
+    """    
+
+    if isinstance(arg, dict):
+        arg = pd.DataFrame().from_dict(arg)
+    arg.to_csv(os.path.join(out_dir, fname + '.csv'))
+
+    return
+
+def save_to_npy(arg, out_dir, fname):
+    """Saves an argument (either dictionary or dataframe) to parquet-file.
+
+    Args:
+        arg (dict or dataframe): dictionary or dataframe to be saved.
+        out_dir (str): path to output folder.
+        fname (str): name of stored item.
+    """    
+
+    if isinstance(arg, dict):
+        arg = pd.DataFrame().from_dict(arg)
+        arg = arg.to_numpy()
+    elif isinstance(arg, pd.DataFrame):
+        arg = arg.to_numpy()
+
+    np.save(os.path.join(out_dir, fname + '.npy'), arg)
+
+    return
+

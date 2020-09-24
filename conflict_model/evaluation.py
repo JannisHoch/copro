@@ -152,7 +152,7 @@ def polygon_model_accuracy(df, global_df, out_dir):
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
     if out_dir != None:
-        gdf_hit.to_file(os.path.join(out_dir, 'all_stats.shp'))
+        gdf_hit.to_file(os.path.join(out_dir, 'all_stats.shp'), crs='EPSG:4326')
 
     return df_hit, gdf_hit
 
@@ -277,6 +277,6 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
     gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
 
     if out_dir != None:
-        gdf.to_file(os.path.join(out_dir, 'kFold_CCP_stats.shp'))
+        gdf.to_file(os.path.join(out_dir, 'kFold_CCP_stats.shp'), crs='EPSG:4326')
 
     return gdf
