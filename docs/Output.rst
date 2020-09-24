@@ -15,6 +15,23 @@ Selected conflicts
 -------------------
 The shp-file ``selected_conflicts.shp`` contains all conflict data points after performing the selection procedure.
 
+Overall output
+---------------
+
+Per model run, a fraction of the total XY-data is used to make a prediction. 
+To be able to analyse model output, all predictions made per run are appended to a main output-file.
+This file is, actually, the basis of all futher analyes.
+Since this can become a rather large file, the dataframe is converted to npy-file (``out_y_df.npy``). This file can be loaded again with ``np.load()``.
+
+.. note:: 
+
+    Note that ``np.load()`` returns an array. This can be further processed with e.g. pandas.
+
+Model accuracy per run
+-----------------------
+
+Per model run, a range of metrics are computed. They are all appended to a dictionary and saved to the file ``out_dict.csv``.
+
 Model accuracy per polygon
 ---------------------------
 
@@ -44,6 +61,13 @@ all data
 All output metrics (CCP, NOC, COC) are determined based on the entire data set at the end of the run, i.e. without splitting it in chunks.
 
 The data is stored to ``all_stats.shp``.
+
+
+.. note::
+
+    In addition to these shp-file, various plots can be stored by using the provided plots-functions. The plots aer stored in the output directory too.
+    Note that the plot settings cannot yet be fully controlled via those functions, i.e. it is more anticipated for debugging.
+    To create custom-made plots, rather use the shp-files and csv-file.
 
 
 

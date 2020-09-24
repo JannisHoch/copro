@@ -33,9 +33,9 @@ def main(cfg):
     print('verbose mode on: {}'.format(config.getboolean('general', 'verbose')) + os.linesep)
 
     #- selecting conflicts and getting area-of-interest and aggregation level
-    conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = conflict_model.selection.select(config)
+    conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = conflict_model.selection.select(config, out_dir)
     #- plot selected conflicts and polygons
-    conflict_model.plots.plot_active_polys(conflict_gdf, extent_gdf, extent_active_polys_gdf, config, out_dir)
+    conflict_model.plots.plot_active_polys(conflict_gdf, extent_active_polys_gdf, config, out_dir)
 
     #- create X and Y arrays by reading conflict and variable files;
     #- or by loading a pre-computed array (npy-file)
@@ -47,9 +47,7 @@ def main(cfg):
     #- initializing output variables
     #TODO: put all this into one function
     out_X_df = conflict_model.evaluation.init_out_df()
-    out_X1_df = conflict_model.evaluation.init_out_df()
     out_y_df = conflict_model.evaluation.init_out_df()
-    out_y1_df = conflict_model.evaluation.init_out_df()
     out_dict = conflict_model.evaluation.init_out_dict()
     trps, aucs, mean_fpr = conflict_model.evaluation.init_out_ROC_curve()
 
@@ -65,26 +63,25 @@ def main(cfg):
         #- run machine learning model and return outputs
         X_df, y_df, eval_dict = conflict_model.pipeline.run(X, Y, config, scaler, clf, out_dir)
         
-        #- select sub-dataset with only datapoints with observed conflicts
-        X1_df, y1_df = conflict_model.utils.get_conflict_datapoints_only(X_df, y_df)
-        
         #- append per model execution
         #TODO: put all this into one function
         out_X_df = conflict_model.evaluation.fill_out_df(out_X_df, X_df)
-        out_X1_df = conflict_model.evaluation.fill_out_df(out_X1_df, X1_df)
         out_y_df = conflict_model.evaluation.fill_out_df(out_y_df, y_df)
-        out_y1_df = conflict_model.evaluation.fill_out_df(out_y1_df, y1_df)
         out_dict = conflict_model.evaluation.fill_out_dict(out_dict, eval_dict)
 
         #- plot ROC curve per model execution
-        tprs, aucs = conflict_model.evaluation.plot_ROC_curve_n_times(ax1, clf, X_df.to_numpy(), y_df.y_test.to_list(),
+        tprs, aucs = conflict_model.plots.plot_ROC_curve_n_times(ax1, clf, X_df.to_numpy(), y_df.y_test.to_list(),
                                                                     trps, aucs, mean_fpr)
 
     #- plot mean ROC curve
-    conflict_model.evaluation.plot_ROC_curve_n_mean(ax1, tprs, aucs, mean_fpr)
+    conflict_model.plots.plot_ROC_curve_n_mean(ax1, tprs, aucs, mean_fpr)
     #- save plot
     plt.savefig(os.path.join(out_dir, 'ROC_curve_per_run.png'), dpi=300)
 
+    #- save output dictionary to csv-file
+    conflict_model.utils.save_to_csv(out_dict, out_dir, 'out_dict')
+    conflict_model.utils.save_to_npy(out_y_df, out_dir, 'out_y_df')
+    
     #- print mean values of all evaluation metrics
     for key in out_dict:
         if config.getboolean('general', 'verbose'):
@@ -93,28 +90,15 @@ def main(cfg):
     #- plot distribution of all evaluation metrics
     conflict_model.plots.plot_metrics_distribution(out_dict, out_dir)
 
-    #- compute average correct prediction per polygon for all data points as well as conflicty-only
-    df_hit, gdf_hit = conflict_model.evaluation.polygon_model_accuracy(out_y_df, global_df)
-    df_hit_1, gdf_hit_1 = conflict_model.evaluation.polygon_model_accuracy(out_y1_df, global_df)
+    #- compute average correct prediction per polygon for all data points
+    df_hit, gdf_hit = conflict_model.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir)
 
-    #- for both, plot number of predictions made per polygon and overall distribution
+    #- plot number of predictions made per polygon and overall distribution
     conflict_model.plots.plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir)
-    conflict_model.plots.plot_nr_and_dist_pred(df_hit_1, gdf_hit_1, extent_active_polys_gdf, out_dir, suffix='conflicts_only')
 
-    #- for both, plot average correct prediction and number of conflicht per polygon
-    conflict_model.plots.plot_frac_and_nr_conf(gdf_hit, extent_active_polys_gdf, out_dir)
-    conflict_model.plots.plot_frac_and_nr_conf(gdf_hit_1, extent_active_polys_gdf, out_dir, suffix='conflicts_only')
-
-    #- for both, plot distribution of average correct predictions
-    conflict_model.plots.plot_frac_pred(gdf_hit, gdf_hit_1, out_dir)
-
-    conflict_model.plots.plot_scatterdata(df_hit, out_dir)
+    conflict_model.plots.plot_kFold_polygon_analysis(out_y_df, global_df, out_dir)
 
     conflict_model.plots.plot_categories(gdf_hit, out_dir)
-
-    #- save some dataframes to file
-    df_hit.to_csv(os.path.join(out_dir, 'df_hit.csv'))
-    pd.DataFrame.from_dict(out_dict).to_csv(os.path.join(out_dir, 'out_dict.csv'), index=False)
 
 if __name__ == '__main__':
     main()
