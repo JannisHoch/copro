@@ -14,7 +14,5 @@ Model evaluation
    evaluation.evaluate_prediction
    evaluation.polygon_model_accuracy
    evaluation.init_out_ROC_curve
-   evaluation.plot_ROC_curve_n_times
-   evaluation.plot_ROC_curve_n_mean
-   evaluation.correlation_matrix
    evaluation.categorize_polys
+   evaluation.calc_kFold_polygon_analysis

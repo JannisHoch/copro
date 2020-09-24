@@ -152,7 +152,7 @@ def polygon_model_accuracy(df, global_df, out_dir):
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
     if out_dir != None:
-        gdf_hit.to_file(os.path.join(out_dir, 'output_per_polygon.shp'))
+        gdf_hit.to_file(os.path.join(out_dir, 'all_stats.shp'))
 
     return df_hit, gdf_hit
 
