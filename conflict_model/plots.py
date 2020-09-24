@@ -43,6 +43,7 @@ def plot_metrics_distribution(out_dict, out_dir, **kwargs):
     sbs.distplot(out_dict['Accuracy'], ax=ax, color="k", label='Accuracy')
     sbs.distplot(out_dict['Precision'], ax=ax, color="r", label='Precision')
     sbs.distplot(out_dict['Recall'], ax=ax, color="b", label='Recall')
+    plt.legend()
 
     plt.savefig(os.path.join(out_dir, 'metrics_distribution.png'), dpi=300)
 
