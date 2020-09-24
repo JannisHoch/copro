@@ -38,17 +38,22 @@ You can then install the model package into this environment.
 Execution
 ----------------
 
+To be able to run the model, the conda environment has to be activated first.
+
+.. code-block:: console
+
+    $ conda activate conflict_model
+
 Example notebook
 ^^^^^^^^^^^^^^^^^^
 
-To run the example jupyter notebook, follow these instructions
+There are jupyter notebooks available to guide you through the model application process.
+They can all be run and converted to htmls by executing the provided shell-script.
 
 .. code-block:: console
 
     $ cd path/to/conflict_model/example
     $ sh run.sh
-
-This automatically executes the notebook and converts it to a html-file, also stored in the example folder.
 
 It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 
@@ -65,9 +70,10 @@ All data and settings are retrieved from the settings-file which needs to be pro
 
 By default, output is stored to the output directory specified in the settings-file. 
 
-Extended documentation
------------------------
-Extended model and API documentation can be found at http://conflict-model.rtfd.io/
+Documentation
+---------------
+
+Model documentation including model API can be found at 
 
 Authors
 ----------------
