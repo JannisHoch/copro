@@ -141,7 +141,7 @@ def climate_zoning(gdf, extent_gdf, config):
 
     return gdf, polygon_gdf, global_df
 
-def select(config):
+def select(config, out_dir):
     """Main function performing the selection steps.
 
     Args:
@@ -163,5 +163,8 @@ def select(config):
     gdf, extent_gdf = clip_to_extent(gdf, config)
 
     gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config)
+
+    gdf.to_file(os.path.join(out_dir, 'selected_conflicts.shp'))
+    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.shp'))
 
     return gdf, extent_gdf, polygon_gdf, global_df
