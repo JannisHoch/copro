@@ -73,7 +73,7 @@ By default, output is stored to the output directory specified in the settings-f
 Documentation
 ---------------
 
-Model documentation including model API can be found at 
+Model documentation including model API can be found at http://conflict-model.rtfd.io/
 
 Authors
 ----------------
