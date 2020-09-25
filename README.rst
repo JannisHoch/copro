@@ -75,6 +75,11 @@ Documentation
 
 Model documentation including model API can be found at http://conflict-model.rtfd.io/
 
+Code of conduct and Contributing
+---------------------------------
+
+Please find the relevant information on our Code of Conduct and how to contribute to this package in the relevant files.
+
 Authors
 ----------------
 
