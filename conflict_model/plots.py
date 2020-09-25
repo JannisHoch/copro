@@ -93,7 +93,7 @@ def plot_predictiveness(gdf, polygon_gdf, out_dir):
                  legend_kwds={'label': "chance correct conflict prediction", 'orientation': "horizontal"})
     polygon_gdf.boundary.plot(ax=ax3, color='0.5')
 
-    plt.savefig(os.path.join(out_dir, 'model_predictivness.png', dpi=300))
+    plt.savefig(os.path.join(out_dir, 'model_predictivness.png'), dpi=300)
 
     return
 
@@ -210,6 +210,24 @@ def plot_kFold_polygon_analysis(y_df, global_df, out_dir, **kwargs):
     ax2.set_title('STD')
     
     plt.savefig(os.path.join(out_dir, 'mean_and_std_CCP.png'), dpi=300)
+
+    return
+
+def plot_confusion_matrix(clf, out_X_df, out_y_df, out_dir):
+    """Plots the confusion matrix based on all data points.
+
+    Args:
+        clf (classifier): classifier used.
+        out_X_df (dataframe): dataframe with all observations.
+        out_y_df (dataframe): dataframe with all predictions.
+        out_dir (str): path to output folder.
+    """    
+
+    fig, ax = plt.subplots(1, 1, figsize=(20, 10))
+
+    metrics.plot_confusion_matrix(clf, out_X_df.to_numpy(), out_y_df.y_test.to_list(), ax=ax)
+
+    plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'), dpi=300)
 
     return
     

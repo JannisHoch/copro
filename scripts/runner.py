@@ -96,9 +96,13 @@ def main(cfg):
     #- plot number of predictions made per polygon and overall distribution
     conflict_model.plots.plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir)
 
+    conflict_model.plots.plot_predictiveness(gdf_hit, extent_active_polys_gdf, out_dir)
+
     conflict_model.plots.plot_kFold_polygon_analysis(out_y_df, global_df, out_dir)
 
     conflict_model.plots.plot_categories(gdf_hit, out_dir)
+
+    conflict_model.plots.plot_confusion_matrix(clf, out_X_df, out_y_df, out_dir)
 
 if __name__ == '__main__':
     main()
