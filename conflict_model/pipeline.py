@@ -27,13 +27,13 @@ def create_XY(config, conflict_gdf, polygon_gdf):
 
         if config.getboolean('general', 'verbose'): 
             print('saving XY data by default to file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy'))) + os.linesep)
-            np.save(os.path.join(config.get('general', 'input_dir'),'XY'), XY)
+        np.save(os.path.join(config.get('general', 'input_dir'),'XY'), XY)
 
     else:
 
         if config.getboolean('general', 'verbose'): 
             print('loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))) + os.linesep)
-            XY = np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
+        XY = np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
         
     X, Y = data.split_XY_data(XY, config)    
 
