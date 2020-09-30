@@ -86,15 +86,13 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
         eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, config)
 
-        y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
-
-        X_df = pd.DataFrame(X_test)
+        utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
     
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
     
-    return X_df, y_df, eval_dict
+    sys.exit('With LEAVE-ONE-OUT model, execution stops here.')
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
     """Model workflow when the model is based on only one single variable.
@@ -138,15 +136,13 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
         eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, config)
 
-        y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
-
-        X_df = pd.DataFrame(X_test)
+        utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
 
-    return X_df, y_df, eval_dict
+    sys.exit('With SINGLE VARIABLE model, execution stops here.')
 
 def dubbelsteen(X, Y, config, scaler, clf, out_dir):
     """Model workflow when the relation between variables and conflict is based on randomness.

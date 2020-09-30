@@ -153,6 +153,7 @@ def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwar
         list: lists with true positive rates and area-under-curve values per plot.
     """    
 
+    print(len(X_test), len(y_test))
     viz = metrics.plot_roc_curve(clf, X_test, y_test, ax=ax,
                             	 alpha=0.15, color='b', lw=1, label=None, **kwargs)
 
