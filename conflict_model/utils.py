@@ -152,6 +152,10 @@ def initiate_setup(settings_file):
     if config['conflict']['conflict_file'] == 'download':
         download_PRIO(config)
 
+    if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
+        config.set('settings', 'n_runs', str(1))
+        print('changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
+
     return config, out_dir
 
 def create_artificial_Y(Y):
@@ -225,7 +229,10 @@ def save_to_csv(arg, out_dir, fname):
     """    
 
     if isinstance(arg, dict):
-        arg = pd.DataFrame().from_dict(arg)
+        try:
+            arg = pd.DataFrame().from_dict(arg)
+        except:
+            arg = pd.DataFrame().from_dict(arg, orient='index')
     arg.to_csv(os.path.join(out_dir, fname + '.csv'))
 
     return

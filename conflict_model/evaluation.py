@@ -1,4 +1,5 @@
 import os, sys
+import warnings
 from sklearn import metrics
 import pandas as pd
 import geopandas as gpd
@@ -290,9 +291,6 @@ def get_feature_importance(clf, out_dir, config):
         out_dir (str): path to output folder. If None, output is not saved.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
-    Raises:
-        Warning: raised if unsupported classifier is used.
-
     Returns:
         dataframe: dataframe containing feature importance.
     """ 
@@ -300,8 +298,8 @@ def get_feature_importance(clf, out_dir, config):
     if config.get('machine_learning', 'model') == 'RFClassifier':
         arr = clf.feature_importances_
     else:
-        arr = np.empty()
-        raise Warning('feature importance not supported for this kind of ML model')
+        arr = np.zeros(len(config.items('env_vars')))
+        warnings.warn('WARNING: feature importance not supported for this kind of ML model', UserWarning)
 
     dict_out = dict()
     for key, x in zip(config.items('env_vars'), range(len(arr))):
