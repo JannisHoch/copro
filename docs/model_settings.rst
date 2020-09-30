@@ -21,7 +21,7 @@ Additionally, the cfg-file included in the GitHub-repository already contains th
 
 .. note::
 
-    the 'leave_one_out' and 'single_variables' models are only tested in beta-state.
+    the 'leave-one-out' and 'single variables' models are only tested in beta-state. They produce only limited output (see :ref:`Output`). 
 
 - *verbose*: if True, model messages will be printed to screen.
 
