@@ -94,7 +94,7 @@ def main(cfg):
     df_hit, gdf_hit = conflict_model.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir)
 
     #- compute relative importance of each feature
-    rel_importance = evaluation.get_feature_importance(clf, out_dir, config)
+    rel_importance = conflict_model.evaluation.get_feature_importance(clf, out_dir, config)
 
     #- plot number of predictions made per polygon and overall distribution
     conflict_model.plots.plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir)
