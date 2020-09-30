@@ -45,7 +45,9 @@ def all_data(X, Y, config, scaler, clf, out_dir):
     return X_df, y_df, eval_dict
 
 def leave_one_out(X, Y, config, scaler, clf, out_dir):
-    """Model workflow when each variable is left out from analysis once.
+    """Model workflow when each variable is left out from analysis once. Output is limited to the metric scores. 
+    Output is stored to sub-folders of the output directory, with each sub-folder containing output for a n-1 variable combination.
+    After computing metric scores per prediction (i.e. n-1 variables combinations), model exit is forced.
     Not tested yet for more than one simulation!
 
     Args:
@@ -55,11 +57,6 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
         scaler (scaler): the specified scaling method instance.
         clf (classifier): the specified model instance.
         out_dir (str): path to output folder.
-
-    Returns:
-        dataframe: containing the test-data X-array values.
-        datatrame: containing model output on polygon-basis.
-        dict: dictionary containing evaluation metrics per simulation.
     """    
 
     if not config.getboolean('general', 'verbose'):
@@ -95,7 +92,9 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
     sys.exit('With LEAVE-ONE-OUT model, execution stops here.')
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
-    """Model workflow when the model is based on only one single variable.
+    """Model workflow when the model is based on only one single variable. Output is limited to the metric scores. 
+    Output is stored to sub-folders of the output directory, with each sub-folder containing output for a 1 variable combination.
+    After computing metric scores per prediction (i.e. per variable), model exit is forced.
     Not tested yet for more than one simulation!
 
     Args:
@@ -105,11 +104,6 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
         scaler (scaler): the specified scaling method instance.
         clf (classifier): the specified model instance.
         out_dir (str): path to output folder.
-
-    Returns:
-        dataframe: containing the test-data X-array values.
-        datatrame: containing model output on polygon-basis.
-        dict: dictionary containing evaluation metrics per simulation.
     """    
 
     if not config.getboolean('general', 'verbose'):
