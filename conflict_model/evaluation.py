@@ -280,3 +280,35 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
         gdf.to_file(os.path.join(out_dir, 'kFold_CCP_stats.shp'), crs='EPSG:4326')
 
     return gdf
+
+def get_feature_importance(clf, out_dir, config):
+    """Determines relative importance of each feature (i.e. variable) used. Must be used after model/classifier is fit.
+    Returns dataframe and saves it to csv too.
+
+    Args:
+        clf (classifier): sklearn-classifier used in the simulation.
+        out_dir (str): path to output folder. If None, output is not saved.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+
+    Raises:
+        Warning: raised if unsupported classifier is used.
+
+    Returns:
+        dataframe: dataframe containing feature importance.
+    """ 
+
+    if config.get('machine_learning', 'model') == 'RFClassifier':
+        arr = clf.feature_importances_
+    else:
+        arr = np.empty()
+        raise Warning('feature importance not supported for this kind of ML model')
+
+    dict_out = dict()
+    for key, x in zip(config.items('env_vars'), range(len(arr))):
+        dict_out[key[0]] = arr[x]
+
+    df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
+
+    df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
+
+    return df
