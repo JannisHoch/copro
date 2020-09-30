@@ -66,7 +66,7 @@ All data and settings are retrieved from the settings-file which needs to be pro
 .. code-block:: console
 
     $ cd path/to/conflict_model/scripts
-    $ python runner.py path/to/conflict_model/data/run_setting.cfg
+    $ python runner.py ../example/example_settings.cfg
 
 By default, output is stored to the output directory specified in the settings-file. 
 
