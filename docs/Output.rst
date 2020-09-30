@@ -1,11 +1,15 @@
 Output
 =========================
 
-The model produces a range of output files by default. Output is stored in the output folder.
+The model can produce a range of output files. Output is stored in the output folder.
 
 .. note:: 
 
     In addition to these output files, the model settings file (cfg-file) is automatically copied to the output folder.
+
+.. important:: 
+
+    Not all model types provide the output mentioned below. If the 'leave-one-out' or 'single variable' model are selected, only the metrics are stored to a csv-file.
 
 Selected polygons
 ------------------
