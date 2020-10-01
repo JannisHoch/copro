@@ -21,7 +21,7 @@ authors:
 affiliations:
  - name: Department of Physical Geography, Utrecht University, Utrecht, the Netherlands
    index: 1
- - name: Planbureau voor Leefomgeving (PBL), the Hague, the Netherlands
+ - name: PBL Netherlands Environmental Assessment Agency, the Hague, the Netherlands
    index: 2
 date: 30 September 2020
 bibliography: bibliography.bib
