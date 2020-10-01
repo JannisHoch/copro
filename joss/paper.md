@@ -36,11 +36,11 @@ Since conflicts are of all times and not limited to specific regions or countrie
 
 # Statement of need 
 
-There is increasing consensus that climate change can exacerbate the risk of (armed) conflict [@hegre2013predicting]. Building upon recent, similar approaches to use data-driven models [@colaresi2017robot] or statistical approaches [@witmer2017subnational] for conflict risk projections, CoPro is a first, fully open, framework to combine the inter-disciplinary expertise required to make projections of climate risk.
+There is increasing consensus that climate change can exacerbate the risk of (armed) conflict [@hegre2013predicting]. Building upon recent, similar approaches to use data-driven models [@colaresi2017robot] or statistical approaches [@witmer2017subnational] for conflict risk projections, CoPro is a first, fully open, framework to combine the inter-disciplinary expertise required to make projections of climate risk. This is very much needed to integrate the different disciplines, and to extend the modelling approach with new insights and data - after all, the established links between climate and societal factors with conflict occurence are still weak, yet positive.
 
 # Acknowledgements
 We kindly acknoweldge the valuable contributions from all partners at PBL, PRIO (Peace Research Institute Oslo), Uppsala University, and Utrecht University.
 Funding to develop the model was received from ...
-
+Last, the valuable comments made by the reviewer are acknowledged.
 
 # References
