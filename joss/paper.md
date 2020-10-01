@@ -43,8 +43,8 @@ Since the replicability of scientific results is important when developing forec
 These functionalities altogether make CoPro suited for both quick and in-depth analyses of the relative importance of climate, environmental, and societal drivers as well as for assessments how conflit risk can change both in time and space.
 
 # Acknowledgements
+This research was supported by a Pathways to Sustainability Acceleration Grant from the Utrecht University.
 We kindly acknoweldge the valuable contributions from all partners at PBL, PRIO (Peace Research Institute Oslo), Uppsala University, and Utrecht University.
-Funding to develop the model was received from ...
 Last, the valuable comments made by the reviewer are acknowledged.
 
 # References
