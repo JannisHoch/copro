@@ -17,6 +17,9 @@ The conflict_model
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/conflict_model
     :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.3
+    
+.. image:: https://zenodo.org/badge/254407279.svg
+   :target: https://zenodo.org/badge/latestdoi/254407279
 
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
