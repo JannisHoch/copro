@@ -16,7 +16,7 @@ The conflict_model
     :target: https://conflict-model.readthedocs.io/en/dev/?badge=dev
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/conflict_model
-    :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.3
+    :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.5-pre
     
 .. image:: https://zenodo.org/badge/254407279.svg
    :target: https://zenodo.org/badge/latestdoi/254407279
