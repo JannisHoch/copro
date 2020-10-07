@@ -1,6 +1,6 @@
 conflict\_model.selection.filter\_conflict\_properties
 ======================================================
 
-.. currentmodule:: conflict_model.selection
+.. currentmodule:: copro.selection
 
 .. autofunction:: filter_conflict_properties

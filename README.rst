@@ -2,21 +2,21 @@
 Overview
 ===============
 
-The conflict_model
+CoPro
 ----------------
-(Machine learning) model for mapping environmental drivers of conflict risk.
+a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
-.. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?token=BnX1oxxHRbyd1dPyXAp2&branch=dev
-    :target: https://travis-ci.com/JannisHoch/conflict_model
+.. image:: https://travis-ci.com/JannisHoch/copro.svg?token=BnX1oxxHRbyd1dPyXAp2&branch=dev
+    :target: https://travis-ci.com/JannisHoch/copro
 
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
-    :target: https://github.com/JannisHoch/conflict_model/blob/dev/LICENSE
+    :target: https://github.com/JannisHoch/copro/blob/dev/LICENSE
 
 .. image:: https://readthedocs.org/projects/conflict-model/badge/?version=dev
     :target: https://conflict-model.readthedocs.io/en/dev/?badge=dev
 
-.. image:: https://img.shields.io/github/v/release/JannisHoch/conflict_model
-    :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.3
+.. image:: https://img.shields.io/github/v/release/JannisHoch/copro
+    :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.3
 
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
@@ -29,10 +29,10 @@ You can then install the model package into this environment.
 
 .. code-block:: console
 
-    $ git clone https://github.com/JannisHoch/conflict_model.git
-    $ cd path/to/conflict_model
+    $ git clone https://github.com/JannisHoch/copro.git
+    $ cd path/to/copro
     $ conda env create -f environment.yml
-    $ conda activate conflict_model
+    $ conda activate copro
     $ python setup.py develop
 
 Execution
@@ -42,7 +42,7 @@ To be able to run the model, the conda environment has to be activated first.
 
 .. code-block:: console
 
-    $ conda activate conflict_model
+    $ conda activate copro
 
 Example notebook
 ^^^^^^^^^^^^^^^^^^
@@ -52,7 +52,7 @@ They can all be run and converted to htmls by executing the provided shell-scrip
 
 .. code-block:: console
 
-    $ cd path/to/conflict_model/example
+    $ cd path/to/copro/example
     $ sh run.sh
 
 It is of course also possible to execute the notebook cell by cell using jupyter notebook.
@@ -65,7 +65,7 @@ All data and settings are retrieved from the settings-file which needs to be pro
 
 .. code-block:: console
 
-    $ cd path/to/conflict_model/scripts
+    $ cd path/to/copro/scripts
     $ python runner.py ../example/example_settings.cfg
 
 By default, output is stored to the output directory specified in the settings-file. 

@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from sklearn import preprocessing, model_selection
-from conflict_model import conflict, machine_learning
+from copro import conflict, machine_learning
 
 def create_fake_config():
 
