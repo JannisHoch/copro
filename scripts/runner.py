@@ -7,7 +7,7 @@ import os, sys
 import matplotlib.pyplot as plt
 
 import warnings
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("module")
 
 
 @click.group()

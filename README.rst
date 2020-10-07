@@ -12,11 +12,14 @@ a machine-learning tool for conflict risk projections based on climate, environm
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
     :target: https://github.com/JannisHoch/copro/blob/dev/LICENSE
 
-.. image:: https://readthedocs.org/projects/conflict-model/badge/?version=dev
-    :target: https://conflict-model.readthedocs.io/en/dev/?badge=dev
+.. image:: https://readthedocs.org/projects/copro/badge/?version=dev
+    :target: https://copro.readthedocs.io/en/dev/?badge=dev
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/copro
     :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.3
+
+.. image:: https://zenodo.org/badge/254407279.svg
+    :target: https://zenodo.org/badge/latestdoi/254407279
 
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/

@@ -45,7 +45,9 @@ def all_data(X, Y, config, scaler, clf, out_dir):
     return X_df, y_df, eval_dict
 
 def leave_one_out(X, Y, config, scaler, clf, out_dir):
-    """Model workflow when each variable is left out from analysis once.
+    """Model workflow when each variable is left out from analysis once. Output is limited to the metric scores. 
+    Output is stored to sub-folders of the output directory, with each sub-folder containing output for a n-1 variable combination.
+    After computing metric scores per prediction (i.e. n-1 variables combinations), model exit is forced.
     Not tested yet for more than one simulation!
 
     Args:
@@ -55,11 +57,6 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
         scaler (scaler): the specified scaling method instance.
         clf (classifier): the specified model instance.
         out_dir (str): path to output folder.
-
-    Returns:
-        dataframe: containing the test-data X-array values.
-        datatrame: containing model output on polygon-basis.
-        dict: dictionary containing evaluation metrics per simulation.
     """    
 
     if not config.getboolean('general', 'verbose'):
@@ -86,18 +83,18 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
         eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, config)
 
-        y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
-
-        X_df = pd.DataFrame(X_test)
+        utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
     
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
     
-    return X_df, y_df, eval_dict
+    sys.exit('With LEAVE-ONE-OUT model, execution stops here.')
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
-    """Model workflow when the model is based on only one single variable.
+    """Model workflow when the model is based on only one single variable. Output is limited to the metric scores. 
+    Output is stored to sub-folders of the output directory, with each sub-folder containing output for a 1 variable combination.
+    After computing metric scores per prediction (i.e. per variable), model exit is forced.
     Not tested yet for more than one simulation!
 
     Args:
@@ -107,11 +104,6 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
         scaler (scaler): the specified scaling method instance.
         clf (classifier): the specified model instance.
         out_dir (str): path to output folder.
-
-    Returns:
-        dataframe: containing the test-data X-array values.
-        datatrame: containing model output on polygon-basis.
-        dict: dictionary containing evaluation metrics per simulation.
     """    
 
     if not config.getboolean('general', 'verbose'):
@@ -138,15 +130,13 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
         eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, config)
 
-        y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
-
-        X_df = pd.DataFrame(X_test)
+        utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
 
     if not config.getboolean('general', 'verbose'):
         sys.stdout = orig_stdout
         f.close()
 
-    return X_df, y_df, eval_dict
+    sys.exit('With SINGLE VARIABLE model, execution stops here.')
 
 def dubbelsteen(X, Y, config, scaler, clf, out_dir):
     """Model workflow when the relation between variables and conflict is based on randomness.
