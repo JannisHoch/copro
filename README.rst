@@ -13,8 +13,8 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
     :target: https://github.com/JannisHoch/copro/blob/dev/LICENSE
 
-.. image:: https://readthedocs.org/projects/copro/badge/?version=dev
-    :target: https://copro.readthedocs.io/en/dev/?badge=dev
+.. image:: https://readthedocs.org/projects/copro/badge/?version=latest
+    :target: https://copro.readthedocs.io/en/latest/?badge=latest
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/copro
     :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.5-pre
