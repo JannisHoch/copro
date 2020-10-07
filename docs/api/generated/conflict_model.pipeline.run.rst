@@ -1,6 +1,6 @@
 conflict\_model.pipeline.run
 ============================
 
-.. currentmodule:: conflict_model.pipeline
+.. currentmodule:: copro.pipeline
 
 .. autofunction:: run

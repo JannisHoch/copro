@@ -9,10 +9,10 @@ You can then install the model package into this environment.
 
 .. code-block:: console
 
-    $ git clone https://github.com/JannisHoch/conflict_model.git
-    $ cd path/to/conflict_model
+    $ git clone https://github.com/JannisHoch/copro.git
+    $ cd path/to/copro
     $ conda env create -f environment.yml
-    $ conda activate conflict_model
+    $ conda activate copro
     $ python setup.py develop
 
 From PyPI

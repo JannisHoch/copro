@@ -1,7 +1,7 @@
 XY-Data
 =================================
 
-.. currentmodule:: conflict_model
+.. currentmodule:: copro
 
 .. autosummary::
    :toctree: generated/
