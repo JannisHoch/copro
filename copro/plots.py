@@ -55,9 +55,9 @@ def metrics_distribution(out_dict, **kwargs):
 
     fig, ax = plt.subplots(1, 1, **kwargs)
 
-    sbs.distplot(out_dict['Accuracy'], ax=ax, color="k", label='Accuracy')
-    sbs.distplot(out_dict['Precision'], ax=ax, color="r", label='Precision')
-    sbs.distplot(out_dict['Recall'], ax=ax, color="b", label='Recall')
+    sbs.displot(out_dict['Accuracy'], ax=ax, color="k", label='Accuracy')
+    sbs.displot(out_dict['Precision'], ax=ax, color="r", label='Precision')
+    sbs.displot(out_dict['Recall'], ax=ax, color="b", label='Recall')
     plt.legend()
 
     return ax
