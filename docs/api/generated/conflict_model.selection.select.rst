@@ -1,6 +1,6 @@
 conflict\_model.selection.select
 ================================
 
-.. currentmodule:: conflict_model.selection
+.. currentmodule:: copro.selection
 
 .. autofunction:: select

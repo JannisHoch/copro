@@ -3,7 +3,7 @@ import configparser
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-from conflict_model import conflict
+from copro import conflict
 
 def test_split_conflict_geom_data():
     #TODO: would like to do this with actual geometry information, but np.equal() does not like this...

@@ -2,7 +2,7 @@ import pytest
 import configparser
 import numpy as np
 import pandas as pd
-from conflict_model import data
+from copro import data
 
 def create_fake_config():
 

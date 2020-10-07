@@ -1,6 +1,6 @@
 conflict\_model.pipeline.create\_XY
 ===================================
 
-.. currentmodule:: conflict_model.pipeline
+.. currentmodule:: copro.pipeline
 
 .. autofunction:: create_XY

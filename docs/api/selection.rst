@@ -1,7 +1,7 @@
 Selecting polygons and conflicts
 =================================
 
-.. currentmodule:: conflict_model
+.. currentmodule:: copro
 
 .. autosummary::
    :toctree: generated/

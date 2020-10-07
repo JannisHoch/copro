@@ -2,7 +2,7 @@ API docs
 ========
 
 This section contains the Documentation of the Application Programming
-Interface (API) of 'conflict_model'.
+Interface (API) of 'copro'.
 
 .. toctree::
    :numbered:
