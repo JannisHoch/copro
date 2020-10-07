@@ -1,4 +1,4 @@
-from conflict_model import conflict, variables
+from copro import conflict, variables
 import numpy as np
 import xarray as xr
 import pandas as pd

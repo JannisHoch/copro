@@ -1,7 +1,7 @@
 Work with conflict data
 =================================
 
-.. currentmodule:: conflict_model
+.. currentmodule:: copro
 
 .. autosummary::
    :toctree: generated/

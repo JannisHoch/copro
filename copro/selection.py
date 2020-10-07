@@ -2,7 +2,7 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 import os, sys
-from conflict_model import utils
+from copro import utils
 
 def filter_conflict_properties(gdf, config):
     """Filters conflict database according to certain conflict properties such as number of casualties, type of violence or country.
@@ -141,7 +141,7 @@ def climate_zoning(gdf, extent_gdf, config):
 
     return gdf, polygon_gdf, global_df
 
-def select(config):
+def select(config, out_dir):
     """Main function performing the selection steps.
 
     Args:
@@ -163,5 +163,8 @@ def select(config):
     gdf, extent_gdf = clip_to_extent(gdf, config)
 
     gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config)
+
+    gdf.to_file(os.path.join(out_dir, 'selected_conflicts.shp'), crs='EPSG:4326')
+    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.shp'), crs='EPSG:4326')
 
     return gdf, extent_gdf, polygon_gdf, global_df

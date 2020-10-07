@@ -40,7 +40,7 @@ def show_versions():
     """Prints the version numbers by the main python-packages used.
     """ 
        
-    from conflict_model import __version__ as cm_version
+    from copro import __version__ as cm_version
     from geopandas import __version__ as gpd_version
     from pandas import __version__ as pd_version
     from numpy import __version__ as np_version
@@ -57,7 +57,7 @@ def show_versions():
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd_version))
 
     print("Python version: {}".format(os_version))
-    print("conflict_model version: {}".format(cm_version))
+    print("copro version: {}".format(cm_version))
     print("geopandas version: {}".format(gpd_version))
     print("xarray version: {}".format(xr_version))
     print("rasterio version: {}".format(rio_version))
@@ -152,6 +152,10 @@ def initiate_setup(settings_file):
     if config['conflict']['conflict_file'] == 'download':
         download_PRIO(config)
 
+    if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
+        config.set('settings', 'n_runs', str(1))
+        print('changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
+
     return config, out_dir
 
 def create_artificial_Y(Y):
@@ -214,4 +218,41 @@ def get_conflict_datapoints_only(X_df, y_df):
     y1_df = df[df.columns[len(X_df.columns):]]
 
     return X1_df, y1_df
+
+def save_to_csv(arg, out_dir, fname):
+    """Saves an argument (either dictionary or dataframe) to csv-file.
+
+    Args:
+        arg (dict or dataframe): dictionary or dataframe to be saved.
+        out_dir (str): path to output folder.
+        fname (str): name of stored item.
+    """    
+
+    if isinstance(arg, dict):
+        try:
+            arg = pd.DataFrame().from_dict(arg)
+        except:
+            arg = pd.DataFrame().from_dict(arg, orient='index')
+    arg.to_csv(os.path.join(out_dir, fname + '.csv'))
+
+    return
+
+def save_to_npy(arg, out_dir, fname):
+    """Saves an argument (either dictionary or dataframe) to parquet-file.
+
+    Args:
+        arg (dict or dataframe): dictionary or dataframe to be saved.
+        out_dir (str): path to output folder.
+        fname (str): name of stored item.
+    """    
+
+    if isinstance(arg, dict):
+        arg = pd.DataFrame().from_dict(arg)
+        arg = arg.to_numpy()
+    elif isinstance(arg, pd.DataFrame):
+        arg = arg.to_numpy()
+
+    np.save(os.path.join(out_dir, fname + '.npy'), arg)
+
+    return
 

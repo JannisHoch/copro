@@ -1,19 +1,19 @@
-conflict_model
+copro
 =========================
 
-This is the documentation website of the 'conflict_model', a (machine learning) model for mapping environmental drivers of conflict risk.
+This is the documentation website CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
 .. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?token=BnX1oxxHRbyd1dPyXAp2&branch=dev
     :target: https://travis-ci.com/JannisHoch/conflict_model
 
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
-    :target: https://github.com/JannisHoch/conflict_model/blob/dev/LICENSE
+    :target: https://github.com/JannisHoch/copro/blob/dev/LICENSE
 
-.. image:: https://readthedocs.org/projects/conflict-model/badge/?version=dev
-    :target: https://conflict-model.readthedocs.io/en/dev/?badge=dev
+.. image:: https://readthedocs.org/projects/copro/badge/?version=latest
+    :target: https://copro.readthedocs.io/en/latest/?badge=latest
 
-.. image:: https://img.shields.io/github/v/release/JannisHoch/conflict_model
-    :target: https://github.com/JannisHoch/conflict_model/releases/tag/v0.0.3
+.. image:: https://img.shields.io/github/v/release/JannisHoch/copro
+    :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.3
 
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
@@ -33,6 +33,7 @@ Contents
    Installation
    Execution
    Model settings <model_settings>
+   Output
    Workflow <examples/index>
    API Docs <api/index>
 

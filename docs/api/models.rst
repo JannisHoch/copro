@@ -1,7 +1,7 @@
 The various models
 ====================
 
-.. currentmodule:: conflict_model
+.. currentmodule:: copro
 
 .. autosummary::
    :toctree: generated/

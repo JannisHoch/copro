@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import geopandas as gpd
 import seaborn as sbs
+import numpy as np
 import os, sys
+from sklearn import metrics
 from conflict_model import evaluation
 
-def plot_active_polys(conflict_gdf, extent_gdf, polygon_gdf, config, out_dir, **kwargs):
+def plot_active_polys(conflict_gdf, polygon_gdf, config, out_dir, **kwargs):
     """Creates a (1,2)-subplot showing a) selected conflicts and all polygons, and b) selected conflicts and selected polygons.
 
     Args:
@@ -15,18 +17,16 @@ def plot_active_polys(conflict_gdf, extent_gdf, polygon_gdf, config, out_dir, **
         out_dir (str): path to output folder
     """    
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, **kwargs)
+    fig, ax = plt.subplots(1, 1, **kwargs)
     fig.suptitle('conflict distribution; # conflicts {}; threshold casualties {}; type of violence {}'.format(len(conflict_gdf), config.get('conflict', 'min_nr_casualties'), config.get('conflict', 'type_of_violence')))
 
-    conflict_gdf.plot(ax=ax1, c='r', column='best', cmap='magma', vmin=int(config.get('conflict', 'min_nr_casualties')), vmax=conflict_gdf.best.mean(), legend=True, legend_kwds={'label': "# casualties",})
-    extent_gdf.boundary.plot(ax=ax1)
-    ax1.set_title('with all polygons')
-
-    conflict_gdf.plot(ax=ax2, c='r', column='best', cmap='magma', vmin=int(config.get('conflict', 'min_nr_casualties')), vmax=conflict_gdf.best.mean(), legend=True, legend_kwds={'label': "# casualties",})
-    polygon_gdf.boundary.plot(ax=ax2)
-    ax2.set_title('with active polygons only')
+    conflict_gdf.plot(ax=ax, c='r', column='best', cmap='magma', 
+                      vmin=int(config.get('conflict', 'min_nr_casualties')), vmax=conflict_gdf.best.mean(), 
+                      legend=True, 
+                      legend_kwds={'label': "# casualties",})
+    polygon_gdf.boundary.plot(ax=ax)
                             
-    plt.savefig(os.path.join(out_dir, 'conflict_and_casualties_distribution.png'), dpi=300)
+    plt.savefig(os.path.join(out_dir, 'selected_conflicts_and_polygons.png'), dpi=300)
 
     return
 
@@ -38,26 +38,18 @@ def plot_metrics_distribution(out_dict, out_dir, **kwargs):
         out_dir (str): path to output folder.
     """    
 
-    fig, axes = plt.subplots(3, 3, **kwargs)
-    sbs.distplot(out_dict['Accuracy'], ax=axes[0,0], color="k")
-    axes[0,0].set_title('Accuracy')
-    sbs.distplot(out_dict['Precision'], ax=axes[0,1], color="r")
-    axes[0,1].set_title('Precision')
-    sbs.distplot(out_dict['Recall'], ax=axes[0,2], color="b")
-    axes[0,2].set_title('Recall')
-    sbs.distplot(out_dict['F1 score'], ax=axes[1,0], color="g")
-    axes[1,0].set_title('F1 score')
-    sbs.distplot(out_dict['Cohen-Kappa score'], ax=axes[1,1], color="c")
-    axes[1,1].set_title('Cohen-Kappa score')
-    sbs.distplot(out_dict['Brier loss score'], ax=axes[1,2], color="y")
-    axes[1,2].set_title('Brier loss score')
-    sbs.distplot(out_dict['ROC AUC score'], ax=axes[2,0], color="k")
-    axes[2,0].set_title('ROC AUC score')
-    plt.savefig(os.path.join(out_dir, 'distribution_output_evaluation_criteria.png'), dpi=300)
+    fig, ax = plt.subplots(1, 1, **kwargs)
+
+    sbs.distplot(out_dict['Accuracy'], ax=ax, color="k", label='Accuracy')
+    sbs.distplot(out_dict['Precision'], ax=ax, color="r", label='Precision')
+    sbs.distplot(out_dict['Recall'], ax=ax, color="b", label='Recall')
+    plt.legend()
+
+    plt.savefig(os.path.join(out_dir, 'metrics_distribution.png'), dpi=300)
 
     return
 
-def plot_nr_and_dist_pred(df, gdf, polygon_gdf, out_dir, suffix='', **kwargs):
+def plot_nr_and_dist_pred(df, gdf, polygon_gdf, out_dir, **kwargs):
     """Plots the number of number of predictions made per unique polygon, and the overall value distribution.
 
     Args:
@@ -69,16 +61,18 @@ def plot_nr_and_dist_pred(df, gdf, polygon_gdf, out_dir, suffix='', **kwargs):
     """    
 
     fig, (ax1, ax2) = plt.subplots(1, 2, **kwargs)
+
     gdf.plot(ax=ax1, column='ID_count', legend=True, cmap='cool')
     polygon_gdf.boundary.plot(ax=ax1, color='0.5')
     ax1.set_title('number of predictions made per polygon')
     sbs.distplot(df.ID_count.values, ax=ax2)
     ax2.set_title('distribution of predictions')
-    plt.savefig(os.path.join(out_dir, 'analyis_predictions' + str(suffix) + '.png'), dpi=300)
+
+    plt.savefig(os.path.join(out_dir, 'analyis_predictions.png'), dpi=300)
 
     return
 
-def plot_frac_and_nr_conf(gdf, polygon_gdf, out_dir, suffix=''):
+def plot_predictiveness(gdf, polygon_gdf, out_dir):
     """Creates (1,3)-subplot showing per polygon the chance of correct prediction, the number of conflicts, and the chance of correct conflict prediction.
 
     Args:
@@ -98,40 +92,10 @@ def plot_frac_and_nr_conf(gdf, polygon_gdf, out_dir, suffix=''):
     gdf.plot(ax=ax3, column='chance_correct_confl_pred', legend=True, cmap='Blues', 
                  legend_kwds={'label': "chance correct conflict prediction", 'orientation': "horizontal"})
     polygon_gdf.boundary.plot(ax=ax3, color='0.5')
-    plt.savefig(os.path.join(out_dir, 'output_evaluation_{}.png'.format(suffix)), dpi=300)
+
+    plt.savefig(os.path.join(out_dir, 'model_predictivness.png'), dpi=300)
 
     return
-
-def plot_frac_pred(gdf, gdf_confl, out_dir):
-    """Plots the distrubtion of correct predictions for all polygons and only those polygons where conflict was actually observed.
-
-    Args:
-        gdf (geo-dataframe): containing model evaluation per unique polygon.
-        gdf_confl (geo-dataframe): containing model evaluation per unique polygon where conflict was actually observed.
-        out_dir (str): path to output folder
-    """    
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
-    sbs.distplot(gdf.chance_correct_pred, ax=ax1)
-    sbs.distplot(gdf_confl.chance_correct_pred, ax=ax2)
-    plt.savefig(os.path.join(out_dir, 'distribution_chance_correct_pred.png'), dpi=300)
-
-    return
-
-def plot_scatterdata(df, out_dir):
-    """Scatterplot of 'ID_count' (number of predictions made per polygon), 'nr_test_confl' (number of conflicts in test-sample), and 'chance_correct_pred'
-    (fraction of correct predictions made).
-
-    Args:
-        df (dataframe): dataframe with data per polygon.
-        out_dir (str): path to output folder
-    """    
-
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 10))
-    sbs.scatterplot(data=df, x='ID_count', y='chance_correct_pred', ax=ax1)
-    sbs.scatterplot(data=df, x='ID_count', y='nr_test_confl', ax=ax2)
-    sbs.scatterplot(data=df, x='nr_test_confl', y='chance_correct_pred', ax=ax3)
-    plt.savefig(os.path.join(out_dir, 'scatterplot_analysis_all_data.png'), dpi=300)
 
 def plot_correlation_matrix(df, out_dir):
     """Plots the correlation matrix of a dataframe.
@@ -170,5 +134,101 @@ def plot_categories(gdf, out_dir, category='sub', mode='median'):
 
     fig, ax = plt.subplots(1, 1, figsize=(20, 10))
     gdf.plot(column='category', categorical=True, legend=True, ax=ax, cmap='copper')
+
     plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300)
+
+def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwargs):
+    """Plots the ROC-curve per model simulation to a pre-initiated matplotlib-instance.
+
+    Args:
+        ax (axis): axis of pre-initaited matplotlib-instance
+        clf (classifier): sklearn-classifier used in the simulation.
+        X_test (array): array containing test-sample variable values.
+        y_test (list): list containing test-sample conflict data.
+        tprs (list): list with false positive rates.
+        aucs (list): list with area-under-curve values.
+        mean_fpr (array): array with mean false positive rate.
+
+    Returns:
+        list: lists with true positive rates and area-under-curve values per plot.
+    """    
+
+    print(len(X_test), len(y_test))
+    viz = metrics.plot_roc_curve(clf, X_test, y_test, ax=ax,
+                            	 alpha=0.15, color='b', lw=1, label=None, **kwargs)
+
+    interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
+    interp_tpr[0] = 0.0
+    tprs.append(interp_tpr)
+    aucs.append(viz.roc_auc)
+
+    return tprs, aucs
+
+def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
+    """Plots the mean ROC-curve to a pre-initiated matplotlib-instance.
+
+    Args:
+        ax (axis): axis of pre-initaited matplotlib-instance
+        tprs (list): list with false positive rates.
+        aucs (list): list with area-under-curve values.
+        mean_fpr (array): array with mean false positive rate.
+    """    
+
+    mean_tpr = np.mean(tprs, axis=0)
+    mean_tpr[-1] = 1.0
+    mean_auc = metrics.auc(mean_fpr, mean_tpr)
+    std_auc = np.std(aucs)
+    ax.plot(mean_fpr, mean_tpr, color='r',
+            label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
+            lw=2, alpha=.8, **kwargs)
+
+    std_tpr = np.std(tprs, axis=0)
+    tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
+    tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
+    ax.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2, label=None, **kwargs)
+
+    ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05], **kwargs)
+
+    ax.legend(loc="lower right")
+
+    return
+
+def plot_kFold_polygon_analysis(y_df, global_df, out_dir, **kwargs):
+    """Determines the mean and standard deviation of correct chance of prediction (CCP) per polygon.
+
+    Args:
+        y_df (dataframe): output dataframe containing results of all simulations.
+        global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
+        out_dir (str): path to output folder.
+    """    
+
+    gdf = evaluation.calc_kFold_polygon_analysis(y_df, global_df, out_dir)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, **kwargs)
+    gdf.plot(column='mean_CCP', ax=ax1, legend=True)
+    ax1.set_title('MEAN')
+    gdf.plot(column='std_CCP', ax=ax2, legend=True)
+    ax2.set_title('STD')
+    
+    plt.savefig(os.path.join(out_dir, 'mean_and_std_CCP.png'), dpi=300)
+
+    return
+
+def plot_confusion_matrix(clf, out_X_df, out_y_df, out_dir):
+    """Plots the confusion matrix based on all data points.
+
+    Args:
+        clf (classifier): classifier used.
+        out_X_df (dataframe): dataframe with all observations.
+        out_y_df (dataframe): dataframe with all predictions.
+        out_dir (str): path to output folder.
+    """    
+
+    fig, ax = plt.subplots(1, 1, figsize=(20, 10))
+
+    metrics.plot_confusion_matrix(clf, out_X_df.to_numpy(), out_y_df.y_test.to_list(), ax=ax)
+
+    plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'), dpi=300)
+
+    return
     

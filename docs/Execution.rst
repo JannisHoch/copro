@@ -5,7 +5,7 @@ To be able to run the model, the conda environment has to be activated first.
 
 .. code-block:: console
 
-    $ conda activate conflict_model
+    $ conda activate copro
 
 Example notebook
 -----------------
@@ -15,7 +15,7 @@ They can all be run and converted to htmls by executing the provided shell-scrip
 
 .. code-block:: console
 
-    $ cd path/to/conflict_model/example
+    $ cd path/to/copro/example
     $ sh run.sh
 
 It is of course also possible to execute the notebook cell by cell using jupyter notebook.
@@ -28,7 +28,7 @@ All data and settings are retrieved from the settings-file which needs to be pro
 
 .. code-block:: console
 
-    $ cd path/to/conflict_model/scripts
-    $ python runner.py path/to/conflict_model/data/run_setting.cfg
+    $ cd path/to/copro/scripts
+    $ python runner.py ../example/example_settings.cfg
 
 By default, output is stored to the output directory specified in the settings-file. 
