@@ -6,36 +6,51 @@ import os, sys
 from sklearn import metrics
 from conflict_model import evaluation
 
-def plot_active_polys(conflict_gdf, polygon_gdf, config, out_dir, **kwargs):
-    """Creates a (1,2)-subplot showing a) selected conflicts and all polygons, and b) selected conflicts and selected polygons.
+def selected_polygons(polygon_gdf, **kwargs):
+    """Creates a plotting instance of the boundaries of all selected polygons.
+
+    Args:
+        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+
+    Kwargs:
+        Geopandas-supported keyword arguments.
+
+    Returns:
+        ax: Matplotlib axis object.   
+    """    
+
+    ax = polygon_gdf.boundary.plot(**kwargs)
+
+    return ax
+
+def selected_conflicts(conflict_gdf, **kwargs):
+    """Creates a plotting instance of the best casualties estimates of the selected conflicts.
 
     Args:
         conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
-        extent_gdf (geo-dataframe): geo-dataframe containing all polygons.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        out_dir (str): path to output folder
-    """    
 
-    fig, ax = plt.subplots(1, 1, **kwargs)
-    fig.suptitle('conflict distribution; # conflicts {}; threshold casualties {}; type of violence {}'.format(len(conflict_gdf), config.get('conflict', 'min_nr_casualties'), config.get('conflict', 'type_of_violence')))
+    Kwargs:
+        Geopandas-supported keyword arguments.
 
-    conflict_gdf.plot(ax=ax, c='r', column='best', cmap='magma', 
-                      vmin=int(config.get('conflict', 'min_nr_casualties')), vmax=conflict_gdf.best.mean(), 
-                      legend=True, 
-                      legend_kwds={'label': "# casualties",})
-    polygon_gdf.boundary.plot(ax=ax)
-                            
-    plt.savefig(os.path.join(out_dir, 'selected_conflicts_and_polygons.png'), dpi=300)
+    Returns:
+        ax: Matplotlib axis object.   
+    """       
 
-    return
+    ax = conflict_gdf.plot(column='best', **kwargs)
 
-def plot_metrics_distribution(out_dict, out_dir, **kwargs):
+    return ax
+
+def metrics_distribution(out_dict, **kwargs):
     """Plots the value distribution of a range of evaluation metrics based on all model simulations.
 
     Args:
         out_dict (dict): dictionary containing metrics score for various metrics and all simulation.
-        out_dir (str): path to output folder.
+
+    Kwargs:
+        Matplotlib-supported keyword arguments.
+
+    Returns:
+        ax: Matplotlib axis object.    
     """    
 
     fig, ax = plt.subplots(1, 1, **kwargs)
@@ -45,73 +60,28 @@ def plot_metrics_distribution(out_dict, out_dir, **kwargs):
     sbs.distplot(out_dict['Recall'], ax=ax, color="b", label='Recall')
     plt.legend()
 
-    plt.savefig(os.path.join(out_dir, 'metrics_distribution.png'), dpi=300)
+    return ax
 
-    return
-
-def plot_nr_and_dist_pred(df, gdf, polygon_gdf, out_dir, **kwargs):
-    """Plots the number of number of predictions made per unique polygon, and the overall value distribution.
-
-    Args:
-        df (dataframe): containing model evaluation per unique polygon.
-        gdf (geo-dataframe): containing model evaluation per unique polygon.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        out_dir (str): path to output folder.
-        suffix (str, optional): suffix that can be used to discriminate between different analyses. Defaults to ''.
-    """    
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, **kwargs)
-
-    gdf.plot(ax=ax1, column='ID_count', legend=True, cmap='cool')
-    polygon_gdf.boundary.plot(ax=ax1, color='0.5')
-    ax1.set_title('number of predictions made per polygon')
-    sbs.distplot(df.ID_count.values, ax=ax2)
-    ax2.set_title('distribution of predictions')
-
-    plt.savefig(os.path.join(out_dir, 'analyis_predictions.png'), dpi=300)
-
-    return
-
-def plot_predictiveness(gdf, polygon_gdf, out_dir):
-    """Creates (1,3)-subplot showing per polygon the chance of correct prediction, the number of conflicts, and the chance of correct conflict prediction.
-
-    Args:
-        gdf (geo-dataframe): containing model evaluation per unique polygon.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        out_dir (str): path to output folder.
-        suffix (str, optional): suffix that can be used to discriminate between different analyses. Defaults to ''.
-    """   
-
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 10))
-    gdf.plot(ax=ax1, column='chance_correct_pred', legend=True, 
-                 legend_kwds={'label': "chance correct prediction", 'orientation': "horizontal"})
-    polygon_gdf.boundary.plot(ax=ax1, color='0.5')
-    gdf.plot(ax=ax2, column='nr_test_confl', legend=True, cmap='Reds', 
-                 legend_kwds={'label': "nr of conflicts per polygon", 'orientation': "horizontal"})
-    polygon_gdf.boundary.plot(ax=ax2, color='0.5')
-    gdf.plot(ax=ax3, column='chance_correct_confl_pred', legend=True, cmap='Blues', 
-                 legend_kwds={'label': "chance correct conflict prediction", 'orientation': "horizontal"})
-    polygon_gdf.boundary.plot(ax=ax3, color='0.5')
-
-    plt.savefig(os.path.join(out_dir, 'model_predictivness.png'), dpi=300)
-
-    return
-
-def plot_correlation_matrix(df, out_dir):
+def correlation_matrix(df, **kwargs):
     """Plots the correlation matrix of a dataframe.
 
     Args:
         df (dataframe): dataframe containing columns to be correlated.
-        out_dir (str): path to output folder
+
+    Kwargs:
+        Seaborn-supported keyword arguments.
+
+    Returns:
+        ax: Matplotlib axis object.    
     """    
 
-    df_corr = evaluation.correlation_matrix(df)
+    df_corr = evaluation.calc_correlation_matrix(df)
 
-    fig, (ax1) = plt.subplots(1, 1, figsize=(20, 10))
-    sbs.heatmap(df_corr, cmap='YlGnBu', annot=True, cbar=False, ax=ax1)
-    plt.savefig(os.path.join(out_dir, 'correlation_matrix.png'), dpi=300)
+    ax = sbs.heatmap(df_corr, **kwargs)
+    
+    return ax
 
-def plot_categories(gdf, out_dir, category='sub', mode='median'):
+def polygon_categorization(gdf, category='sub', method='median', **kwargs):
     """Plots the categorization of polygons based on chance of correct prediction and number of conflicts.
 
     Main categories are:
@@ -127,15 +97,20 @@ def plot_categories(gdf, out_dir, category='sub', mode='median'):
     Args:
         gdf (geo-dataframe): containing model evaluation per unique polygon.
         out_dir (str): path to output folder
-        mode (str, optional): Statistical mode used to determine categorization threshold. Defaults to 'median'.
+        method (str, optional): Statistical method used to determine categorization threshold. Defaults to 'median'.
+
+    Kwargs:
+        Matplotlib-supported keyword arguments.
+
+    Returns:
+        ax: Matplotlib axis object.        
     """    
 
-    gdf = evaluation.categorize_polys(gdf, category, mode)
+    gdf = evaluation.categorize_polys(gdf, category, method)
 
-    fig, ax = plt.subplots(1, 1, figsize=(20, 10))
-    gdf.plot(column='category', categorical=True, legend=True, ax=ax, cmap='copper')
+    ax = gdf.plot(column='category', **kwargs)
 
-    plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300)
+    return ax
 
 def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwargs):
     """Plots the ROC-curve per model simulation to a pre-initiated matplotlib-instance.
@@ -190,44 +165,24 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
 
     ax.legend(loc="lower right")
 
-    return
-
-def plot_kFold_polygon_analysis(y_df, global_df, out_dir, **kwargs):
-    """Determines the mean and standard deviation of correct chance of prediction (CCP) per polygon.
+def factor_importance(clf, config, out_dir, **kwargs):
+    """Plots the relative importance of each factor as bar plot. Note, this works only for RFClassifier as ML-model!
 
     Args:
-        y_df (dataframe): output dataframe containing results of all simulations.
-        global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        out_dir (str): path to output folder.
+        clf (classifier): sklearn-classifier used in the simulation.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        out_dir (str): path to output folder. If None, output is not saved.
+
+    Kwargs:
+        Matplotlib-supported keyword arguments.
+
+    Returns:
+        ax: Matplotlib axis object.
     """    
 
-    gdf = evaluation.calc_kFold_polygon_analysis(y_df, global_df, out_dir)
+    df = evaluation.get_feature_importance(clf, config, out_dir=None)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, **kwargs)
-    gdf.plot(column='mean_CCP', ax=ax1, legend=True)
-    ax1.set_title('MEAN')
-    gdf.plot(column='std_CCP', ax=ax2, legend=True)
-    ax2.set_title('STD')
-    
-    plt.savefig(os.path.join(out_dir, 'mean_and_std_CCP.png'), dpi=300)
+    ax = df.plot.bar(**kwargs)
 
-    return
-
-def plot_confusion_matrix(clf, out_X_df, out_y_df, out_dir):
-    """Plots the confusion matrix based on all data points.
-
-    Args:
-        clf (classifier): classifier used.
-        out_X_df (dataframe): dataframe with all observations.
-        out_y_df (dataframe): dataframe with all predictions.
-        out_dir (str): path to output folder.
-    """    
-
-    fig, ax = plt.subplots(1, 1, figsize=(20, 10))
-
-    metrics.plot_confusion_matrix(clf, out_X_df.to_numpy(), out_y_df.y_test.to_list(), ax=ax)
-
-    plt.savefig(os.path.join(out_dir, 'confusion_matrix.png'), dpi=300)
-
-    return
+    return ax
     

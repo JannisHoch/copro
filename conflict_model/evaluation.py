@@ -281,14 +281,14 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
 
     return gdf
 
-def get_feature_importance(clf, out_dir, config):
+def get_feature_importance(clf, config, out_dir):
     """Determines relative importance of each feature (i.e. variable) used. Must be used after model/classifier is fit.
     Returns dataframe and saves it to csv too.
 
     Args:
         clf (classifier): sklearn-classifier used in the simulation.
-        out_dir (str): path to output folder. If None, output is not saved.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        out_dir (str): path to output folder. If None, output is not saved.
 
     Raises:
         Warning: raised if unsupported classifier is used.
@@ -309,6 +309,7 @@ def get_feature_importance(clf, out_dir, config):
 
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
 
-    df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
+    if out_dir != None:
+        df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
 
     return df
