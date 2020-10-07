@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import pandas as pd
-from conflict_model import utils
+from copro import utils
 
 def test_create_artificial_Y():
 

@@ -2,7 +2,7 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 import os, sys
-from conflict_model import utils
+from copro import utils
 
 def filter_conflict_properties(gdf, config):
     """Filters conflict database according to certain conflict properties such as number of casualties, type of violence or country.

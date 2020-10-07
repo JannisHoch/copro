@@ -4,7 +4,7 @@ import seaborn as sbs
 import numpy as np
 import os, sys
 from sklearn import metrics
-from conflict_model import evaluation
+from copro import evaluation
 
 def selected_polygons(polygon_gdf, **kwargs):
     """Creates a plotting instance of the boundaries of all selected polygons.

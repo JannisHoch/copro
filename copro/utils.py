@@ -40,7 +40,7 @@ def show_versions():
     """Prints the version numbers by the main python-packages used.
     """ 
        
-    from conflict_model import __version__ as cm_version
+    from copro import __version__ as cm_version
     from geopandas import __version__ as gpd_version
     from pandas import __version__ as pd_version
     from numpy import __version__ as np_version
@@ -57,7 +57,7 @@ def show_versions():
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}'.format(gpd_version))
 
     print("Python version: {}".format(os_version))
-    print("conflict_model version: {}".format(cm_version))
+    print("copro version: {}".format(cm_version))
     print("geopandas version: {}".format(gpd_version))
     print("xarray version: {}".format(xr_version))
     print("rasterio version: {}".format(rio_version))

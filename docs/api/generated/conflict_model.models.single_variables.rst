@@ -1,6 +1,6 @@
 conflict\_model.models.single\_variables
 ========================================
 
-.. currentmodule:: conflict_model.models
+.. currentmodule:: copro.models
 
 .. autofunction:: single_variables

@@ -1,6 +1,6 @@
 conflict\_model.models.all\_data
 ================================
 
-.. currentmodule:: conflict_model.models
+.. currentmodule:: copro.models
 
 .. autofunction:: all_data
