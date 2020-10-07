@@ -1,7 +1,7 @@
 copro
 =========================
 
-This is the documentation website of the 'copro', a (machine learning) model for mapping environmental drivers of conflict risk.
+This is the documentation website CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
 .. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?token=BnX1oxxHRbyd1dPyXAp2&branch=dev
     :target: https://travis-ci.com/JannisHoch/conflict_model
