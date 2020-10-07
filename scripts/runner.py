@@ -25,7 +25,8 @@ def main(cfg):
     """    
 
     print('')
-    print('#### LETS GET STARTED PEOPLZ! ####' + os.linesep)
+    print('#### CONFLICT MODEL version {} ####'.format(conflict_model.__version__))
+    print('')
 
     #- parsing settings-file and getting path to output folder
     config, out_dir = conflict_model.utils.initiate_setup(cfg)
@@ -34,8 +35,11 @@ def main(cfg):
 
     #- selecting conflicts and getting area-of-interest and aggregation level
     conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = conflict_model.selection.select(config, out_dir)
-    #- plot selected conflicts and polygons
-    conflict_model.plots.plot_active_polys(conflict_gdf, extent_active_polys_gdf, config, out_dir)
+    #- plot selected polygons and conflicts
+    fig, ax = plt.subplots(1, 1)
+    conflict_model.plots.selected_polygons(extent_active_polys_gdf, figsize=(20, 10), ax=ax)
+    conflict_model.plots.selected_conflicts(conflict_gdf, ax=ax)
+    plt.savefig(os.path.join(out_dir, 'selected_polygons_and_conflicts.png'), dpi=300, bbox_inches='tight')
 
     #- create X and Y arrays by reading conflict and variable files;
     #- or by loading a pre-computed array (npy-file)
@@ -52,7 +56,7 @@ def main(cfg):
     trps, aucs, mean_fpr = conflict_model.evaluation.init_out_ROC_curve()
 
     #- create plot instance for ROC plots
-    fig, (ax1) = plt.subplots(1, 1, figsize=(20,10))
+    fig, ax1 = plt.subplots(1, 1, figsize=(20,10))
 
     #- go through all n model executions
     for n in range(config.getint('settings', 'n_runs')):
@@ -76,7 +80,7 @@ def main(cfg):
     #- plot mean ROC curve
     conflict_model.plots.plot_ROC_curve_n_mean(ax1, tprs, aucs, mean_fpr)
     #- save plot
-    plt.savefig(os.path.join(out_dir, 'ROC_curve_per_run.png'), dpi=300)
+    plt.savefig(os.path.join(out_dir, 'ROC_curve_per_run.png'), dpi=300, bbox_inches='tight')
 
     #- save output dictionary to csv-file
     conflict_model.utils.save_to_csv(out_dict, out_dir, 'out_dict')
@@ -87,25 +91,21 @@ def main(cfg):
         if config.getboolean('general', 'verbose'):
             print('average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config.getint('settings', 'n_runs'), np.mean(out_dict[key])))
 
+    df_hit, gdf_hit = conflict_model.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir=None)
+
     #- plot distribution of all evaluation metrics
-    conflict_model.plots.plot_metrics_distribution(out_dict, out_dir)
+    fig, ax = plt.subplots(1, 1)
+    conflict_model.plots.metrics_distribution(out_dict, figsize=(20, 10))
+    plt.savefig(os.path.join(out_dir, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-    #- compute average correct prediction per polygon for all data points
-    df_hit, gdf_hit = conflict_model.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir)
+    #- plot relative importance of each feature
+    fig, ax = plt.subplots(1, 1)
+    conflict_model.plots.factor_importance(clf, config, ax=ax, figsize=(20, 10))
+    plt.savefig(os.path.join(out_dir, 'factor_importance.png'), dpi=300, bbox_inches='tight')
 
-    #- compute relative importance of each feature
-    rel_importance = conflict_model.evaluation.get_feature_importance(clf, out_dir, config)
-
-    #- plot number of predictions made per polygon and overall distribution
-    conflict_model.plots.plot_nr_and_dist_pred(df_hit, gdf_hit, extent_active_polys_gdf, out_dir)
-
-    conflict_model.plots.plot_predictiveness(gdf_hit, extent_active_polys_gdf, out_dir)
-
-    conflict_model.plots.plot_kFold_polygon_analysis(out_y_df, global_df, out_dir)
-
-    conflict_model.plots.plot_categories(gdf_hit, out_dir)
-
-    conflict_model.plots.plot_confusion_matrix(clf, out_X_df, out_y_df, out_dir)
+    fig, ax = plt.subplots(1, 1)
+    conflict_model.plots.polygon_categorization(gdf_hit, ax=ax)
+    plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
     main()
