@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
-from conflict_model import conflict
+from copro import conflict
 
 def define_scaling(config):
     """Defines scaling method based on model configurations.

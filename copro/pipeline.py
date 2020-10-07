@@ -1,4 +1,4 @@
-from conflict_model import models, data, machine_learning, evaluation
+from copro import models, data, machine_learning, evaluation
 import pandas as pd
 import numpy as np
 import os, sys
