@@ -13,7 +13,7 @@ a machine-learning tool for conflict risk projections based on climate, environm
     :target: https://github.com/JannisHoch/copro/blob/dev/LICENSE
 
 .. image:: https://readthedocs.org/projects/copro/badge/?version=dev
-    :target: https://copro.readthedocs.io/en/latest/?badge=dev
+    :target: https://copro.readthedocs.io/en/dev/?badge=dev
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/copro
     :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.5-pre
