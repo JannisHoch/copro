@@ -4,7 +4,8 @@ Overview
 
 CoPro
 ----------------
-a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
+
+Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
 .. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?branch=dev
     :target: https://travis-ci.com/JannisHoch/conflict_model
@@ -27,7 +28,7 @@ a machine-learning tool for conflict risk projections based on climate, environm
 Installation
 ----------------
 
-To install the conflict model, first clone the code from GitHub. It is advised to create an individual python environment first. 
+To install copro, first clone the code from GitHub. It is advised to create an individual python environment first. 
 You can then install the model package into this environment.
 
 .. code-block:: console
@@ -76,7 +77,7 @@ By default, output is stored to the output directory specified in the settings-f
 Documentation
 ---------------
 
-Model documentation including model API can be found at http://conflict-model.rtfd.io/
+Model documentation including model API can be found at http://copro.rtfd.io/
 
 Code of conduct and Contributing
 ---------------------------------
