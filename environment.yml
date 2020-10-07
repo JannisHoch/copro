@@ -1,4 +1,4 @@
-name: conflict_model
+name: copro
 
 channels:
   - conda-forge

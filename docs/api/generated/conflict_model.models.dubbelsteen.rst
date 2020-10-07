@@ -1,6 +1,6 @@
 conflict\_model.models.dubbelsteen
 ==================================
 
-.. currentmodule:: conflict_model.models
+.. currentmodule:: copro.models
 
 .. autofunction:: dubbelsteen
