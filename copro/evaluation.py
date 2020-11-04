@@ -113,7 +113,7 @@ def polygon_model_accuracy(df, global_df, out_dir):
     Args:
         df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        out_dir (str): path to output folder. If None, output is not saved.
+        out_dir (str): path to output folder. If 'None', no output is stored.
 
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
@@ -152,7 +152,7 @@ def polygon_model_accuracy(df, global_df, out_dir):
     #- convert to geodataframe
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
-    if out_dir != None:
+    if (out_dir != None) and isinstance(out_dir, str):
         gdf_hit.to_file(os.path.join(out_dir, 'all_stats.shp'), crs='EPSG:4326')
 
     return df_hit, gdf_hit
@@ -246,7 +246,7 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
     Args:
         y_df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        out_dir (str): path to output folder. If None, output is not saved.
+        out_dir (str): path to output folder. If 'None', no output is stored.
         k (int, optional): number of chunks in which y_df will be split. Defaults to 10.
 
     Returns:
@@ -277,7 +277,7 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
 
     gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
 
-    if out_dir != None:
+    if (out_dir != None) and isinstance(out_dir, str):
         gdf.to_file(os.path.join(out_dir, 'kFold_CCP_stats.shp'), crs='EPSG:4326')
 
     return gdf
@@ -289,7 +289,7 @@ def get_feature_importance(clf, config, out_dir):
     Args:
         clf (classifier): sklearn-classifier used in the simulation.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        out_dir (str): path to output folder. If None, output is not saved.
+        out_dir (str): path to output folder. If 'None', no output is stored.
 
     Returns:
         dataframe: dataframe containing feature importance.
@@ -307,7 +307,7 @@ def get_feature_importance(clf, config, out_dir):
 
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
 
-    if out_dir != None:
+    if (out_dir != None) and isinstance(out_dir, str):
         df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
 
     return df
