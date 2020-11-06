@@ -1,3 +1,4 @@
+from test_data import create_fake_config
 import pytest
 import configparser
 import numpy as np
@@ -27,7 +28,9 @@ def test_get_poly_geometry():
 
     gdf = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
-    list_geometry = conflict.get_poly_geometry(gdf)
+    config = create_fake_config()
+
+    list_geometry = conflict.get_poly_geometry(gdf, config)
 
     assert len(gdf) == len(list_geometry)
 
