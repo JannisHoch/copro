@@ -25,15 +25,13 @@ def create_XY(config, polygon_gdf, conflict_gdf):
 
         XY = data.fill_XY(XY, config, conflict_gdf, polygon_gdf)
 
-        if config.getboolean('general', 'verbose'): 
-            print('INFO: saving XY data by default to file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy'))) + os.linesep)
-        np.save(os.path.join(config.get('general', 'input_dir'),'XY'), XY)
+        print('INFO: saving XY data by default to file {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'XY.npy'))))
+        np.save(os.path.join(config.get('general', 'output_dir'),'XY'), XY)
 
     else:
 
-        if config.getboolean('general', 'verbose'): 
-            print('INFO: loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))) + os.linesep)
-        XY = np.load(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
+        print('INFO: loading XY data from file {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), config.get('pre_calc', 'XY')))))
+        XY = np.load(os.path.join(config.get('general', 'output_dir'), config.get('pre_calc', 'XY')), allow_pickle=True)
         
     X, Y = data.split_XY_data(XY, config)    
 
@@ -97,11 +95,11 @@ def run_reference(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def run_prediction(X, scaler, clf, config):
+def run_prediction(X, scaler, config):
 
     if config.getint('general', 'model') != 1:
         raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
-    y_df = models.predictive(X, scaler, clf, config)
+    y_df = models.predictive(X, scaler, config)
 
     return y_df

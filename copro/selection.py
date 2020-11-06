@@ -18,20 +18,20 @@ def filter_conflict_properties(gdf, config):
     selection_criteria = {'best': config.getint('conflict', 'min_nr_casualties'),
                           'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(',')}
     
-    if config.getboolean('general', 'verbose'): print('filtering on conflict properties...')
+    print('INFO: filtering on conflict properties.')
     
     for key in selection_criteria:
 
         if selection_criteria[key] == '':
-            if config.getboolean('general', 'verbose'): print('...passing key', key, 'as it is empty')
+            if config.getboolean('general', 'verbose'): print('DEBUG: passing key', key, 'as it is empty')
             pass
 
         elif key == 'best':
-            if config.getboolean('general', 'verbose'): print('...filtering key', key, 'with lower value', selection_criteria[key])
+            if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
             gdf = gdf.loc[(gdf[key] >= selection_criteria[key])]
 
         else:
-            if config.getboolean('general', 'verbose'): print('...filtering key', key, 'with value(s)', selection_criteria[key])
+            if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
             gdf = gdf.loc[(gdf[key].isin(selection_criteria[key]))]
 
     return gdf
@@ -50,7 +50,7 @@ def select_period(gdf, config):
     t0 = config.getint('settings', 'y_start')
     t1 = config.getint('settings', 'y_end')
     
-    if config.getboolean('general', 'verbose'): print('focussing on period between {} and {}'.format(t0, t1))
+    if config.getboolean('general', 'verbose'): print('DEBUG: focussing on period between {} and {}'.format(t0, t1))
     
     gdf = gdf.loc[(gdf.year >= t0) & (gdf.year <= t1)]
     
@@ -71,13 +71,13 @@ def clip_to_extent(gdf, config):
     shp_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
                           config.get('extent', 'shp'))
     
-    if config.getboolean('general', 'verbose'): print('reading extent and spatial aggregation level from file {}'.format(shp_fo) + os.linesep)
+    print('INFO: reading extent and spatial aggregation level from file {}'.format(shp_fo))
     extent_gdf = gpd.read_file(shp_fo)
 
-    if config.getboolean('general', 'verbose'): print('fixing invalid geometries' + os.linesep)
+    print('INFO: fixing invalid geometries')
     extent_gdf.geometry = extent_gdf.buffer(0)
 
-    if config.getboolean('general', 'verbose'): print('clipping clipping conflict dataset to extent' + os.linesep)    
+    print('INFO: clipping clipping conflict dataset to extent')    
     gdf = gpd.clip(gdf, extent_gdf)
     
     return gdf, extent_gdf
@@ -122,10 +122,10 @@ def climate_zoning(gdf, extent_gdf, config):
         if KG_gdf.crs != 'EPSG:4326':
             KG_gdf = KG_gdf.to_crs('EPSG:4326')
 
-        if config.getboolean('general', 'verbose'): print('clipping conflicts to climate zones {}'.format(look_up_classes) + os.linesep)
+        if config.getboolean('general', 'verbose'): print('DEBUG: clipping conflicts to climate zones {}'.format(look_up_classes))
         gdf = gpd.clip(gdf, KG_gdf.buffer(0))
 
-        if config.getboolean('general', 'verbose'): print('clipping polygons to climate zones {}'.format(look_up_classes) + os.linesep)
+        if config.getboolean('general', 'verbose'): print('DEBUG: clipping polygons to climate zones {}'.format(look_up_classes))
         polygon_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
 
     elif config.get('climate', 'zones') == 'None':

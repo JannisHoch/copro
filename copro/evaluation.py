@@ -46,10 +46,6 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
         print('Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])))
         print('Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)))
         print('ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])))
-        print('')
-
-        print(metrics.classification_report(y_test, y_pred))
-        print('')
 
     eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
@@ -300,11 +296,11 @@ def get_feature_importance(clf, config, out_dir):
     if config.get('machine_learning', 'model') == 'RFClassifier':
         arr = clf.feature_importances_
     else:
-        arr = np.zeros(len(config.items('reference_data')))
+        arr = np.zeros(len(config.items('data')))
         warnings.warn('WARNING: feature importance not supported for this kind of ML model', UserWarning)
 
     dict_out = dict()
-    for key, x in zip(config.items('reference_data'), range(len(arr))):
+    for key, x in zip(config.items('data'), range(len(arr))):
         dict_out[key[0]] = arr[x]
 
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])

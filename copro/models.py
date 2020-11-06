@@ -26,7 +26,7 @@ def all_data(X, Y, config, scaler, clf, out_dir):
         f = open(os.path.join(out_dir, 'out.txt'), 'w')
         sys.stdout = f
 
-    print('### USING ALL DATA ###' + os.linesep)
+    print('INFO: using all data')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
     
@@ -68,7 +68,7 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
-    for i, key in zip(range(X_train.shape[1]), config.items('reference_data')):
+    for i, key in zip(range(X_train.shape[1]), config.items('data')):
 
         print('--- removing data for variable {} ---'.format(key[0]) + os.linesep)
 
@@ -115,7 +115,7 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
-    for i, key in zip(range(X_train.shape[1]), config.items('reference_data')):
+    for i, key in zip(range(X_train.shape[1]), config.items('data')):
 
         print('--- single variable model with variable {} ---'.format(key[0]) + os.linesep)
 
@@ -182,7 +182,7 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def predictive(X, scaler, clf, config, pickle_load=True):
+def predictive(X, scaler, config):
 
     print('INFO: scaling the data from projection period')
     X = pd.DataFrame(X)
@@ -193,18 +193,13 @@ def predictive(X, scaler, clf, config, pickle_load=True):
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
-    print('INFO: fitting the classifier with all data from reference period')
-    if config.get('pre_calc', 'XY') is '':
-        print('INFO: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy'))))
-        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy')), allow_pickle=True)
+    if os.path.isfile(config.get('pre_calc', 'clf')):
+        with open(config.get('pre_calc', 'clf'), 'rb') as f:
+            print('INFO: loading classifier from {}'.format(config.get('pre_calc', 'clf')))
+            clf = pickle.load(f)
     else:
-        print('INFO: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))))
-        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY'))), allow_pickle=True)
-    X_fit, Y_fit = data.split_XY_data(XY_fit, config)
-    X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)
-    X_ft_fit = scaler.fit_transform(X_data_fit)
-    clf.fit(X_ft_fit, Y_fit)
-    
+        raise ValueError('ERROR: no pre-computed classifier specified in cfg-file')
+        
     print('INFO: making the projection')
     y_pred = clf.predict(X_ft)
     arr = np.column_stack((X_ID, X_geom, y_pred))
