@@ -105,7 +105,7 @@ def fill_out_df(out_df, y_df):
 
     return out_df
 
-def polygon_model_accuracy(df, global_df, out_dir):
+def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     """Determines a range of model accuracy values for each polygon.
     Reduces dataframe with results from each simulation to values per unique polygon identifier.
     Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and conflict-only data.
@@ -128,20 +128,22 @@ def polygon_model_accuracy(df, global_df, out_dir):
     #- remove column ID
     ID_count = ID_count.drop('ID', axis=1)
 
+    df_count = pd.DataFrame()
+    
     #- per polygon ID, compute sum of overall correct predictions and rename column name
-    hit_count = df.correct_pred.groupby(df.ID).sum().to_frame()
+    if not make_proj: df_count['correct_pred'] = df.correct_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    hit_count['nr_test_confl'] = df.y_test.groupby(df.ID).sum()
+    if not make_proj: df_count['nr_test_confl'] = df.y_test.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    hit_count['nr_pred_confl'] = df.y_pred.groupby(df.ID).sum()
+    df_count['nr_pred_confl'] = df.y_pred.groupby(df.ID).sum()
 
     #- merge the two dataframes with ID as key
-    df_temp = pd.merge(ID_count, hit_count, on='ID')
+    df_temp = pd.merge(ID_count, df_count, on='ID')
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['chance_correct_pred'] = df_temp.correct_pred / df_temp.ID_count
+    if not make_proj: df_temp['chance_correct_pred'] = df_temp.correct_pred / df_temp.ID_count
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
     df_temp['chance_correct_confl_pred'] = df_temp.nr_pred_confl / df_temp.ID_count
@@ -298,11 +300,11 @@ def get_feature_importance(clf, config, out_dir):
     if config.get('machine_learning', 'model') == 'RFClassifier':
         arr = clf.feature_importances_
     else:
-        arr = np.zeros(len(config.items('env_vars')))
+        arr = np.zeros(len(config.items('reference_data')))
         warnings.warn('WARNING: feature importance not supported for this kind of ML model', UserWarning)
 
     dict_out = dict()
-    for key, x in zip(config.items('env_vars'), range(len(arr))):
+    for key, x in zip(config.items('reference_data'), range(len(arr))):
         dict_out[key[0]] = arr[x]
 
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])

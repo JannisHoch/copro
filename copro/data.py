@@ -20,7 +20,7 @@ def initiate_XY_data(config):
     XY = {}
     XY['poly_ID'] = pd.Series()
     XY['poly_geometry'] = pd.Series()
-    for key in config.items('env_vars'):
+    for key in config.items('reference_data'):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=int)
 
@@ -28,7 +28,22 @@ def initiate_XY_data(config):
 
     return XY
 
-def fill_XY(XY, config, conflict_gdf, polygon_gdf):
+def initiate_X_data(config):
+
+    if not config.getboolean('settings', 'make_proj'):
+        raise ValueError('ERROR: this function should only be called for reading projection data')
+    
+    X = {}
+    X['poly_ID'] = pd.Series()
+    X['poly_geometry'] = pd.Series()
+    for key in config.items('projection_data'):
+        X[str(key[0])] = pd.Series(dtype=float)
+
+    if config.getboolean('general', 'verbose'): print('{}'.format(X) + os.linesep)
+
+    return X
+
+def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
     """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -46,10 +61,13 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf):
         array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """    
 
-    if config.getboolean('general', 'verbose'): print('reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')) + os.linesep)
+    if config.getboolean('general', 'verbose'): 
+        if make_proj: print('INFO: making a projection')
+        else: print('INFO: reference run')
+        print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')) + os.linesep)
 
     # go through all simulation years as specified in config-file
-    for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1):
+    for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1):
 
         if config.getboolean('general', 'verbose'): print(os.linesep + 'entering year {}'.format(sim_year) + os.linesep)
 
@@ -78,8 +96,11 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf):
                 XY[key] = data_series
 
             else:
-            
-                nc_ds = xr.open_dataset(os.path.join(config.get('general', 'input_dir'), config.get('env_vars', key)))
+
+                if config.getboolean('settings', 'make_proj'):
+                    nc_ds = xr.open_dataset(os.path.join(config.get('general', 'input_dir'), config.get('projection_data', key)))
+                else:
+                    nc_ds = xr.open_dataset(os.path.join(config.get('general', 'input_dir'), config.get('reference_data', key)))
                 
                 if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                     data_series = value
@@ -112,10 +133,10 @@ def split_XY_data(XY, config):
     """    
 
     XY = pd.DataFrame(XY)
-    if config.getboolean('general', 'verbose'): print('number of data points including missing values:', len(XY))
+    if config.getboolean('general', 'verbose'): print('INFO: number of data points including missing values:', len(XY))
 
     XY = XY.dropna()
-    if config.getboolean('general', 'verbose'): print('number of data points excluding missing values:', len(XY))
+    if config.getboolean('general', 'verbose'): print('INFO: number of data points excluding missing values:', len(XY))
 
     XY = XY.to_numpy()
     X = XY[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values

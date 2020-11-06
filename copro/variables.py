@@ -36,7 +36,7 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
     """   
     # get path to netCDF-file.
     nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                         config.get('env_vars', var_name))
+                         config.get('reference_data', var_name))
 
     if config.getboolean('general', 'verbose'): print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
@@ -91,7 +91,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
     """   
     # get path to netCDF-file.
     nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                         config.get('env_vars', var_name))
+                         config.get('reference_data', var_name))
     
     if config.getboolean('general', 'verbose'): print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 

@@ -1,4 +1,5 @@
 import os
+import pickle
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -105,7 +106,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
 
     return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
-def fit_predict(X_train, y_train, X_test, clf):
+def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
     """Fits the classifier based on training-data and makes predictions.
     Additionally, the prediction probability is determined.
 
@@ -120,6 +121,11 @@ def fit_predict(X_train, y_train, X_test, clf):
     """    
 
     clf.fit(X_train, y_train)
+
+    if pickle_dump:
+        print('INFO: dumping the fitted classifier to {}'.format(os.path.join(config.get('general', 'output_dir'), 'clf.pkl')) + os.linesep)
+        with open(os.path.join(config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
+            pickle.dump(clf, f)
 
     y_pred = clf.predict(X_test)
 
