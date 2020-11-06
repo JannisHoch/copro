@@ -1,4 +1,4 @@
-from copro import machine_learning, conflict, utils, evaluation
+from copro import machine_learning, conflict, utils, evaluation, data
 import pandas as pd
 import numpy as np
 import pickle
@@ -184,26 +184,30 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
 def predictive(X, scaler, clf, config, pickle_load=True):
 
+    print('INFO: scaling the data from projection period')
     X = pd.DataFrame(X)
-    if config.getboolean('general', 'verbose'): print('INFO: number of data points including missing values:', len(X))
-
+    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
     X = X.dropna()
-    if config.getboolean('general', 'verbose'): print('INFO: number of data points excluding missing values:', len(X))
-
+    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X.to_numpy())
-
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
-    if pickle_load:
-        print('INFO: loading the fitted classifier from {}'.format(os.path.join(config.get('general', 'output_dir'), 'clf.pkl')) + os.linesep)
-        with open(os.path.join(config.get('general', 'output_dir'), 'clf.pkl'), 'rb') as f:
-            clf = pickle.load(f)
-
+    print('INFO: fitting the classifier with all data from reference period')
+    if config.get('pre_calc', 'XY') is '':
+        print('INFO: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy'))))
+        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy')), allow_pickle=True)
+    else:
+        print('INFO: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY')))))
+        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY'))), allow_pickle=True)
+    X_fit, Y_fit = data.split_XY_data(XY_fit, config)
+    X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)
+    X_ft_fit = scaler.fit_transform(X_data_fit)
+    clf.fit(X_ft_fit, Y_fit)
+    
+    print('INFO: making the projection')
     y_pred = clf.predict(X_ft)
-
     arr = np.column_stack((X_ID, X_geom, y_pred))
-
     y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])
 
     return y_df

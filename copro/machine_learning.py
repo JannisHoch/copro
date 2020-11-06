@@ -122,10 +122,10 @@ def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
 
     clf.fit(X_train, y_train)
 
-    if pickle_dump:
-        print('INFO: dumping the fitted classifier to {}'.format(os.path.join(config.get('general', 'output_dir'), 'clf.pkl')) + os.linesep)
-        with open(os.path.join(config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
-            pickle.dump(clf, f)
+    # if pickle_dump:
+    #     print('INFO: dumping the fitted classifier to {}'.format(os.path.join(config.get('general', 'output_dir'), 'clf.pkl')) + os.linesep)
+    #     with open(os.path.join(config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
+    #         pickle.dump(clf, f)
 
     y_pred = clf.predict(X_test)
 
