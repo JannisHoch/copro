@@ -67,7 +67,7 @@ Additionally, the cfg-file included in the GitHub-repository already contains th
 
     The code2class-file should not be altered except if another shp-file is provided containing undocumented climate classes.
 
-**[env_vars]**
+**[reference_data]**
 
 In this section, all variables to be used in the model need to be provided. The main convention is that the name of the file agrees with the variable name in the file. Only netCDF-files with annual data are supported.
 
