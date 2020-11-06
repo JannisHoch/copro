@@ -62,12 +62,20 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
     """    
 
     if config.getboolean('general', 'verbose'): 
-        if make_proj: print('INFO: making a projection')
-        else: print('INFO: reference run')
-        print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')) + os.linesep)
+        if make_proj: 
+            print('INFO: making a projection')
+            print('INFO: reading data for period from', str(config.getint('settings', 'y_start_pred')), 'to', str(config.getint('settings', 'y_end_pred')))
+        else: 
+            print('INFO: reference run')
+            print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
 
     # go through all simulation years as specified in config-file
-    for sim_year in np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1):
+    if make_proj: 
+        model_period = np.arange(config.getint('settings', 'y_start_pred'), config.getint('settings', 'y_end_pred') + 1, 1)
+    else:
+        model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+
+    for sim_year in model_period:
 
         if config.getboolean('general', 'verbose'): print(os.linesep + 'entering year {}'.format(sim_year) + os.linesep)
 
@@ -117,7 +125,7 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
                 else:
                     raise Warning('this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-    if config.getboolean('general', 'verbose'): print('...reading data DONE' + os.linesep)
+    if config.getboolean('general', 'verbose'): print('\nDEBUG: ...reading data DONE' + os.linesep)
     
     return pd.DataFrame.from_dict(XY).to_numpy()
 
@@ -133,10 +141,10 @@ def split_XY_data(XY, config):
     """    
 
     XY = pd.DataFrame(XY)
-    if config.getboolean('general', 'verbose'): print('INFO: number of data points including missing values:', len(XY))
+    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values:', len(XY))
 
     XY = XY.dropna()
-    if config.getboolean('general', 'verbose'): print('INFO: number of data points excluding missing values:', len(XY))
+    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values:', len(XY))
 
     XY = XY.to_numpy()
     X = XY[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
@@ -145,6 +153,6 @@ def split_XY_data(XY, config):
 
     if config.getboolean('general', 'verbose'): 
         fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
-        print('from this, {0} points are equal to 1, i.e. represent conflict occurence. This is a fraction of {1} percent.'.format(len(np.where(Y != 0)[0]), round(fraction_Y_1, 2)))
+        print('DEBUG: a fraction of {} percent in the data corresponds to conflicts.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
