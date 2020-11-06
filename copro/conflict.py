@@ -80,7 +80,7 @@ def get_poly_ID(extent_gdf):
         
     return list_ID
 
-def get_poly_geometry(extent_gdf): 
+def get_poly_geometry(extent_gdf, config): 
     """Extracts geometry information for each polygon from geodataframe and saves to list. The geometry column in geodataframe must be named 'geometry'.
 
     Args:
@@ -93,7 +93,7 @@ def get_poly_geometry(extent_gdf):
         list: list containing the geometry information extracted from geo-dataframe for each polygon used in the model.
     """    
     
-    print('listing the geometry of all geographical units')
+    if config.getboolean('general', 'verbose'): print('DEBUG: getting the geometry of all geographical units')
 
     # initiatie empty list
     list_geometry = []

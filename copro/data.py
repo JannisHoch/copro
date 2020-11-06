@@ -20,7 +20,7 @@ def initiate_XY_data(config):
     XY = {}
     XY['poly_ID'] = pd.Series()
     XY['poly_geometry'] = pd.Series()
-    for key in config.items('reference_data'):
+    for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=int)
 
@@ -29,14 +29,11 @@ def initiate_XY_data(config):
     return XY
 
 def initiate_X_data(config):
-
-    if not config.getboolean('settings', 'make_proj'):
-        raise ValueError('ERROR: this function should only be called for reading projection data')
     
     X = {}
     X['poly_ID'] = pd.Series()
     X['poly_geometry'] = pd.Series()
-    for key in config.items('projection_data'):
+    for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
 
     if config.getboolean('general', 'verbose'): print('{}'.format(X) + os.linesep)
@@ -61,23 +58,13 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
         array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """    
 
-    if config.getboolean('general', 'verbose'): 
-        if make_proj: 
-            print('INFO: making a projection')
-            print('INFO: reading data for period from', str(config.getint('settings', 'y_start_pred')), 'to', str(config.getint('settings', 'y_end_pred')))
-        else: 
-            print('INFO: reference run')
-            print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
+    print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
 
     # go through all simulation years as specified in config-file
-    if make_proj: 
-        model_period = np.arange(config.getint('settings', 'y_start_pred'), config.getint('settings', 'y_end_pred') + 1, 1)
-    else:
-        model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
-
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
     for sim_year in model_period:
 
-        if config.getboolean('general', 'verbose'): print(os.linesep + 'entering year {}'.format(sim_year) + os.linesep)
+        print('INFO: entering year {}'.format(sim_year))
 
         # go through all keys in dictionary
         for key, value in XY.items(): 
@@ -99,16 +86,13 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
             elif key == 'poly_geometry':
             
                 data_series = value
-                data_list = conflict.get_poly_geometry(polygon_gdf)
+                data_list = conflict.get_poly_geometry(polygon_gdf, config)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
             else:
 
-                if config.getboolean('settings', 'make_proj'):
-                    nc_ds = xr.open_dataset(os.path.join(config.get('general', 'input_dir'), config.get('projection_data', key)))
-                else:
-                    nc_ds = xr.open_dataset(os.path.join(config.get('general', 'input_dir'), config.get('reference_data', key)))
+                nc_ds = xr.open_dataset(os.path.join(config.get('general', 'input_dir'), config.get('data', key)))
                 
                 if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                     data_series = value
@@ -125,7 +109,7 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
                 else:
                     raise Warning('this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-    if config.getboolean('general', 'verbose'): print('\nDEBUG: ...reading data DONE' + os.linesep)
+    print('INFO: all data read')
     
     return pd.DataFrame.from_dict(XY).to_numpy()
 

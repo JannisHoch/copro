@@ -26,10 +26,10 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
                                config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
-    if config.getboolean('general', 'verbose'): print('reading csv file to dataframe {}'.format(conflict_fo) + os.linesep)
+    print('INFO: reading csv file to dataframe {}'.format(conflict_fo))
     df = pd.read_csv(conflict_fo)
 
-    if config.getboolean('general', 'verbose'): print('translating to geopandas dataframe' + os.linesep)
+    if config.getboolean('general', 'verbose'): print('DEBUG: translating to geopandas dataframe')
     gdf = gpd.GeoDataFrame(df,
                           geometry=gpd.points_from_xy(df[longitude], df[latitude]),
                           crs=crs)
@@ -97,7 +97,7 @@ def make_output_dir(config):
     out_dir = os.path.abspath(config.get('general','output_dir'))
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
-    print('saving output to folder {}'.format(out_dir))
+    print('INFO: saving output to folder {}'.format(out_dir))
 
     return out_dir
     
@@ -117,8 +117,7 @@ def download_PRIO(config):
 
     filename = os.path.join(path, 'ged201-csv.zip')
 
-    print('')
-    print('no conflict file was specified, hence downloading data from {} to {}'.format(url, filename) + os.linesep)
+    print('INFO: no conflict file was specified, hence downloading data from {} to {}'.format(url, filename))
 
     urllib.request.urlretrieve(url, filename)
 
@@ -154,7 +153,7 @@ def initiate_setup(settings_file):
 
     if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
         config.set('settings', 'n_runs', str(1))
-        print('changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
+        print('INFOL changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
 
     return config, out_dir
 

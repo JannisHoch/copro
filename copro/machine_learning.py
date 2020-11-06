@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
-from copro import conflict
+from copro import conflict, data
 
 def define_scaling(config):
     """Defines scaling method based on model configurations.
@@ -30,7 +30,7 @@ def define_scaling(config):
     else:
         raise ValueError('no supported scaling-algorithm selected - choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer')
 
-    if config.getboolean('general', 'verbose'): print('chosen scaling method is {}'.format(scaler))
+    if config.getboolean('general', 'verbose'): print('DEBUG: chosen scaling method is {}'.format(scaler))
 
     return scaler
 
@@ -56,7 +56,7 @@ def define_model(config):
     else:
         raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
 
-    if config.getboolean('general', 'verbose'): print('chosen ML model is {}'.format(clf))
+    if config.getboolean('general', 'verbose'): print('DEBUG: chosen ML model is {}'.format(clf))
 
     return clf
 
@@ -82,14 +82,14 @@ def split_scale_train_test_split(X, Y, config, scaler):
     ##- separate arrays for geomety and variable values
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
-    if config.getboolean('general', 'verbose'): print('fitting and transforming X' + os.linesep)
+    if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
     ##- combining geometry and scaled variable values
     X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
-    if config.getboolean('general', 'verbose'): print('splitting both X and Y in train and test data' + os.linesep)
+    if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
     ##- splitting in train and test samples
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
                                                                         Y,
@@ -122,13 +122,31 @@ def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
 
     clf.fit(X_train, y_train)
 
-    # if pickle_dump:
-    #     print('INFO: dumping the fitted classifier to {}'.format(os.path.join(config.get('general', 'output_dir'), 'clf.pkl')) + os.linesep)
-    #     with open(os.path.join(config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
-    #         pickle.dump(clf, f)
-
     y_pred = clf.predict(X_test)
 
     y_prob = clf.predict_proba(X_test)
 
     return y_pred, y_prob
+
+def pickle_clf(scaler, clf, config):
+
+    print('INFO: fitting the classifier with all data from reference period')
+
+    if config.get('pre_calc', 'XY') is '':
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'XY.npy'))))
+        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy')), allow_pickle=True)
+    else:
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), config.get('pre_calc', 'XY')))))
+        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY'))), allow_pickle=True)
+
+    X_fit, Y_fit = data.split_XY_data(XY_fit, config)
+    X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)
+    X_ft_fit = scaler.fit_transform(X_data_fit)
+
+    clf.fit(X_ft_fit, Y_fit)
+
+    print('INFO: dumping classifier to {}'.format(os.path.join(config.get('general', 'output_dir'), 'clf.pkl')))
+    with open(os.path.join(config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
+        pickle.dump(clf, f) 
+
+    return clf
