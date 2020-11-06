@@ -1,10 +1,18 @@
-from test_data import create_fake_config
 import pytest
 import configparser
 import numpy as np
 import pandas as pd
 import geopandas as gpd
 from copro import conflict
+
+def create_fake_config():
+
+    config = configparser.ConfigParser()
+
+    config.add_section('general')
+    config.set('general', 'verbose', str(False))
+
+    return config
 
 def test_split_conflict_geom_data():
     #TODO: would like to do this with actual geometry information, but np.equal() does not like this...
