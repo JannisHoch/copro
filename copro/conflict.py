@@ -10,7 +10,7 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
     Args:
         conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data)
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
-        config (config): parsed configuration settings of run
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         sim_year (int): year for which data is extracted
 
     Raises:
@@ -85,6 +85,7 @@ def get_poly_geometry(extent_gdf, config):
 
     Args:
         extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons with geometry information.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Raises:
         AssertionError: error raised if length of output list does not match length of input geo-dataframe.
