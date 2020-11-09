@@ -134,10 +134,10 @@ def pickle_clf(scaler, clf, config):
 
     if config.get('pre_calc', 'XY') is '':
         if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'XY.npy'))))
-        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), 'XY.npy')), allow_pickle=True)
+        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'XY.npy')), allow_pickle=True)
     else:
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), config.get('pre_calc', 'XY')))))
-        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'input_dir'), config.get('pre_calc', 'XY'))), allow_pickle=True)
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.abspath(config.get('pre_calc', 'XY'))))
+        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'output_dir'), config.get('pre_calc', 'XY'))), allow_pickle=True)
 
     X_fit, Y_fit = data.split_XY_data(XY_fit, config)
     X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)

@@ -7,6 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os, sys
 
+import warnings
+warnings.filterwarnings("ignore")
+
 def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
     By default, the mean value of all cells within a polygon is computed.
