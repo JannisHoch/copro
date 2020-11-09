@@ -8,6 +8,7 @@ from configparser import RawConfigParser
 from shutil import copyfile
 from sklearn import utils
 from datetime import date
+import click
 import copro
 
 def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
@@ -135,12 +136,12 @@ def download_PRIO(config):
 
 def print_model_info():
 
-    print('')
-    print('#### CoPro version {} ####'.format(copro.__version__))
-    print('#### For information about the model, please visit https://copro.readthedocs.io/ ####')
-    print('#### Copyright ({}): {} ####'.format(date.today().year, copro.__author__))
-    print('#### Contact via: {} ####'.format(copro.__email__))
-    print('#### The model can be used and shared under the MIT license ####' + os.linesep)
+    click.echo('')
+    click.echo(click.style('#### CoPro version {} ####'.format(copro.__version__), fg='yellow'))
+    click.echo(click.style('#### For information about the model, please visit https://copro.readthedocs.io/ ####', fg='yellow'))
+    click.echo(click.style('#### Copyright ({}): {} ####'.format(date.today().year, copro.__author__), fg='yellow'))
+    click.echo(click.style('#### Contact via: {} ####'.format(copro.__email__), fg='yellow'))
+    click.echo(click.style('#### The model can be used and shared under the MIT license ####' + os.linesep, fg='yellow'))
 
     return
 

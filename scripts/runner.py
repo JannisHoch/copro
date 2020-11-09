@@ -15,8 +15,9 @@ def cli():
 
 @click.command()
 @click.argument('cfg', type=click.Path())
+@click.option('--projection-settings', '-proj', help='path to cfg-file with settings for a projection run', multiple=True, type=click.Path())
 
-def main(cfg):   
+def main(cfg, projection_settings=[]):   
     """Main command line script to execute the model. All settings are read from cfg-file.
 
     Args:
@@ -27,6 +28,8 @@ def main(cfg):
     config, out_dir = copro.utils.initiate_setup(cfg)
 
     if config.getboolean('general', 'verbose'): warnings.filterwarnings("default")
+
+    click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting conflicts and getting area-of-interest and aggregation level
     conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config, out_dir)
@@ -96,18 +99,36 @@ def main(cfg):
     copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
     plt.savefig(os.path.join(out_dir, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-    #- plot relative importance of each feature
-    fig, ax = plt.subplots(1, 1)
-    copro.plots.factor_importance(clf, config, ax=ax, figsize=(20, 10))
-    plt.savefig(os.path.join(out_dir, 'factor_importance.png'), dpi=300, bbox_inches='tight')
-
     fig, ax = plt.subplots(1, 1)
     copro.plots.polygon_categorization(gdf_hit, ax=ax)
     plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300, bbox_inches='tight')
 
-    copro.machine_learning.pickle_clf(scaler, clf, config)
+    clf = copro.machine_learning.pickle_clf(scaler, clf, config)
+    #- plot relative importance of each feature based on ALL data points
+    fig, ax = plt.subplots(1, 1)
+    copro.plots.factor_importance(clf, config, ax=ax, figsize=(20, 10))
+    plt.savefig(os.path.join(out_dir, 'factor_importance.png'), dpi=300, bbox_inches='tight')
 
-    click.echo('INFO: model run succesfully finished')
+    click.echo('INFO: reference run succesfully finished')
+
+    if projection_settings is not []:
+
+        for proj in projection_settings:
+
+            click.echo(click.style('\nINFO: projection run started, based on {}'.format(os.path.abspath(proj)), fg='cyan'))
+
+            config, out_dir = copro.utils.initiate_setup(proj)
+
+            X = copro.pipeline.create_X(config, extent_active_polys_gdf)
+
+            y_df = copro.pipeline.run_prediction(X, scaler, config)
+
+            df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(y_df, global_df, out_dir=out_dir, make_proj=True)
+
+            fig, ax = plt.subplots(1, 1, figsize=(20, 10))
+            gdf_hit.plot(column='chance_correct_confl_pred', legend=True, ax=ax, cmap='Blues', vmin=0, vmax=1,
+                legend_kwds={'label': "chance of conflict", 'orientation': "vertical"})
+            extent_active_polys_gdf.boundary.plot(ax=ax, color='0.5')
 
 if __name__ == '__main__':
     main()
