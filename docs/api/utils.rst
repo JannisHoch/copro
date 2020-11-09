@@ -7,6 +7,7 @@ Auxiliary functions
    :toctree: generated/
    :nosignatures:
 
+   utils.print_model_info
    utils.get_geodataframe
    utils.show_versions
    utils.parse_settings

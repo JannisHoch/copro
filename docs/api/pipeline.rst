@@ -9,4 +9,5 @@ The model pipeline
 
    pipeline.create_XY
    pipeline.prepare_ML
-   pipeline.run
+   pipeline.run_reference
+   pipeline.run_prediction
