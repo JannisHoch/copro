@@ -16,16 +16,22 @@ def cli():
 @click.command()
 @click.argument('cfg', type=click.Path())
 @click.option('--projection-settings', '-proj', help='path to cfg-file with settings for a projection run', multiple=True, type=click.Path())
+@click.option('--verbose', '-v', help='command line switch to turn on verbose mode', is_flag=True)
 
-def main(cfg, projection_settings=[]):   
+
+def main(cfg, projection_settings=[], verbose=False):   
     """Main command line script to execute the model. All settings are read from cfg-file.
 
     Args:
         CFG (str): (relative) path to cfg-file
-    """    
+    """ 
+  
 
     #- parsing settings-file and getting path to output folder
     config, out_dir = copro.utils.initiate_setup(cfg)
+
+    if verbose:
+        config.set('general', 'verbose', str(verbose))
 
     if config.getboolean('general', 'verbose'): warnings.filterwarnings("default")
 
