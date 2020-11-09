@@ -7,6 +7,8 @@ import zipfile
 from configparser import RawConfigParser
 from shutil import copyfile
 from sklearn import utils
+from datetime import date
+import copro
 
 def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
     """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe.
@@ -131,6 +133,17 @@ def download_PRIO(config):
 
     return
 
+def print_model_info():
+
+    print('')
+    print('#### CoPro version {} ####'.format(copro.__version__))
+    print('#### For information about the model, please visit https://copro.readthedocs.io/ ####')
+    print('#### Copyright ({}): {} ####'.format(date.today().year, copro.__author__))
+    print('#### Contact via: {} ####'.format(copro.__email__))
+    print('#### The model can be used and shared under the MIT license ####' + os.linesep)
+
+    return
+
 def initiate_setup(settings_file):
     """Initiates the model set-up. It parses the cfg-file, creates an output folder, copies the cfg-file to the output folder, and, if specified, downloads conflict data.
 
@@ -140,9 +153,13 @@ def initiate_setup(settings_file):
     Returns:
         ConfigParser-object: parsed model configuration.
         out_dir: path to output folder
-    """    
+    """  
+
+    print_model_info() 
 
     config = parse_settings(settings_file)
+
+    print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
     out_dir = make_output_dir(config)
 
