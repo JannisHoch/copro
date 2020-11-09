@@ -20,6 +20,7 @@ They can all be run and converted to htmls by executing the provided shell-scrip
 
 It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 
+.. _clickscript:
 Runner script
 ----------------
 
