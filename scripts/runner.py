@@ -7,8 +7,7 @@ import os, sys
 import matplotlib.pyplot as plt
 
 import warnings
-warnings.filterwarnings("module")
-
+warnings.filterwarnings("ignore")
 
 @click.group()
 def cli():
@@ -16,22 +15,29 @@ def cli():
 
 @click.command()
 @click.argument('cfg', type=click.Path())
+@click.option('--projection-settings', '-proj', help='path to cfg-file with settings for a projection run', multiple=True, type=click.Path())
+@click.option('--verbose', '-v', help='command line switch to turn on verbose mode', is_flag=True)
 
-def main(cfg):   
-    """Main command line script to execute the model. All settings are read from cfg-file.
+def main(cfg, projection_settings=[], verbose=False):   
+    """Main command line script to execute the model. 
+    All settings are read from cfg-file.
+    One cfg-file is required argument to train, test, and evaluate the model.
+    Additional cfg-files can be provided as optional arguments, whereby each file corresponds to one projection to be made.
 
     Args:
         CFG (str): (relative) path to cfg-file
-    """    
-
-    print('')
-    print('#### CONFLICT MODEL version {} ####'.format(copro.__version__))
-    print('')
+    """ 
+  
 
     #- parsing settings-file and getting path to output folder
     config, out_dir = copro.utils.initiate_setup(cfg)
 
-    print('verbose mode on: {}'.format(config.getboolean('general', 'verbose')) + os.linesep)
+    if verbose:
+        config.set('general', 'verbose', str(verbose))
+
+    if config.getboolean('general', 'verbose'): warnings.filterwarnings("default")
+
+    click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting conflicts and getting area-of-interest and aggregation level
     conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config, out_dir)
@@ -43,7 +49,7 @@ def main(cfg):
 
     #- create X and Y arrays by reading conflict and variable files;
     #- or by loading a pre-computed array (npy-file)
-    X, Y = copro.pipeline.create_XY(config, conflict_gdf, extent_active_polys_gdf)
+    X, Y = copro.pipeline.create_XY(config, extent_active_polys_gdf, conflict_gdf)
 
     #- defining scaling and model algorithms
     scaler, clf = copro.pipeline.prepare_ML(config)
@@ -61,11 +67,10 @@ def main(cfg):
     #- go through all n model executions
     for n in range(config.getint('settings', 'n_runs')):
         
-        if config.getboolean('general', 'verbose'):
-            print('run {} of {}'.format(n+1, config.getint('settings', 'n_runs')) + os.linesep)
+        click.echo('INFO: run {} of {}'.format(n+1, config.getint('settings', 'n_runs')))
 
         #- run machine learning model and return outputs
-        X_df, y_df, eval_dict = copro.pipeline.run(X, Y, config, scaler, clf, out_dir)
+        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config, scaler, clf, out_dir)
         
         #- append per model execution
         #TODO: put all this into one function
@@ -89,7 +94,7 @@ def main(cfg):
     #- print mean values of all evaluation metrics
     for key in out_dict:
         if config.getboolean('general', 'verbose'):
-            print('average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config.getint('settings', 'n_runs'), np.mean(out_dict[key])))
+            click.echo('DEBUG: average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config.getint('settings', 'n_runs'), np.mean(out_dict[key])))
 
     # create accuracy values per polygon and save to output folder
     df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir)
@@ -102,14 +107,31 @@ def main(cfg):
     copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
     plt.savefig(os.path.join(out_dir, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-    #- plot relative importance of each feature
+    fig, ax = plt.subplots(1, 1)
+    copro.plots.polygon_categorization(gdf_hit, ax=ax)
+    plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300, bbox_inches='tight')
+
+    clf = copro.machine_learning.pickle_clf(scaler, clf, config)
+    #- plot relative importance of each feature based on ALL data points
     fig, ax = plt.subplots(1, 1)
     copro.plots.factor_importance(clf, config, ax=ax, figsize=(20, 10))
     plt.savefig(os.path.join(out_dir, 'factor_importance.png'), dpi=300, bbox_inches='tight')
 
-    fig, ax = plt.subplots(1, 1)
-    copro.plots.polygon_categorization(gdf_hit, ax=ax)
-    plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300, bbox_inches='tight')
+    click.echo('INFO: reference run succesfully finished')
+
+    if projection_settings is not []:
+
+        for proj in projection_settings:
+
+            click.echo(click.style('\nINFO: projection run started, based on {}'.format(os.path.abspath(proj)), fg='cyan'))
+
+            config, out_dir = copro.utils.initiate_setup(proj)
+
+            X = copro.pipeline.create_X(config, extent_active_polys_gdf)
+
+            y_df = copro.pipeline.run_prediction(X, scaler, config)
+
+            df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(y_df, global_df, out_dir=out_dir, make_proj=True)
 
 if __name__ == '__main__':
     main()

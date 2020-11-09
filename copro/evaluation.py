@@ -1,5 +1,5 @@
 import os, sys
-import warnings
+import click
 from sklearn import metrics
 import pandas as pd
 import geopandas as gpd
@@ -25,6 +25,7 @@ def init_out_dict():
 def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
     """Computes a range of model evaluation metrics and appends the resulting scores to a dictionary.
     This is done for each model execution separately.
+    Output will be stored to stderr if possible.
 
     Args:
         y_test (list): list containing test-sample conflict data.
@@ -39,17 +40,13 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
     """  
 
     if config.getboolean('general', 'verbose'):
-        print("Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)))
-        print("Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)))
-        print("Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)))
-        print('F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)))
-        print('Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])))
-        print('Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)))
-        print('ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])))
-        print('')
-
-        print(metrics.classification_report(y_test, y_pred))
-        print('')
+        click.echo("... Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)), err=True)
+        click.echo("... Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)), err=True)
+        click.echo("... Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)), err=True)
+        click.echo('... F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)), err=True)
+        click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
+        click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
+        click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
 
     eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
@@ -105,7 +102,7 @@ def fill_out_df(out_df, y_df):
 
     return out_df
 
-def polygon_model_accuracy(df, global_df, out_dir):
+def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     """Determines a range of model accuracy values for each polygon.
     Reduces dataframe with results from each simulation to values per unique polygon identifier.
     Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and conflict-only data.
@@ -114,6 +111,7 @@ def polygon_model_accuracy(df, global_df, out_dir):
         df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
         out_dir (str): path to output folder. If 'None', no output is stored.
+        make_proj (bool, optional): whether or not this function is used to make a projection. If False, a couple of calculations are skipped. Defaults to 'False'.
 
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
@@ -128,20 +126,22 @@ def polygon_model_accuracy(df, global_df, out_dir):
     #- remove column ID
     ID_count = ID_count.drop('ID', axis=1)
 
+    df_count = pd.DataFrame()
+    
     #- per polygon ID, compute sum of overall correct predictions and rename column name
-    hit_count = df.correct_pred.groupby(df.ID).sum().to_frame()
+    if not make_proj: df_count['correct_pred'] = df.correct_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    hit_count['nr_test_confl'] = df.y_test.groupby(df.ID).sum()
+    if not make_proj: df_count['nr_test_confl'] = df.y_test.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    hit_count['nr_pred_confl'] = df.y_pred.groupby(df.ID).sum()
+    df_count['nr_pred_confl'] = df.y_pred.groupby(df.ID).sum()
 
     #- merge the two dataframes with ID as key
-    df_temp = pd.merge(ID_count, hit_count, on='ID')
+    df_temp = pd.merge(ID_count, df_count, on='ID')
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['chance_correct_pred'] = df_temp.correct_pred / df_temp.ID_count
+    if not make_proj: df_temp['chance_correct_pred'] = df_temp.correct_pred / df_temp.ID_count
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
     df_temp['chance_correct_confl_pred'] = df_temp.nr_pred_confl / df_temp.ID_count
@@ -298,11 +298,11 @@ def get_feature_importance(clf, config, out_dir):
     if config.get('machine_learning', 'model') == 'RFClassifier':
         arr = clf.feature_importances_
     else:
-        arr = np.zeros(len(config.items('env_vars')))
-        warnings.warn('WARNING: feature importance not supported for this kind of ML model', UserWarning)
+        arr = np.zeros(len(config.items('data')))
+        raise Warning('WARNING: feature importance not supported for this kind of ML model')
 
     dict_out = dict()
-    for key, x in zip(config.items('env_vars'), range(len(arr))):
+    for key, x in zip(config.items('data'), range(len(arr))):
         dict_out[key[0]] = arr[x]
 
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])

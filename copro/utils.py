@@ -7,6 +7,9 @@ import zipfile
 from configparser import RawConfigParser
 from shutil import copyfile
 from sklearn import utils
+from datetime import date
+import click
+import copro
 
 def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
     """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe.
@@ -26,10 +29,10 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
                                config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
-    if config.getboolean('general', 'verbose'): print('reading csv file to dataframe {}'.format(conflict_fo) + os.linesep)
+    print('INFO: reading csv file to dataframe {}'.format(conflict_fo))
     df = pd.read_csv(conflict_fo)
 
-    if config.getboolean('general', 'verbose'): print('translating to geopandas dataframe' + os.linesep)
+    if config.getboolean('general', 'verbose'): print('DEBUG: translating to geopandas dataframe')
     gdf = gpd.GeoDataFrame(df,
                           geometry=gpd.points_from_xy(df[longitude], df[latitude]),
                           crs=crs)
@@ -97,7 +100,7 @@ def make_output_dir(config):
     out_dir = os.path.abspath(config.get('general','output_dir'))
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
-    print('saving output to folder {}'.format(out_dir))
+    print('INFO: saving output to folder {}'.format(out_dir))
 
     return out_dir
     
@@ -117,8 +120,7 @@ def download_PRIO(config):
 
     filename = os.path.join(path, 'ged201-csv.zip')
 
-    print('')
-    print('no conflict file was specified, hence downloading data from {} to {}'.format(url, filename) + os.linesep)
+    print('INFO: no conflict file was specified, hence downloading data from {} to {}'.format(url, filename))
 
     urllib.request.urlretrieve(url, filename)
 
@@ -132,6 +134,19 @@ def download_PRIO(config):
 
     return
 
+def print_model_info():
+    """Prints a header with main model information.
+    """    
+
+    click.echo('')
+    click.echo(click.style('#### CoPro version {} ####'.format(copro.__version__), fg='yellow'))
+    click.echo(click.style('#### For information about the model, please visit https://copro.readthedocs.io/ ####', fg='yellow'))
+    click.echo(click.style('#### Copyright ({}): {} ####'.format(date.today().year, copro.__author__), fg='yellow'))
+    click.echo(click.style('#### Contact via: {} ####'.format(copro.__email__), fg='yellow'))
+    click.echo(click.style('#### The model can be used and shared under the MIT license ####' + os.linesep, fg='yellow'))
+
+    return
+
 def initiate_setup(settings_file):
     """Initiates the model set-up. It parses the cfg-file, creates an output folder, copies the cfg-file to the output folder, and, if specified, downloads conflict data.
 
@@ -141,9 +156,13 @@ def initiate_setup(settings_file):
     Returns:
         ConfigParser-object: parsed model configuration.
         out_dir: path to output folder
-    """    
+    """  
+
+    print_model_info() 
 
     config = parse_settings(settings_file)
+
+    print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
     out_dir = make_output_dir(config)
 
@@ -154,7 +173,7 @@ def initiate_setup(settings_file):
 
     if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
         config.set('settings', 'n_runs', str(1))
-        print('changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
+        print('INFOL changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
 
     return config, out_dir
 
