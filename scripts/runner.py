@@ -18,9 +18,11 @@ def cli():
 @click.option('--projection-settings', '-proj', help='path to cfg-file with settings for a projection run', multiple=True, type=click.Path())
 @click.option('--verbose', '-v', help='command line switch to turn on verbose mode', is_flag=True)
 
-
 def main(cfg, projection_settings=[], verbose=False):   
-    """Main command line script to execute the model. All settings are read from cfg-file.
+    """Main command line script to execute the model. 
+    All settings are read from cfg-file.
+    One cfg-file is required argument to train, test, and evaluate the model.
+    Additional cfg-files can be provided as optional arguments, whereby each file corresponds to one projection to be made.
 
     Args:
         CFG (str): (relative) path to cfg-file
@@ -130,11 +132,6 @@ def main(cfg, projection_settings=[], verbose=False):
             y_df = copro.pipeline.run_prediction(X, scaler, config)
 
             df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(y_df, global_df, out_dir=out_dir, make_proj=True)
-
-            fig, ax = plt.subplots(1, 1, figsize=(20, 10))
-            gdf_hit.plot(column='chance_correct_confl_pred', legend=True, ax=ax, cmap='Blues', vmin=0, vmax=1,
-                legend_kwds={'label': "chance of conflict", 'orientation': "vertical"})
-            extent_active_polys_gdf.boundary.plot(ax=ax, color='0.5')
 
 if __name__ == '__main__':
     main()
