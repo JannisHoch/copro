@@ -129,6 +129,17 @@ def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
     return y_pred, y_prob
 
 def pickle_clf(scaler, clf, config):
+    """(Re)fits a classifier with all available data and pickles it.
+    Can then be used to make projections in conjuction with projected values.
+
+    Args:
+        scaler (scaler): the specified scaling method instance.
+        clf (classifier): the specified model instance.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+
+    Returns:
+        classifier: classifier fitted with all available data.
+    """    
 
     print('INFO: fitting the classifier with all data from reference period')
 

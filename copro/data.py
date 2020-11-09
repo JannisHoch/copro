@@ -8,13 +8,13 @@ import os, sys
 def initiate_XY_data(config):
     """Initiates an empty dictionary to contain the XY-data for each polygon. 
     By default, the first column is for the polygon ID, the second for polygon geometry, and the last for binary conflict data (i.e. the Y-data).
-    Every column in between corresponds to the variables providing in the cfg-file (i.e. the X-data).
+    Every column in between corresponds to the variables provided in the cfg-file (i.e. the X-data).
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        dict: emtpy dictionary containing the variable values (X) and binary conflict data (Y) plus meta-data.
+        dict: emtpy dictionary to be filled, containing keys for each variable (X), binary conflict data (Y) plus meta-data.
     """
 
     XY = {}
@@ -29,6 +29,16 @@ def initiate_XY_data(config):
     return XY
 
 def initiate_X_data(config):
+    """Initiates an empty dictionary to contain the X-data for each polygon. 
+    By default, the first column is for the polygon ID and the second for polygon geometry.
+    All remaining columns correspond to the variables provided in the cfg-file (i.e. the X-data).
+
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+
+    Returns:
+        dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
+    """    
     
     X = {}
     X['poly_ID'] = pd.Series()
@@ -40,7 +50,7 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
+def fill_XY(XY, config, conflict_gdf, polygon_gdf):
     """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -107,7 +117,7 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf, make_proj=False):
                     XY[key] = data_series
                     
                 else:
-                    raise Warning('this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
     print('INFO: all data read')
     
@@ -118,7 +128,8 @@ def split_XY_data(XY, config):
     Thereby, the X-array also contains the information about unique identifier and polygon geometry.
 
     Args:
-        XY (array): array containing variable values and conflict data
+        XY (array): array containing variable values and conflict data.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
         arrays: two separate arrays, the X-array and Y-array

@@ -143,9 +143,11 @@ def climate_zoning(gdf, extent_gdf, config):
 
 def select(config, out_dir):
     """Main function performing the selection steps.
+    Also stores the selected conflicts and polygons to output directory.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        out_dir (str): path to output folder.
 
     Returns:
         geo-dataframe: remaining conflict data after selection process.

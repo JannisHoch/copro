@@ -135,6 +135,8 @@ def download_PRIO(config):
     return
 
 def print_model_info():
+    """Prints a header with main model information.
+    """    
 
     click.echo('')
     click.echo(click.style('#### CoPro version {} ####'.format(copro.__version__), fg='yellow'))

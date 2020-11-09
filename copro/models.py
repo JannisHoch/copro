@@ -57,6 +57,9 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
         scaler (scaler): the specified scaling method instance.
         clf (classifier): the specified model instance.
         out_dir (str): path to output folder.
+
+    Raises:
+        DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
 
     if not config.getboolean('general', 'verbose'):
@@ -64,13 +67,13 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
         f = open(os.path.join(out_dir, 'out.txt'), 'w')
         sys.stdout = f
 
-    print('### LEAVE ONE OUT MODEL ###' + os.linesep)
+    raise DeprecationWarning('WARNING: the leave-one-out model will be most likely be deprecated in near future')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
     for i, key in zip(range(X_train.shape[1]), config.items('data')):
 
-        print('--- removing data for variable {} ---'.format(key[0]) + os.linesep)
+        print('INFO: removing data for variable {}'.format(key[0]))
 
         X_train_loo = np.delete(X_train, i, axis=1)
         X_test_loo = np.delete(X_test, i, axis=1)
@@ -89,7 +92,7 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
         sys.stdout = orig_stdout
         f.close()
     
-    sys.exit('With LEAVE-ONE-OUT model, execution stops here.')
+    sys.exit('INFO: leave-one-out model execution stops here.')
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
     """Model workflow when the model is based on only one single variable. Output is limited to the metric scores. 
@@ -104,6 +107,9 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
         scaler (scaler): the specified scaling method instance.
         clf (classifier): the specified model instance.
         out_dir (str): path to output folder.
+
+    Raises:
+        DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
 
     if not config.getboolean('general', 'verbose'):
@@ -111,13 +117,13 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
         f = open(os.path.join(out_dir, 'out.txt'), 'w')
         sys.stdout = f
 
-    print('### SINGLE VARIABLE MODEL ###' + os.linesep)
+    raise DeprecationWarning('WARNING: the single-variable model will be most likely be deprecated in near future')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
     for i, key in zip(range(X_train.shape[1]), config.items('data')):
 
-        print('--- single variable model with variable {} ---'.format(key[0]) + os.linesep)
+        print('INFO: single-variable model with variable {}'.format(key[0]))
 
         X_train_svmod = X_train[:, i].reshape(-1, 1)
         X_test_svmod = X_test[:, i].reshape(-1, 1)
@@ -136,7 +142,7 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
         sys.stdout = orig_stdout
         f.close()
 
-    sys.exit('With SINGLE VARIABLE model, execution stops here.')
+    sys.exit('INFO: single-variable model execution stops here.')
 
 def dubbelsteen(X, Y, config, scaler, clf, out_dir):
     """Model workflow when the relation between variables and conflict is based on randomness.
@@ -162,7 +168,7 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
         f = open(os.path.join(out_dir, 'out.txt'), 'w')
         sys.stdout = f
 
-    print('### DUBBELSTEENMODEL ###' + os.linesep)
+    print('INFO: dubbelsteenmodel running')
 
     Y = utils.create_artificial_Y(Y)
 
@@ -183,6 +189,20 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
     return X_df, y_df, eval_dict
 
 def predictive(X, scaler, config):
+    """Predictive model to use the already fitted classifier to make projections.
+    As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
+
+    Args:
+        X (array): array containing the variable values plus unique identifer and geometry information.
+        scaler (scaler): the specified scaling method instance.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+
+    Raises:
+        ValueError: raised if path to pickled classifier is incorrect.
+
+    Returns:
+        datatrame: containing model output on polygon-basis.
+    """    
 
     print('INFO: scaling the data from projection period')
     X = pd.DataFrame(X)

@@ -25,6 +25,7 @@ def init_out_dict():
 def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
     """Computes a range of model evaluation metrics and appends the resulting scores to a dictionary.
     This is done for each model execution separately.
+    Output will be stored to stderr if possible.
 
     Args:
         y_test (list): list containing test-sample conflict data.
@@ -110,6 +111,7 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
         df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
         out_dir (str): path to output folder. If 'None', no output is stored.
+        make_proj (bool, optional): whether or not this function is used to make a projection. If False, a couple of calculations are skipped. Defaults to 'False'.
 
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
