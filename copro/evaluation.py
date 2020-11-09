@@ -1,5 +1,5 @@
 import os, sys
-import warnings
+import click
 from sklearn import metrics
 import pandas as pd
 import geopandas as gpd
@@ -39,13 +39,13 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
     """  
 
     if config.getboolean('general', 'verbose'):
-        print("Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)))
-        print("Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)))
-        print("Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)))
-        print('F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)))
-        print('Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])))
-        print('Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)))
-        print('ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])))
+        click.echo("... Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)), err=True)
+        click.echo("... Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)), err=True)
+        click.echo("... Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)), err=True)
+        click.echo('... F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)), err=True)
+        click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
+        click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
+        click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
 
     eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
@@ -297,7 +297,7 @@ def get_feature_importance(clf, config, out_dir):
         arr = clf.feature_importances_
     else:
         arr = np.zeros(len(config.items('data')))
-        warnings.warn('WARNING: feature importance not supported for this kind of ML model', UserWarning)
+        raise Warning('WARNING: feature importance not supported for this kind of ML model')
 
     dict_out = dict()
     for key, x in zip(config.items('data'), range(len(arr))):
