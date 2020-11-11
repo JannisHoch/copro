@@ -28,7 +28,6 @@ def main(cfg, projection_settings=[], verbose=False):
         CFG (str): (relative) path to cfg-file
     """ 
   
-
     #- parsing settings-file and getting path to output folder
     config, out_dir = copro.utils.initiate_setup(cfg)
 
@@ -64,6 +63,7 @@ def main(cfg, projection_settings=[], verbose=False):
     #- create plot instance for ROC plots
     fig, ax1 = plt.subplots(1, 1, figsize=(20,10))
 
+    click.echo('INFO: training and testing machine learning model')
     #- go through all n model executions
     for n in range(config.getint('settings', 'n_runs')):
         
