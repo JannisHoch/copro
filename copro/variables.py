@@ -65,6 +65,8 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
         list_out.append(zonal_stats[0][stat_func])
 
+    if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
+
     return list_out
 
 def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
@@ -125,5 +127,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
         prov = extent_gdf.iloc[i]
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
         list_out.append(zonal_stats[0][stat_func])
+
+    if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
 
     return list_out

@@ -41,7 +41,7 @@ def create_X(config, polygon_gdf, conflict_gdf=None):
 
     X = data.initiate_X_data(config)
 
-    X = data.fill_XY(X, config, conflict_gdf, polygon_gdf, make_proj=True)
+    X = data.fill_XY(X, config, conflict_gdf, polygon_gdf)
 
     return X
 
