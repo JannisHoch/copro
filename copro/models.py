@@ -20,12 +20,6 @@ def all_data(X, Y, config, scaler, clf, out_dir):
         datatrame: containing model output on polygon-basis.
         dict: dictionary containing evaluation metrics per simulation.
     """    
-
-    if not config.getboolean('general', 'verbose'):
-        orig_stdout = sys.stdout
-        f = open(os.path.join(out_dir, 'out.txt'), 'w')
-        sys.stdout = f
-
     print('INFO: using all data')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
@@ -37,10 +31,6 @@ def all_data(X, Y, config, scaler, clf, out_dir):
     y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     X_df = pd.DataFrame(X_test)
-
-    if not config.getboolean('general', 'verbose'):
-        sys.stdout = orig_stdout
-        f.close() 
 
     return X_df, y_df, eval_dict
 
@@ -61,11 +51,6 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
     Raises:
         DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
-
-    if not config.getboolean('general', 'verbose'):
-        orig_stdout = sys.stdout
-        f = open(os.path.join(out_dir, 'out.txt'), 'w')
-        sys.stdout = f
 
     raise DeprecationWarning('WARNING: the leave-one-out model will be most likely be deprecated in near future')
 
@@ -88,10 +73,6 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
         utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
     
-    if not config.getboolean('general', 'verbose'):
-        sys.stdout = orig_stdout
-        f.close()
-    
     sys.exit('INFO: leave-one-out model execution stops here.')
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
@@ -111,11 +92,6 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
     Raises:
         DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
-
-    if not config.getboolean('general', 'verbose'):
-        orig_stdout = sys.stdout
-        f = open(os.path.join(out_dir, 'out.txt'), 'w')
-        sys.stdout = f
 
     raise DeprecationWarning('WARNING: the single-variable model will be most likely be deprecated in near future')
 
@@ -138,10 +114,6 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
         utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
 
-    if not config.getboolean('general', 'verbose'):
-        sys.stdout = orig_stdout
-        f.close()
-
     sys.exit('INFO: single-variable model execution stops here.')
 
 def dubbelsteen(X, Y, config, scaler, clf, out_dir):
@@ -161,12 +133,7 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
         dataframe: containing the test-data X-array values.
         datatrame: containing model output on polygon-basis.
         dict: dictionary containing evaluation metrics per simulation.
-    """    
-
-    if not config.getboolean('general', 'verbose'):
-        orig_stdout = sys.stdout
-        f = open(os.path.join(out_dir, 'out.txt'), 'w')
-        sys.stdout = f
+    """   
 
     print('INFO: dubbelsteenmodel running')
 
@@ -181,10 +148,6 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
     y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     X_df = pd.DataFrame(X_test)
-    
-    if not config.getboolean('general', 'verbose'):
-        sys.stdout = orig_stdout
-        f.close()
 
     return X_df, y_df, eval_dict
 
