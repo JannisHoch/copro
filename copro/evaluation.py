@@ -141,10 +141,10 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     df_temp = pd.merge(ID_count, df_count, on='ID')
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.correct_pred / df_temp.ID_count
+    if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.nr_correct_predictions / df_temp.nr_predictions
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['fraction_correct_conflict_predictions'] = df_temp.nr_predicted_conflicts / df_temp.ID_count
+    df_temp['fraction_correct_conflict_predictions'] = df_temp.nr_predicted_conflicts / df_temp.nr_predictions
 
     #- merge with global dataframe containing IDs and geometry, and keep only those polygons occuring in test sample
     df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
@@ -213,29 +213,29 @@ def categorize_polys(gdf_hit, category='sub', mode='median'):
     """    
 
     if mode == 'median':
-        average_hit_median = gdf_hit.chance_correct_pred.median()
-        nr_confl_median = gdf_hit.nr_test_confl.median()
+        average_hit_median = gdf_hit.fraction_correct_predictions.median()
+        nr_confl_median = gdf_hit.nr_observed_conflicts.median()
     elif mode == 'mean':
-        average_hit_median = gdf_hit.chance_correct_pred.mean()
-        nr_confl_median = gdf_hit.nr_test_confl.mean()
+        average_hit_median = gdf_hit.fraction_correct_predictions.mean()
+        nr_confl_median = gdf_hit.nr_observed_conflicts.mean()
     else:
         raise ValueError('specified mode not supported - use either median (default) or mean')
 
     gdf_hit['category'] = ''
 
     if category == 'main':
-        gdf_hit['category'].loc[gdf_hit.chance_correct_pred >= average_hit_median] = 'H'
-        gdf_hit['category'].loc[gdf_hit.chance_correct_pred < average_hit_median] = 'L'
+        gdf_hit['category'].loc[gdf_hit.fraction_correct_predictions >= average_hit_median] = 'H'
+        gdf_hit['category'].loc[gdf_hit.fraction_correct_predictions < average_hit_median] = 'L'
 
     if category == 'sub':
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
-                            (gdf_hit.nr_test_confl >= nr_confl_median)] = 'HH'
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
-                            (gdf_hit.nr_test_confl < nr_confl_median)] = 'HL'
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
-                            (gdf_hit.nr_test_confl >= nr_confl_median)] = 'LH'
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
-                            (gdf_hit.nr_test_confl < nr_confl_median)] = 'LL'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions >= average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts >= nr_confl_median)] = 'HH'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions >= average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts < nr_confl_median)] = 'HL'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions < average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts >= nr_confl_median)] = 'LH'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions < average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts < nr_confl_median)] = 'LL'
 
     return gdf_hit
 
@@ -263,7 +263,7 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
 
         df_hit, gdf_hit = polygon_model_accuracy(ks_i, global_df, out_dir=None)
 
-        temp_df = pd.DataFrame(data=pd.concat([df_hit.chance_correct_pred], axis=1))
+        temp_df = pd.DataFrame(data=pd.concat([df_hit.fraction_correct_predictions], axis=1))
 
         df = pd.concat([df, temp_df], axis=1)
 
@@ -273,7 +273,7 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
 
     df = pd.merge(df, global_df, on='ID')
 
-    df = df.drop(columns=['chance_correct_pred'])
+    df = df.drop(columns=['fraction_correct_predictions'])
 
     gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
 
