@@ -63,6 +63,8 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
     for i in range(len(extent_gdf)):
         prov = extent_gdf.iloc[i]
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
+        if (zonal_stats[0][stat_func] == None) and (config.getboolean('general', 'verbose')): 
+            print('WARNING: NaN computed!')
         list_out.append(zonal_stats[0][stat_func])
 
     if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
@@ -126,6 +128,8 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
     for i in range(len(extent_gdf)):
         prov = extent_gdf.iloc[i]
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
+        if (zonal_stats[0][stat_func] == None) and (config.getboolean('general', 'verbose')): 
+            print('WARNING: NaN computed!')
         list_out.append(zonal_stats[0][stat_func])
 
     if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')

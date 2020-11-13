@@ -39,9 +39,19 @@ def create_XY(config, polygon_gdf, conflict_gdf):
 
 def create_X(config, polygon_gdf, conflict_gdf=None):
 
-    X = data.initiate_X_data(config)
+    if config.get('pre_calc', 'XY') is '':
 
-    X = data.fill_XY(X, config, conflict_gdf, polygon_gdf)
+        X = data.initiate_X_data(config)
+
+        X = data.fill_XY(X, config, conflict_gdf, polygon_gdf)
+
+        print('INFO: saving X data by default to file {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'X.npy'))))
+        np.save(os.path.join(config.get('general', 'output_dir'),'X'), X)
+
+    else:
+
+        print('INFO: loading XY data from file {}'.format(os.path.abspath(config.get('pre_calc', 'X'))))
+        X = np.load(os.path.abspath(config.get('pre_calc', 'X')), allow_pickle=True)
 
     return X
 
