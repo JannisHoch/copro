@@ -118,7 +118,7 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     """    
 
     #- create a dataframe containing the number of occurence per ID
-    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'ID_count'})
+    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'nr_predictions'})
     #- add column containing the IDs
     ID_count['ID'] = ID_count.index.values
     #- set index with index named ID now
@@ -129,22 +129,22 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     df_count = pd.DataFrame()
     
     #- per polygon ID, compute sum of overall correct predictions and rename column name
-    if not make_proj: df_count['correct_pred'] = df.correct_pred.groupby(df.ID).sum()
+    if not make_proj: df_count['nr_correct_predictions'] = df.correct_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    if not make_proj: df_count['nr_test_confl'] = df.y_test.groupby(df.ID).sum()
+    if not make_proj: df_count['nr_observed_conflicts'] = df.y_test.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    df_count['nr_pred_confl'] = df.y_pred.groupby(df.ID).sum()
+    df_count['nr_predicted_conflicts'] = df.y_pred.groupby(df.ID).sum()
 
     #- merge the two dataframes with ID as key
     df_temp = pd.merge(ID_count, df_count, on='ID')
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    if not make_proj: df_temp['chance_correct_pred'] = df_temp.correct_pred / df_temp.ID_count
+    if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.correct_pred / df_temp.ID_count
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['chance_correct_confl_pred'] = df_temp.nr_pred_confl / df_temp.ID_count
+    df_temp['fraction_correct_conflict_predictions'] = df_temp.nr_predicted_conflicts / df_temp.ID_count
 
     #- merge with global dataframe containing IDs and geometry, and keep only those polygons occuring in test sample
     df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
