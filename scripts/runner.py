@@ -34,8 +34,6 @@ def main(cfg, projection_settings=[], verbose=False):
     if verbose:
         config.set('general', 'verbose', str(verbose))
 
-    if config.getboolean('general', 'verbose'): warnings.filterwarnings("default")
-
     click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting conflicts and getting area-of-interest and aggregation level
