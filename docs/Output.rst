@@ -30,6 +30,8 @@ During model execution, data is sampled per polygon and time step.
 This data contains the geometry and ID of each polygon as well as unscaled variable values (X) and a boolean identifier whether conflict took place or not (Y).
 If the model is re-run without making changes to the data and how it is sampled, the resulting XY-array is stored to ``XY.npy``. This file can be loaded again with ``np.load()``.
 
+If making projections, the Y-part is not available. The remaining X-data is still written to a file ``X.npy``.
+
 .. note:: 
 
     Note that ``np.load()`` returns an array. This can be further processed with e.g. pandas.
@@ -45,15 +47,21 @@ Per model run, a fraction of the total XY-data is used to make a prediction.
 To be able to analyse model output, all predictions (stored as pandas dataframes) made per run are appended to a main output-dataframe.
 This dataframe is, actually, the basis of all futher analyes.
 When storing to file, this can become a rather large file. 
-Therefore, the dataframe is converted to npy-file (``out_y_df.npy``). This file can be loaded again with ``np.load()``.
+Therefore, the dataframe is converted to npy-file (``raw_output_data.npy``). This file can be loaded again with ``np.load()``.
 
 .. note:: 
 
     Note that ``np.load()`` returns an array. This can be further processed with e.g. pandas.
 
-Prediction metrics
+Evaluation metrics
 -----------------------
-Per model run, a range of metrics are computed to evalute the predictions made. They are all appended to a dictionary and saved to the file ``out_dict.csv``.
+Per model run, a range of metrics are computed to evalute the predictions made. 
+They are all appended to a dictionary and saved to the file ``evaluation_metrics.csv``.
+
+ROC-AUC
+--------
+To be able to determine the mean of the ROC-AUC score plus its standard deviation, the required data is stored to csv-files.
+``ROC_data_tprs.csv`` contains the false positive rates per evaluation, and ``ROC_data_aucs.csv`` the area-under-curve values per run. 
 
 Model prediction per polygon
 ---------------------------
@@ -66,6 +74,13 @@ Three main output metrics are calculated per polygon:
 2. The total number of conflicts in the test  (*NOC*);
 3. The chance of conflict (*COC*), defined as the ration of number of conflict predictions to overall number of predictions made.
 
+all data
+^^^^^^^^^
+
+All output metrics (CCP, NOC, COC) are determined based on the entire data set at the end of the run, i.e. without splitting it in chunks.
+
+The data is stored to ``output_per_polygon.shp``.
+
 k-fold analysis
 ^^^^^^^^^^^^^^^^
 The model is repeated several times to eliminate the influence of how the data is split into training and test samples.
@@ -74,14 +89,7 @@ As such, the accuracy per run and polygon will differ.
 To account for that, the resulting data set containing all predictions at the end of the run is split in k chunks. 
 Subsequently, the mean, median, and standard deviation of CCP is determined from the k chunks.
 
-The resulting shp-file is named ``kFold_CCP_stats.shp``.
-
-all data
-^^^^^^^^^
-
-All output metrics (CCP, NOC, COC) are determined based on the entire data set at the end of the run, i.e. without splitting it in chunks.
-
-The data is stored to ``all_stats.shp``.
+The resulting shp-file is named ``output_kFoldAnalysis_per_polygon.shp``.
 
 .. note::
 

@@ -47,11 +47,6 @@ Projection runs
 If also projections are computed, multiple additional cfg-files can be provided.
 For each projection, one individual cfg-file is required.
 
-.. note::
-
-    Not all sections of the cfg-file are required here anymore. Most important is a correct reference
-    to the files containing the future variable values and the fitted classifier which is saved to file from the reference run.
-
 Since the projections are based on the reference run, at least two cfg-file are needed.
 The command would then look like this:
 
@@ -59,6 +54,10 @@ The command would then look like this:
 
     $ cd path/to/copro/scripts
     $ python runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
+
+.. info::
+
+    Multiple projections can be made by specifing various cfg-files with the -proj flag.
 
 Help
 ^^^^^^^^^^^^^^^^
