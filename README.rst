@@ -68,12 +68,13 @@ To run the model from command line, a command line script is provided.
 All data and settings are retrieved from the settings-file which needs to be provided as inline argument.
 
 There are two settings-files, one for evaluating the model for the reference situation, and another one for additionally making projections.
+To make a projection, both files need to be specified with the latter requiring the -proj flag.
 
 .. code-block:: console
 
     $ cd path/to/copro/scripts
     $ python runner.py ../example/example_settings.cfg
-    $ python runner.py ../example/example_settings_proj.cfg
+    $ python runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
 
 By default, output is stored to the output directory specified in the specific settings-file. 
 
