@@ -3,7 +3,7 @@
 cff-version: "1.1.0"
 message: "If you use this software, please cite it using these metadata."
 title: CoPro
-version: "v0.0.6b"
+version: "v0.0.6b-joss"
 authors: 
   -
     affiliation: "Utrecht University"
@@ -20,7 +20,7 @@ authors:
     family-names: Wanders
     given-names: Niko
     orcid: "https://orcid.org/0000-0002-7102-5454"
-date-released: 2020-11-09
+date-released: 2020-11-17
 doi: "10.5281/zenodo.4264684"
 license: MIT
 repository-code: "https://github.com/JannisHoch/copro"
