@@ -170,7 +170,20 @@ def init_out_ROC_curve():
 
     return tprs, aucs, mean_fpr
 
-def save_out_ROC_curve():
+def save_out_ROC_curve(tprs, aucs, out_dir):
+
+    # print(tprs.shape, aucs.shape)
+    # print(len(tprs), len(aucs))
+    # out_arr = np.column_stack((tprs, aucs))
+    # print(out_arr.shape)
+
+    tprs = pd.DataFrame(tprs)
+    aucs = pd.DataFrame(aucs)
+
+    tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False)
+    aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False)
+
+    print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
 
     return
 
