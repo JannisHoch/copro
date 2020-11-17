@@ -180,8 +180,8 @@ def save_out_ROC_curve(tprs, aucs, out_dir):
     tprs = pd.DataFrame(tprs)
     aucs = pd.DataFrame(aucs)
 
-    tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False)
-    aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False)
+    tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False, header=False)
+    aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False, header=False)
 
     print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
 
