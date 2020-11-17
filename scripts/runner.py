@@ -84,6 +84,8 @@ def main(cfg, projection_settings=[], verbose=False):
     copro.plots.plot_ROC_curve_n_mean(ax1, tprs, aucs, mean_fpr)
     #- save plot
     plt.savefig(os.path.join(out_dir, 'ROC_curve_per_run.png'), dpi=300, bbox_inches='tight')
+    #- save data for plot
+    copro.evaluation.save_out_ROC_curve(tprs, aucs, out_dir)
 
     #- save output dictionary to csv-file
     copro.utils.save_to_csv(out_dict, out_dir, 'evaluation_metrics')
