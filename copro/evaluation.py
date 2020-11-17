@@ -153,7 +153,7 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
     if (out_dir != None) and isinstance(out_dir, str):
-        gdf_hit.to_file(os.path.join(out_dir, 'all_stats.shp'), crs='EPSG:4326')
+        gdf_hit.to_file(os.path.join(out_dir, 'output_per_polygon.shp'), crs='EPSG:4326')
 
     return df_hit, gdf_hit
 
@@ -169,6 +169,10 @@ def init_out_ROC_curve():
     mean_fpr = np.linspace(0, 1, 100)
 
     return tprs, aucs, mean_fpr
+
+def save_out_ROC_curve():
+
+    return
 
 def calc_correlation_matrix(df):
     """Computes the correlation matrix for a dataframe.
@@ -278,7 +282,7 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
     gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
 
     if (out_dir != None) and isinstance(out_dir, str):
-        gdf.to_file(os.path.join(out_dir, 'kFold_CCP_stats.shp'), crs='EPSG:4326')
+        gdf.to_file(os.path.join(out_dir, 'output_kFoldAnalysis_per_polygon.shp'), crs='EPSG:4326')
 
     return gdf
 
@@ -308,6 +312,6 @@ def get_feature_importance(clf, config, out_dir):
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
 
     if (out_dir != None) and isinstance(out_dir, str):
-        df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
+        df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
 
     return df
