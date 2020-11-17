@@ -98,9 +98,15 @@ def make_output_dir(config):
     """    
 
     out_dir = os.path.abspath(config.get('general','output_dir'))
+    print('INFO: saving output to folder {}'.format(out_dir))
+
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
-    print('INFO: saving output to folder {}'.format(out_dir))
+    else:
+        for root, dirs, files in os.walk(out_dir):
+            if config.getboolean('general', 'verbose'): print('DEBUG: remove files in folder {}'.format(os.path.abspath(root)))
+            for fo in files:
+                os.remove(os.path.join(root, fo))
 
     return out_dir
     
