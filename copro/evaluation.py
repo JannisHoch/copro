@@ -171,11 +171,14 @@ def init_out_ROC_curve():
     return tprs, aucs, mean_fpr
 
 def save_out_ROC_curve(tprs, aucs, out_dir):
+    """Saves data needed to plot mean ROC and standard deviation to csv-files. 
+    They can be loaded again with pandas in a post-processing step.
 
-    # print(tprs.shape, aucs.shape)
-    # print(len(tprs), len(aucs))
-    # out_arr = np.column_stack((tprs, aucs))
-    # print(out_arr.shape)
+    Args:
+        tprs (list): list with false positive rates.
+        aucs (list): list with area-under-curve values.
+        out_dir (str):  path to output folder. If 'None', no output is stored.
+    """    
 
     tprs = pd.DataFrame(tprs)
     aucs = pd.DataFrame(aucs)
