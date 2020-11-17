@@ -86,8 +86,8 @@ def main(cfg, projection_settings=[], verbose=False):
     plt.savefig(os.path.join(out_dir, 'ROC_curve_per_run.png'), dpi=300, bbox_inches='tight')
 
     #- save output dictionary to csv-file
-    copro.utils.save_to_csv(out_dict, out_dir, 'out_dict')
-    copro.utils.save_to_npy(out_y_df, out_dir, 'out_y_df')
+    copro.utils.save_to_csv(out_dict, out_dir, 'evaluation_metrics')
+    copro.utils.save_to_npy(out_y_df, out_dir, 'raw_output_data')
     
     #- print mean values of all evaluation metrics
     for key in out_dict:
@@ -105,15 +105,11 @@ def main(cfg, projection_settings=[], verbose=False):
     copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
     plt.savefig(os.path.join(out_dir, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-    fig, ax = plt.subplots(1, 1)
-    copro.plots.polygon_categorization(gdf_hit, ax=ax)
-    plt.savefig(os.path.join(out_dir, 'polygon_categorization.png'), dpi=300, bbox_inches='tight')
-
     clf = copro.machine_learning.pickle_clf(scaler, clf, config)
     #- plot relative importance of each feature based on ALL data points
     fig, ax = plt.subplots(1, 1)
     copro.plots.factor_importance(clf, config, ax=ax, figsize=(20, 10))
-    plt.savefig(os.path.join(out_dir, 'factor_importance.png'), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.join(out_dir, 'feature_importances.png'), dpi=300, bbox_inches='tight')
 
     click.echo('INFO: reference run succesfully finished')
 
