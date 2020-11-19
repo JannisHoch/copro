@@ -2,7 +2,6 @@ import os
 import pickle
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
 from copro import conflict, data
 
