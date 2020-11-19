@@ -4,7 +4,6 @@ import pandas as pd
 import geopandas as gpd
 import rasterstats as rstats
 import numpy as np
-import matplotlib.pyplot as plt
 import os, sys
 
 import warnings
