@@ -110,7 +110,7 @@ def main(cfg, projection_settings=[], verbose=False):
     clf = copro.machine_learning.pickle_clf(scaler, clf, config)
     #- plot relative importance of each feature based on ALL data points
     fig, ax = plt.subplots(1, 1)
-    copro.plots.factor_importance(clf, config, ax=ax, figsize=(20, 10))
+    copro.plots.factor_importance(clf, config, out_dir=out_dir, ax=ax, figsize=(20, 10))
     plt.savefig(os.path.join(out_dir, 'feature_importances.png'), dpi=300, bbox_inches='tight')
 
     click.echo('INFO: reference run succesfully finished')
