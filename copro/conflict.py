@@ -1,7 +1,6 @@
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import os, sys
 
 def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year): 
@@ -10,7 +9,7 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
     Args:
         conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data)
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
-        config (config): parsed configuration settings of run
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         sim_year (int): year for which data is extracted
 
     Raises:
@@ -80,11 +79,12 @@ def get_poly_ID(extent_gdf):
         
     return list_ID
 
-def get_poly_geometry(extent_gdf): 
+def get_poly_geometry(extent_gdf, config): 
     """Extracts geometry information for each polygon from geodataframe and saves to list. The geometry column in geodataframe must be named 'geometry'.
 
     Args:
         extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons with geometry information.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Raises:
         AssertionError: error raised if length of output list does not match length of input geo-dataframe.
@@ -93,7 +93,7 @@ def get_poly_geometry(extent_gdf):
         list: list containing the geometry information extracted from geo-dataframe for each polygon used in the model.
     """    
     
-    print('listing the geometry of all geographical units')
+    if config.getboolean('general', 'verbose'): print('DEBUG: getting the geometry of all geographical units')
 
     # initiatie empty list
     list_geometry = []

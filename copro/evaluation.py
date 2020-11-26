@@ -1,10 +1,9 @@
 import os, sys
-import warnings
+import click
 from sklearn import metrics
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import matplotlib.pyplot as plt
 
 def init_out_dict():
     """Initiates the main model evaluatoin dictionary for a range of model metric scores. 
@@ -25,6 +24,7 @@ def init_out_dict():
 def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
     """Computes a range of model evaluation metrics and appends the resulting scores to a dictionary.
     This is done for each model execution separately.
+    Output will be stored to stderr if possible.
 
     Args:
         y_test (list): list containing test-sample conflict data.
@@ -39,17 +39,13 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
     """  
 
     if config.getboolean('general', 'verbose'):
-        print("Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)))
-        print("Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)))
-        print("Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)))
-        print('F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)))
-        print('Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])))
-        print('Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)))
-        print('ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])))
-        print('')
-
-        print(metrics.classification_report(y_test, y_pred))
-        print('')
+        click.echo("... Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)), err=True)
+        click.echo("... Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)), err=True)
+        click.echo("... Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)), err=True)
+        click.echo('... F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)), err=True)
+        click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
+        click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
+        click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
 
     eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
@@ -105,7 +101,7 @@ def fill_out_df(out_df, y_df):
 
     return out_df
 
-def polygon_model_accuracy(df, global_df, out_dir):
+def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     """Determines a range of model accuracy values for each polygon.
     Reduces dataframe with results from each simulation to values per unique polygon identifier.
     Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and conflict-only data.
@@ -113,14 +109,15 @@ def polygon_model_accuracy(df, global_df, out_dir):
     Args:
         df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        out_dir (str): path to output folder. If None, output is not saved.
+        out_dir (str): path to output folder. If 'None', no output is stored.
+        make_proj (bool, optional): whether or not this function is used to make a projection. If False, a couple of calculations are skipped. Defaults to 'False'.
 
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
     """    
 
     #- create a dataframe containing the number of occurence per ID
-    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'ID_count'})
+    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'nr_predictions'})
     #- add column containing the IDs
     ID_count['ID'] = ID_count.index.values
     #- set index with index named ID now
@@ -128,23 +125,25 @@ def polygon_model_accuracy(df, global_df, out_dir):
     #- remove column ID
     ID_count = ID_count.drop('ID', axis=1)
 
+    df_count = pd.DataFrame()
+    
     #- per polygon ID, compute sum of overall correct predictions and rename column name
-    hit_count = df.correct_pred.groupby(df.ID).sum().to_frame()
+    if not make_proj: df_count['nr_correct_predictions'] = df.correct_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    hit_count['nr_test_confl'] = df.y_test.groupby(df.ID).sum()
+    if not make_proj: df_count['nr_observed_conflicts'] = df.y_test.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    hit_count['nr_pred_confl'] = df.y_pred.groupby(df.ID).sum()
+    df_count['nr_predicted_conflicts'] = df.y_pred.groupby(df.ID).sum()
 
     #- merge the two dataframes with ID as key
-    df_temp = pd.merge(ID_count, hit_count, on='ID')
+    df_temp = pd.merge(ID_count, df_count, on='ID')
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['chance_correct_pred'] = df_temp.correct_pred / df_temp.ID_count
+    if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.nr_correct_predictions / df_temp.nr_predictions
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['chance_correct_confl_pred'] = df_temp.nr_pred_confl / df_temp.ID_count
+    df_temp['fraction_correct_conflict_predictions'] = df_temp.nr_predicted_conflicts / df_temp.nr_predictions
 
     #- merge with global dataframe containing IDs and geometry, and keep only those polygons occuring in test sample
     df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
@@ -152,8 +151,8 @@ def polygon_model_accuracy(df, global_df, out_dir):
     #- convert to geodataframe
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
-    if out_dir != None:
-        gdf_hit.to_file(os.path.join(out_dir, 'all_stats.shp'), crs='EPSG:4326')
+    if (out_dir != None) and isinstance(out_dir, str):
+        gdf_hit.to_file(os.path.join(out_dir, 'output_per_polygon.shp'), crs='EPSG:4326')
 
     return df_hit, gdf_hit
 
@@ -169,6 +168,26 @@ def init_out_ROC_curve():
     mean_fpr = np.linspace(0, 1, 100)
 
     return tprs, aucs, mean_fpr
+
+def save_out_ROC_curve(tprs, aucs, out_dir):
+    """Saves data needed to plot mean ROC and standard deviation to csv-files. 
+    They can be loaded again with pandas in a post-processing step.
+
+    Args:
+        tprs (list): list with false positive rates.
+        aucs (list): list with area-under-curve values.
+        out_dir (str):  path to output folder. If 'None', no output is stored.
+    """    
+
+    tprs = pd.DataFrame(tprs)
+    aucs = pd.DataFrame(aucs)
+
+    tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False, header=False)
+    aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False, header=False)
+
+    print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
+
+    return
 
 def calc_correlation_matrix(df):
     """Computes the correlation matrix for a dataframe.
@@ -213,29 +232,29 @@ def categorize_polys(gdf_hit, category='sub', mode='median'):
     """    
 
     if mode == 'median':
-        average_hit_median = gdf_hit.chance_correct_pred.median()
-        nr_confl_median = gdf_hit.nr_test_confl.median()
+        average_hit_median = gdf_hit.fraction_correct_predictions.median()
+        nr_confl_median = gdf_hit.nr_observed_conflicts.median()
     elif mode == 'mean':
-        average_hit_median = gdf_hit.chance_correct_pred.mean()
-        nr_confl_median = gdf_hit.nr_test_confl.mean()
+        average_hit_median = gdf_hit.fraction_correct_predictions.mean()
+        nr_confl_median = gdf_hit.nr_observed_conflicts.mean()
     else:
         raise ValueError('specified mode not supported - use either median (default) or mean')
 
     gdf_hit['category'] = ''
 
     if category == 'main':
-        gdf_hit['category'].loc[gdf_hit.chance_correct_pred >= average_hit_median] = 'H'
-        gdf_hit['category'].loc[gdf_hit.chance_correct_pred < average_hit_median] = 'L'
+        gdf_hit['category'].loc[gdf_hit.fraction_correct_predictions >= average_hit_median] = 'H'
+        gdf_hit['category'].loc[gdf_hit.fraction_correct_predictions < average_hit_median] = 'L'
 
     if category == 'sub':
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
-                            (gdf_hit.nr_test_confl >= nr_confl_median)] = 'HH'
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred >= average_hit_median) & 
-                            (gdf_hit.nr_test_confl < nr_confl_median)] = 'HL'
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
-                            (gdf_hit.nr_test_confl >= nr_confl_median)] = 'LH'
-        gdf_hit['category'].loc[(gdf_hit.chance_correct_pred < average_hit_median) & 
-                            (gdf_hit.nr_test_confl < nr_confl_median)] = 'LL'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions >= average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts >= nr_confl_median)] = 'HH'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions >= average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts < nr_confl_median)] = 'HL'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions < average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts >= nr_confl_median)] = 'LH'
+        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions < average_hit_median) & 
+                            (gdf_hit.nr_observed_conflicts < nr_confl_median)] = 'LL'
 
     return gdf_hit
 
@@ -246,7 +265,7 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
     Args:
         y_df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        out_dir (str): path to output folder. If None, output is not saved.
+        out_dir (str): path to output folder. If 'None', no output is stored.
         k (int, optional): number of chunks in which y_df will be split. Defaults to 10.
 
     Returns:
@@ -263,7 +282,7 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
 
         df_hit, gdf_hit = polygon_model_accuracy(ks_i, global_df, out_dir=None)
 
-        temp_df = pd.DataFrame(data=pd.concat([df_hit.chance_correct_pred], axis=1))
+        temp_df = pd.DataFrame(data=pd.concat([df_hit.fraction_correct_predictions], axis=1))
 
         df = pd.concat([df, temp_df], axis=1)
 
@@ -273,12 +292,12 @@ def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
 
     df = pd.merge(df, global_df, on='ID')
 
-    df = df.drop(columns=['chance_correct_pred'])
+    df = df.drop(columns=['fraction_correct_predictions'])
 
     gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
 
-    if out_dir != None:
-        gdf.to_file(os.path.join(out_dir, 'kFold_CCP_stats.shp'), crs='EPSG:4326')
+    if (out_dir != None) and isinstance(out_dir, str):
+        gdf.to_file(os.path.join(out_dir, 'output_kFoldAnalysis_per_polygon.shp'), crs='EPSG:4326')
 
     return gdf
 
@@ -289,7 +308,7 @@ def get_feature_importance(clf, config, out_dir):
     Args:
         clf (classifier): sklearn-classifier used in the simulation.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        out_dir (str): path to output folder. If None, output is not saved.
+        out_dir (str): path to output folder. If 'None', no output is stored.
 
     Returns:
         dataframe: dataframe containing feature importance.
@@ -298,16 +317,16 @@ def get_feature_importance(clf, config, out_dir):
     if config.get('machine_learning', 'model') == 'RFClassifier':
         arr = clf.feature_importances_
     else:
-        arr = np.zeros(len(config.items('env_vars')))
-        warnings.warn('WARNING: feature importance not supported for this kind of ML model', UserWarning)
+        arr = np.zeros(len(config.items('data')))
+        raise Warning('WARNING: feature importance not supported for this kind of ML model')
 
     dict_out = dict()
-    for key, x in zip(config.items('env_vars'), range(len(arr))):
+    for key, x in zip(config.items('data'), range(len(arr))):
         dict_out[key[0]] = arr[x]
 
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
 
-    if out_dir != None:
-        df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
+    if (out_dir != None) and isinstance(out_dir, str):
+        df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
 
     return df

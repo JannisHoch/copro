@@ -5,6 +5,15 @@ import pandas as pd
 import geopandas as gpd
 from copro import conflict
 
+def create_fake_config():
+
+    config = configparser.ConfigParser()
+
+    config.add_section('general')
+    config.set('general', 'verbose', str(False))
+
+    return config
+
 def test_split_conflict_geom_data():
     #TODO: would like to do this with actual geometry information, but np.equal() does not like this...
 
@@ -27,7 +36,9 @@ def test_get_poly_geometry():
 
     gdf = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
-    list_geometry = conflict.get_poly_geometry(gdf)
+    config = create_fake_config()
+
+    list_geometry = conflict.get_poly_geometry(gdf, config)
 
     assert len(gdf) == len(list_geometry)
 

@@ -7,8 +7,8 @@ CoPro
 
 Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
-.. image:: https://travis-ci.com/JannisHoch/conflict_model.svg?branch=dev
-    :target: https://travis-ci.com/JannisHoch/conflict_model
+.. image:: https://travis-ci.com/JannisHoch/copro.svg?branch=dev
+    :target: https://travis-ci.com/JannisHoch/copro
 
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
     :target: https://github.com/JannisHoch/copro/blob/dev/LICENSE
@@ -17,7 +17,7 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
     :target: https://copro.readthedocs.io/en/latest/?badge=latest
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/copro
-    :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.5-pre
+    :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.6
 
 .. image:: https://zenodo.org/badge/254407279.svg
     :target: https://zenodo.org/badge/latestdoi/254407279
@@ -67,12 +67,16 @@ Runner script
 To run the model from command line, a command line script is provided. 
 All data and settings are retrieved from the settings-file which needs to be provided as inline argument.
 
+There are two settings-files, one for evaluating the model for the reference situation, and another one for additionally making projections.
+To make a projection, both files need to be specified with the latter requiring the -proj flag.
+
 .. code-block:: console
 
     $ cd path/to/copro/scripts
     $ python runner.py ../example/example_settings.cfg
+    $ python runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
 
-By default, output is stored to the output directory specified in the settings-file. 
+By default, output is stored to the output directory specified in the specific settings-file. 
 
 Documentation
 ---------------

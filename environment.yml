@@ -24,6 +24,7 @@ dependencies:
   - click
   - seaborn==0.11.0
   - pip
+  - colorama
   - pip:
     - rasterstats==0.14.0
     

@@ -4,8 +4,10 @@ import pandas as pd
 import geopandas as gpd
 import rasterstats as rstats
 import numpy as np
-import matplotlib.pyplot as plt
 import os, sys
+
+import warnings
+warnings.filterwarnings("ignore")
 
 def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
@@ -36,9 +38,9 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
     """   
     # get path to netCDF-file.
     nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                         config.get('env_vars', var_name))
+                         config.get('data', var_name))
 
-    if config.getboolean('general', 'verbose'): print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
+    if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -60,7 +62,11 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
     for i in range(len(extent_gdf)):
         prov = extent_gdf.iloc[i]
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
+        if (zonal_stats[0][stat_func] == None) and (config.getboolean('general', 'verbose')): 
+            print('WARNING: NaN computed!')
         list_out.append(zonal_stats[0][stat_func])
+
+    if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
 
     return list_out
 
@@ -91,9 +97,9 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
     """   
     # get path to netCDF-file.
     nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                         config.get('env_vars', var_name))
+                         config.get('data', var_name))
     
-    if config.getboolean('general', 'verbose'): print('calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
+    if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -121,6 +127,10 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
     for i in range(len(extent_gdf)):
         prov = extent_gdf.iloc[i]
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
+        if (zonal_stats[0][stat_func] == None) and (config.getboolean('general', 'verbose')): 
+            print('WARNING: NaN computed!')
         list_out.append(zonal_stats[0][stat_func])
+
+    if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
 
     return list_out
