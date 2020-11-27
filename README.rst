@@ -33,11 +33,11 @@ You can then install the model package into this environment.
 
 .. code-block:: console
 
-    $ git clone https://github.com/JannisHoch/copro.git
-    $ cd path/to/copro
-    $ conda env create -f environment.yml
-    $ conda activate copro
-    $ python setup.py develop
+    git clone https://github.com/JannisHoch/copro.git
+    cd path/to/copro
+    conda env create -f environment.yml
+    conda activate copro
+    python setup.py develop
 
 Execution
 ----------------
@@ -46,7 +46,7 @@ To be able to run the model, the conda environment has to be activated first.
 
 .. code-block:: console
 
-    $ conda activate copro
+    conda activate copro
 
 Example notebook
 ^^^^^^^^^^^^^^^^^^
@@ -56,8 +56,8 @@ They can all be run and converted to htmls by executing the provided shell-scrip
 
 .. code-block:: console
 
-    $ cd path/to/copro/example
-    $ sh run.sh
+    cd path/to/copro/example
+    sh run.sh
 
 It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 
@@ -83,6 +83,12 @@ To run the model from command line, a command line script is provided. The usage
     -v, --verbose                       command line switch to turn on verbose mode
     --help                              Show this message and exit.
 
+This help information can be also accessed with
+
+.. code-block:: console
+
+    python copro_runner.py --help
+
 All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
 
 To provide a workable model example, there are two settings-files provided: one for evaluating the model for the reference situation, and another one for additionally making projections.
@@ -90,9 +96,9 @@ To make a projection, both files need to be specified with the latter requiring 
 
 .. code-block:: console
 
-    $ cd path/to/copro/scripts
-    $ python copro_runner.py ../example/example_settings.cfg
-    $ python copro_runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
+    cd path/to/copro/scripts
+    python copro_runner.py ../example/example_settings.cfg
+    python copro_runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
 
 By default, output is stored to the output directory specified in the cfg-files. 
 
