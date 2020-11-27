@@ -5,9 +5,7 @@ Overview
 CoPro
 ----------------
 
-Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers. 
-CoPro employes observed conflict data together with (user-provided) socio-economic and environmental data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
-The model can, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
+Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
 .. image:: https://travis-ci.com/JannisHoch/copro.svg?branch=dev
     :target: https://travis-ci.com/JannisHoch/copro
@@ -26,6 +24,18 @@ The model can, for instance, be used to make scenario projections, evaluate the 
 
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
+
+Model purpose
+--------------
+
+CoPro employes observed conflict data together with (user-provided) socio-economic and environmental data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
+As primary model output, conflict risk (defined as the fraction conflict predictions of all predictions) is provided.
+To capture the geographical variability of conflict and socio-environmental drivers, the model is spatially explicit and calculates conflict risk at a (user-specified) aggregation level.
+This way, the model is able to also capture the relevant sub-national variability of conflict and conflict drivers.
+
+In addition to the calculation of conflict risk, can the model, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
+
+All in all, CoPro supports the mapping of current and future areas at risk of conflict, while also facilitating obtaining a better understanding of the underlying processes.
 
 Installation
 ----------------
