@@ -1,1 +1,1 @@
-python runner.py ../example/example_settings.cfg
+python copro_runner.py ../example/example_settings.cfg
