@@ -61,22 +61,40 @@ They can all be run and converted to htmls by executing the provided shell-scrip
 
 It is of course also possible to execute the notebook cell by cell using jupyter notebook.
 
-Runner script
-^^^^^^^^^^^^^^^^^^
+Command-line script
+^^^^^^^^^^^^^^^^^^^^
 
-To run the model from command line, a command line script is provided. 
-All data and settings are retrieved from the settings-file which needs to be provided as inline argument.
+To run the model from command line, a command line script is provided. The usage of the script is as follows:
 
-There are two settings-files, one for evaluating the model for the reference situation, and another one for additionally making projections.
+.. code-block:: console
+
+    Usage: runner.py [OPTIONS] CFG
+
+    Main command line script to execute the model.  All settings are read from
+    cfg-file. One cfg-file is required argument to train, test, and evaluate
+    the model. Additional cfg-files can be provided as optional arguments,
+    whereby each file corresponds to one projection to be made.
+
+    Args:     CFG (str): (relative) path to cfg-file
+
+    Options:
+    -proj, --projection-settings PATH   path to cfg-file with settings for a projection run
+
+    -v, --verbose                       command line switch to turn on verbose mode
+    --help                              Show this message and exit.
+
+All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
+
+To provide a workable model example, there are two settings-files provided: one for evaluating the model for the reference situation, and another one for additionally making projections.
 To make a projection, both files need to be specified with the latter requiring the -proj flag.
 
 .. code-block:: console
 
     $ cd path/to/copro/scripts
-    $ python runner.py ../example/example_settings.cfg
-    $ python runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
+    $ python copro_runner.py ../example/example_settings.cfg
+    $ python copro_runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
 
-By default, output is stored to the output directory specified in the specific settings-file. 
+By default, output is stored to the output directory specified in the cfg-files. 
 
 Documentation
 ---------------
