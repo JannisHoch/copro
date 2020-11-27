@@ -5,7 +5,9 @@ Overview
 CoPro
 ----------------
 
-Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
+Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers. 
+CoPro employes observed conflict data together with (user-provided) socio-economic and environmental data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
+The model can, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
 
 .. image:: https://travis-ci.com/JannisHoch/copro.svg?branch=dev
     :target: https://travis-ci.com/JannisHoch/copro
@@ -39,30 +41,14 @@ You can then install the model package into this environment.
     conda activate copro
     python setup.py develop
 
-Execution
-----------------
-
 To be able to run the model, the conda environment has to be activated first.
 
 .. code-block:: console
 
     conda activate copro
 
-Example notebook
-^^^^^^^^^^^^^^^^^^
-
-There are jupyter notebooks available to guide you through the model application process.
-They can all be run and converted to htmls by executing the provided shell-script.
-
-.. code-block:: console
-
-    cd path/to/copro/example
-    sh run.sh
-
-It is of course also possible to execute the notebook cell by cell using jupyter notebook.
-
 Command-line script
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 
 To run the model from command line, a command line script is provided. The usage of the script is as follows:
 
@@ -91,8 +77,36 @@ This help information can be also accessed with
 
 All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
 
-To provide a workable model example, there are two settings-files provided: one for evaluating the model for the reference situation, and another one for additionally making projections.
-To make a projection, both files need to be specified with the latter requiring the -proj flag.
+Example data
+----------------
+
+To give an idea how the model works, some example data is provided in the example-folder. Note that this is only for demonstration purposes.
+
+Additionally, the configuration-files (cfg-files) needed to perform a reference run and a projection run are provided. 
+All output is stored in the output directory specified in the cfg-files. 
+
+Jupyter notebooks
+^^^^^^^^^^^^^^^^^^
+
+There are multiple jupyter notebooks available to guide you through the model application process step-by-step.
+They can all be run and converted to htmls by executing the provided shell-script.
+
+.. code-block:: console
+
+    cd path/to/copro/example
+    sh run.sh
+
+It is of course also possible to execute the notebook cell-by-cell and explore the full range of possibilities.
+
+Command-line
+^^^^^^^^^^^^^^^^^^
+
+While the notebooks are great for exploring, the command line script is the envisaged way to use CoPro.
+
+To only test the model for the reference situation, the cfg-file is the required argument.
+
+To make a projection, both cfg-files need to be specified with the latter requiring the -proj flag.
+If more projections are ought to be made, multiple cfg-files can be provided with the -proj flag.
 
 .. code-block:: console
 
@@ -100,17 +114,30 @@ To make a projection, both files need to be specified with the latter requiring 
     python copro_runner.py ../example/example_settings.cfg
     python copro_runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
 
-By default, output is stored to the output directory specified in the cfg-files. 
+Validation
+^^^^^^^^^^^^^^^^^^
+
+The reference model makes use of the `UCDP Georeferenced Event Dataset <https://ucdp.uu.se/downloads/index.html#ged_global>`_ for observed conflict. 
+The selected classifier is trained and validated against this data.
+
+Main validation metrics are the ROC-AUC score as well as accuracy, precision, and recall. 
+All metrics are reported and written to file per model evaluation.
 
 Documentation
 ---------------
 
-Model documentation including model API can be found at http://copro.rtfd.io/
+An extensive model documentation including full model API description can be found at http://copro.rtfd.io/
 
 Code of conduct and Contributing
 ---------------------------------
 
-Please find the relevant information on our Code of Conduct and how to contribute to this package in the relevant files.
+The project welcomes contributions from everyone! 
+To make collaborations as pleasent as possible, we expect contributors to the project to abide by the Code of Conduct.
+
+License
+--------
+
+CoPro is released under the MIT license.
 
 Authors
 ----------------
