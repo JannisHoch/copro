@@ -32,7 +32,7 @@ Here, the different sections are explained briefly.
 **[pre_calc]**
 
 - *XY*: if the XY-data was already pre-computed in a previous run and stored as npy-file, it can be specified here and will be loaded from file. If nothing is specified, the model will save the XY-data by default to the output directory as ``XY.npy``;
-- *clf*: path to the pickled fitted classifier from the reference run. Needed for projection runs only;
+- *clf*: path to the pickled fitted classifier from the reference run. Needed for projection runs only!
 
 **[extent]**
 
