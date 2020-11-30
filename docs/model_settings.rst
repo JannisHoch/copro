@@ -66,9 +66,14 @@ Here, the different sections are explained briefly.
 
     The code2class-file should not be altered!
 
-**[reference_data]**
+**[data]**
 
 In this section, all variables to be used in the model need to be provided. The main convention is that the name of the file agrees with the variable name in the file. Only netCDF-files with annual data are supported.
+
+For example, if the variable precipitation is provided in a file, this should be noted as follows
+
+    [data]
+    precipitation=/path/to/file/precipitation_file.nc
 
 **[machine_learning]**
 
