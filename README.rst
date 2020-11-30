@@ -49,16 +49,21 @@ You can then install the model package into this environment.
     cd path/to/copro
     conda env create -f environment.yml
     conda activate copro
-    python setup.py develop
+
+To install CoPro in editable mode in this environment, run this command next:
+
+.. code-block:: console
+
+    pip install -e <path/to/copro>/copro
+
+Command-line script
+--------------------
 
 To be able to run the model, the conda environment has to be activated first.
 
 .. code-block:: console
 
     conda activate copro
-
-Command-line script
---------------------
 
 To run the model from command line, a command line script is provided. The usage of the script is as follows:
 
