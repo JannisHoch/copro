@@ -49,16 +49,16 @@ You can then install the model package into this environment.
 
 .. code-block:: console
 
-    git clone https://github.com/JannisHoch/copro.git
-    cd path/to/copro
-    conda env create -f environment.yml
-    conda activate copro
+    $ git clone https://github.com/JannisHoch/copro.git
+    $ cd path/to/copro
+    $ conda env create -f environment.yml
+    $ conda activate copro
 
 To install CoPro in editable mode in this environment, run this command next:
 
 .. code-block:: console
 
-    pip install -e <path/to/copro>/copro
+    $ pip install -e <path/to/copro>/copro
 
 Command-line script
 --------------------
@@ -67,7 +67,7 @@ To be able to run the model, the conda environment has to be activated first.
 
 .. code-block:: console
 
-    conda activate copro
+    $ conda activate copro
 
 To run the model from command line, a command line script is provided. The usage of the script is as follows:
 
@@ -92,7 +92,7 @@ This help information can be also accessed with
 
 .. code-block:: console
 
-    python copro_runner.py --help
+    $ python copro_runner.py --help
 
 All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
 
@@ -112,8 +112,8 @@ They can all be run and converted to html-files by executing the provided shell-
 
 .. code-block:: console
 
-    cd path/to/copro/example
-    sh run_notebooks.sh
+    $ cd path/to/copro/example
+    $ sh run_notebooks.sh
 
 It is of course also possible to execute the notebook cell-by-cell and explore the full range of possibilities.
 
@@ -131,17 +131,17 @@ If more projections are ought to be made, multiple cfg-files can be provided wit
 
 .. code-block:: console
 
-    cd path/to/copro/example
-    python ../scripts/copro_runner.py example_settings.cfg
-    python ../scripts/copro_runner.py example_settings.cfg -proj example_settings_proj.cfg
+    $ cd path/to/copro/example
+    $ python ../scripts/copro_runner.py example_settings.cfg
+    $ python ../scripts/copro_runner.py example_settings.cfg -proj example_settings_proj.cfg
 
 Alternatively, the same commands can be executed using a bash-file.
 
 .. code-block:: console
 
-    cd path/to/copro/example
-    sh run_script_reference.sh
-    sh run_script_projections.sh
+    $ cd path/to/copro/example
+    $ sh run_script_reference.sh
+    $ sh run_script_projections.sh
 
 Validation
 ^^^^^^^^^^^^^^^^^^
