@@ -99,9 +99,6 @@ def main(cfg, projection_settings=[], verbose=False):
     # create accuracy values per polygon and save to output folder
     df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir)
 
-    # apply k-fold 
-    gdf_CCP = copro.evaluation.calc_kFold_polygon_analysis(out_y_df, global_df, out_dir, k=10)
-
     #- plot distribution of all evaluation metrics
     fig, ax = plt.subplots(1, 1)
     copro.plots.metrics_distribution(out_dict, figsize=(20, 10))

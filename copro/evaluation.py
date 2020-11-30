@@ -143,7 +143,7 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.nr_correct_predictions / df_temp.nr_predictions
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['fraction_correct_conflict_predictions'] = df_temp.nr_predicted_conflicts / df_temp.nr_predictions
+    df_temp['chance_of_conflict'] = df_temp.nr_predicted_conflicts / df_temp.nr_predictions
 
     #- merge with global dataframe containing IDs and geometry, and keep only those polygons occuring in test sample
     df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
