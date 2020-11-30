@@ -5,21 +5,21 @@ To install copro from GitHub, first clone the code. It is advised to create an i
 
 .. code-block:: console
 
-    git clone https://github.com/JannisHoch/copro.git
-    cd path/to/copro
-    conda env create -f environment.yml
+    $ git clone https://github.com/JannisHoch/copro.git
+    $ cd path/to/copro
+    $ conda env create -f environment.yml
 
 It is now possible to activate this environment with
 
 .. code-block:: console
 
-    conda activate copro
+    $ conda activate copro
 
 To install CoPro in editable mode in this environment, run this command next
 
 .. code-block:: console
 
-    pip install -e <path/to/copro>/copro
+    $ pip install -e <path/to/copro>/copro
 
 From PyPI
 ------------
