@@ -73,7 +73,7 @@ To run the model from command line, a command line script is provided. The usage
 
 .. code-block:: console
 
-    Usage: runner.py [OPTIONS] CFG
+    Usage: copro_runner.py [OPTIONS] CFG
 
     Main command line script to execute the model.  All settings are read from
     cfg-file. One cfg-file is required argument to train, test, and evaluate
