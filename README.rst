@@ -28,10 +28,14 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 Model purpose
 --------------
 
-CoPro employes observed conflict data together with (user-provided) socio-economic and environmental data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
-As primary model output, conflict risk (defined as the fraction conflict predictions of all predictions) is provided.
+As primary model output, CoPro provides maps of conflict risk (defined as the fraction conflict predictions of all predictions).
+
+To that end, it employs observed conflicts as target data together with (user-provided) socio-economic and environmental sample data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
+While the samples have the units of the data, the target value is converted to Boolean, where a 0 indicates no conflict occurrence and 1 indicates occurrence.
 To capture the geographical variability of conflict and socio-environmental drivers, the model is spatially explicit and calculates conflict risk at a (user-specified) aggregation level.
-This way, the model is able to also capture the relevant sub-national variability of conflict and conflict drivers.
+This way, the model can also capture the relevant sub-national variability of conflict and conflict drivers.
+Model robustness is determined using a split-sample test where a part of the data is used to train the model, while the other part is used to evaluate the outcome. 
+Throughout this process, the geographical unit is tracked to be able to map the resulting conflict risk to the correct areas.
 
 In addition to the calculation of conflict risk, can the model, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
 
@@ -104,7 +108,7 @@ Jupyter notebooks
 ^^^^^^^^^^^^^^^^^^
 
 There are multiple jupyter notebooks available to guide you through the model application process step-by-step.
-They can all be run and converted to htmls by executing the provided shell-script.
+They can all be run and converted to html-files by executing the provided shell-script.
 
 .. code-block:: console
 
@@ -112,6 +116,8 @@ They can all be run and converted to htmls by executing the provided shell-scrip
     sh run_notebooks.sh
 
 It is of course also possible to execute the notebook cell-by-cell and explore the full range of possibilities.
+
+The notebooks are also used to exemplify the `Workflow <https://copro.readthedocs.io/en/latest/examples/index.html>`_ of CoPro.
 
 Command-line
 ^^^^^^^^^^^^^^^^^^
