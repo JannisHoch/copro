@@ -157,6 +157,8 @@ Note that with additional and more explanatory sample data, the score will most 
 
 .. figure:: docs/_static/roc_curve.png
 
+Additional ways to validate the model are showcased in the `Workflow <https://copro.readthedocs.io/en/latest/examples/index.html>`_.
+
 Documentation
 ---------------
 
