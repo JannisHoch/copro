@@ -95,9 +95,9 @@ All data and settings are retrieved from the settings-file (cfg-file) which need
 Example data
 ----------------
 
-To give an idea how the model works, some example data is provided in the example-folder. Note that this is only for demonstration purposes.
+Example data for demonstration purposes can be downloaded from `Zenodo <https://zenodo.org/record/4297295>`_.
 
-Additionally, the configuration-files (cfg-files) needed to perform a reference run and a projection run are provided. 
+With this (or other) data, the provided configuration-files (cfg-files) can be used to perform a reference run or a projection run. 
 All output is stored in the output directory specified in the cfg-files. 
 
 Jupyter notebooks
@@ -138,7 +138,7 @@ The selected classifier is trained and validated against this data.
 Main validation metrics are the ROC-AUC score as well as accuracy, precision, and recall. 
 All metrics are reported and written to file per model evaluation.
 
-With the example data downloadable from `Zenodo <>`_,  a ROC-AUC score of 0.82 can be obtained. 
+With the example data downloadable from `Zenodo <https://zenodo.org/record/4297295>`_, a ROC-AUC score of 0.82 can be obtained. 
 Note that with additional and more explanatory sample data, the score will most likely increase.
 
 .. figure:: docs/_static/roc_curve.png
