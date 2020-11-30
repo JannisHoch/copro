@@ -138,6 +138,10 @@ OUT*/
 # sphinx
 generated*
 
+# example input data
+*.zip
+example/example_data/*.md
+
 # article related stuff
 _paper/*
 
