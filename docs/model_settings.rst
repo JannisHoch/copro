@@ -13,7 +13,7 @@ Additionally, the cfg-file included in the GitHub-repository already contains th
 **[general]**
 
 - *input_dir*: (relative) path to the directory where the input data is stored. This requires all input data to be stored in one main folder;
-- *output_dir*: (relative) path to the directory where output will be stored. If folder does not exist yet, it will be created;
+- *output_dir*: (relative) path to the directory where output will be stored. If the folder does not exist yet, it will be created;
 - *model*: the type of simulation to be run can be specified here. Currently, for different models are available:
 
     1. 'all data': all variable values are used to fit the model and predict results;
@@ -52,8 +52,8 @@ Additionally, the cfg-file included in the GitHub-repository already contains th
 - *type_of_violence*: the types of violence to be considered can be specified here. Multiple values can be specified. Types of violence are:
 
     1. state-based armed conflict: a contested incompatibility that concerns government and/or territory where the use of armed force between two parties, of which at least one is the government of a state, results in at least 25 battle-related deaths in one calendar year;
-    2. non-state conflict: the use of armed force between two organised armed groups, neither of which is the government of a state, which results in at least 25 battle-related deaths in a year;
-    3. one-sided violence: the deliberate use of armed force by the government of a state or by a formally organised group against civilians which results in at least 25 deaths in a year.
+    2. non-state conflict: the use of armed force between two organized armed groups, neither of which is the government of a state, which results in at least 25 battle-related deaths in a year;
+    3. one-sided violence: the deliberate use of armed force by the government of a state or by a formally organized group against civilians which results in at least 25 deaths in a year.
 
 .. note::
 

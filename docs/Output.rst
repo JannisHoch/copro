@@ -70,9 +70,9 @@ By aggregating results per polygon, it is possible to assess model output spatia
 
 Three main output metrics are calculated per polygon:
 
-1. The chance of a correct (*CCP*), defined as the ratio of number of correct predictions made to overall number of predictions made;
+1. The chance of a correct (*CCP*), defined as the ratio of the number of correct predictions made to the overall number of predictions made;
 2. The total number of conflicts in the test  (*NOC*);
-3. The chance of conflict (*COC*), defined as the ration of number of conflict predictions to overall number of predictions made.
+3. The chance of conflict (*COC*), defined as the ration of the number of conflict predictions to the overall number of predictions made.
 
 all data
 ^^^^^^^^^
@@ -93,7 +93,7 @@ The resulting shp-file is named ``output_kFoldAnalysis_per_polygon.shp``.
 
 .. note::
 
-    In addition to these shp-file, various plots can be stored by using the provided plots-functions. The plots aer stored in the output directory too.
+    In addition to these shp-files, various plots can be stored by using the provided plots-functions. The plots are stored in the output directory too.
     Note that the plot settings cannot yet be fully controlled via those functions, i.e. it is more anticipated for debugging.
     To create custom-made plots, rather use the shp-files and csv-file.
 
