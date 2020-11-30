@@ -1,0 +1,1 @@
+python ../example/copro_runner.py example_settings.cfg
