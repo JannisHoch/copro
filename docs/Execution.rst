@@ -7,62 +7,60 @@ To be able to run the model, the conda environment has to be activated first.
 
     $ conda activate copro
 
-Example notebook
------------------
-
-There are jupyter notebooks available to guide you through the model application process (also see :ref:`workflow`).
-They can all be run and converted to htmls by executing the provided shell-script.
-
-.. code-block:: console
-
-    $ cd path/to/copro/example
-    $ sh run.sh
-
-It is of course also possible to execute the notebook cell by cell using jupyter notebook. 
-The notebooks should give a fairly good impression how the model can be executed function-by-function and what functionality these functions have.
-
 .. _script:
 
 Runner script
 ----------------
 
-To run the model from command line, a command line script is provided. 
-The number of inline arguments differs whether only a reference run or also one or more projections runs are executed.
+To run the model, a command line script is provided. The usage of the script is as follows:
 
-By default, output is stored to the output directory specified in the individual configurations-file (cfg-file). 
+.. code-block:: console
+
+    Usage: copro_runner.py [OPTIONS] CFG
+
+    Main command line script to execute the model.  All settings are read from
+    cfg-file. One cfg-file is required argument to train, test, and evaluate
+    the model. Additional cfg-files can be provided as optional arguments,
+    whereby each file corresponds to one projection to be made.
+
+    Args:     CFG (str): (relative) path to cfg-file
+
+    Options:
+    -proj, --projection-settings PATH   path to cfg-file with settings for a projection run
+
+    -v, --verbose                       command line switch to turn on verbose mode
+    --help                              Show this message and exit.
+
+This help information can be also accessed with
+
+.. code-block:: console
+
+    $ python copro_runner.py --help
+
+All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
+
+.. note::
+
+    Multiple projections can be made based on a reference model by providing multiple cfg-files with a -proj/--projection-settings flag.
 
 Reference run
 ^^^^^^^^^^^^^^^^
-All data and settings are retrieved from the cfg-file (see :ref:`settings`).
-Based on these settings, data is sampled and the model is trained, tested, and evaluated.
-The output is then stored to the output directory.
 
-.. code-block:: console
+In the reference run, the sample data (X) and target data (Y) are read and stored in arrays along with their geographic information.
+A scaling technique is used to normalize the sample data as the range, magnitude, and units of the sample data can vary between input files.
+This data is then split into a training and test set. While the former is used to fit the model, the latter is used to evaluate the accuracy of a prediction made with this fitted model.
+To increase the robustness of the split-sample test, this step can be repeated multiple times to obtain an averaged picture of model accuracy.
+After each repetition, the model outcome is associated to its geographic origin to yield maps of conflict risk.
 
-    $ cd path/to/copro/scripts
-    $ python runner.py ../example/example_settings.cfg
+At the end of the reference run, the classifier is fitted on more time with all sample and target data. It is then stored to be used in one (or more) projection runs.
 
 Projection runs
 ^^^^^^^^^^^^^^^^
-If also projections are computed, multiple additional cfg-files can be provided.
-For each projection, one individual cfg-file is required.
 
-Since the projections are based on the reference run, at least two cfg-file are needed.
-The command would then look like this:
+The projections runs employ the fitted classifier of the reference run in conjunction with other sample data, for example for future scenarios. 
+Based on the relations established between sample data and target data of the reference run, the model projects where conflict will occur.
 
-.. code-block:: console
+.. important:: 
 
-    $ cd path/to/copro/scripts
-    $ python runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
+    In order to re-use the classifier, the number of sample data features used in the projection runs must be identical to the feature number used in the reference run.
 
-.. info::
-
-    Multiple projections can be made by specifying various cfg-files with the -proj flag.
-
-Help
-^^^^^^^^^^^^^^^^
-For further help how to use the script, try this:
-
-.. code-block:: console
-
-    $ python runner.py --help
