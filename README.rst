@@ -136,13 +136,13 @@ All metrics are reported and written to file per model evaluation.
 Documentation
 ---------------
 
-An extensive model documentation including full model API description can be found at http://copro.rtfd.io/
+Extensive model documentation including full model API description can be found at http://copro.rtfd.io/
 
 Code of conduct and Contributing
 ---------------------------------
 
 The project welcomes contributions from everyone! 
-To make collaborations as pleasent as possible, we expect contributors to the project to abide by the Code of Conduct.
+To make collaborations as pleasant as possible, we expect contributors to the project to abide by the Code of Conduct.
 
 License
 --------
@@ -156,4 +156,4 @@ Authors
 * Sophie de Bruin (Utrecht University, PBL)
 * Niko Wanders (Utrecht University)
 
-Corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
+Corresponding author: Jannis M. Hoch (j.m.hoch@uu.nl)

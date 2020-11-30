@@ -34,7 +34,7 @@ By default, output is stored to the output directory specified in the individual
 Reference run
 ^^^^^^^^^^^^^^^^
 All data and settings are retrieved from the cfg-file (see :ref:`settings`).
-Based on these settings, data is sampled and the model is trained, tested, and evaluted.
+Based on these settings, data is sampled and the model is trained, tested, and evaluated.
 The output is then stored to the output directory.
 
 .. code-block:: console
@@ -57,7 +57,7 @@ The command would then look like this:
 
 .. info::
 
-    Multiple projections can be made by specifing various cfg-files with the -proj flag.
+    Multiple projections can be made by specifying various cfg-files with the -proj flag.
 
 Help
 ^^^^^^^^^^^^^^^^
