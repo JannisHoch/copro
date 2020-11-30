@@ -9,6 +9,8 @@ In addition to the output files listed below, the model settings file (cfg-file)
 
     Not all model types provide the output mentioned below. If the 'leave-one-out' or 'single variable' model are selected, only the metrics are stored to a csv-file.
 
+List of output files
+---------------------------
 
 +-------------------------------+---------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------+
 | File name                     | Description                                                                                 | Note                                                                                        |
@@ -36,6 +38,7 @@ In addition to the output files listed below, the model settings file (cfg-file)
 
 Conflict risk per polygon
 ---------------------------
+
 At the end of all model repetitions, the resulting output data frame contains multiple predictions for each polygon.
 By aggregating results per polygon, it is possible to assess model output spatially. 
 
