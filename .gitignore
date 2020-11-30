@@ -139,8 +139,8 @@ OUT*/
 generated*
 
 # example input data
-*.zip
-example/example_data/*.md
+example/*.zip
+example/example_data/*
 
 # article related stuff
 _paper/*
