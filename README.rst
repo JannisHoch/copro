@@ -109,7 +109,7 @@ They can all be run and converted to htmls by executing the provided shell-scrip
 .. code-block:: console
 
     cd path/to/copro/example
-    sh run.sh
+    sh run_notebooks.sh
 
 It is of course also possible to execute the notebook cell-by-cell and explore the full range of possibilities.
 
@@ -125,9 +125,17 @@ If more projections are ought to be made, multiple cfg-files can be provided wit
 
 .. code-block:: console
 
-    cd path/to/copro/scripts
-    python copro_runner.py ../example/example_settings.cfg
-    python copro_runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
+    cd path/to/copro/example
+    python ../scripts/copro_runner.py example_settings.cfg
+    python ../scripts/copro_runner.py example_settings.cfg -proj example_settings_proj.cfg
+
+Alternatively, the same commands can be executed using a bash-file.
+
+.. code-block:: console
+
+    cd path/to/copro/example
+    sh run_script_reference.sh
+    sh run_script_projections.sh
 
 Validation
 ^^^^^^^^^^^^^^^^^^
