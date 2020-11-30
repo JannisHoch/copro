@@ -33,8 +33,8 @@ Contents
    Installation
    Execution
    Model settings <model_settings>
-   Output
    Workflow <examples/index>
+   Output
    API Docs <api/index>
 
 Authors
