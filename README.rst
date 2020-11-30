@@ -138,6 +138,11 @@ The selected classifier is trained and validated against this data.
 Main validation metrics are the ROC-AUC score as well as accuracy, precision, and recall. 
 All metrics are reported and written to file per model evaluation.
 
+With the example data downloadable from `Zenodo <>`_,  a ROC-AUC score of 0.82 can be obtained. 
+Note that with additional and more explanatory sample data, the score will most likely increase.
+
+.. figure:: docs/_static/roc_curve.png
+
 Documentation
 ---------------
 
