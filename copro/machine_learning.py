@@ -127,7 +127,7 @@ def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
 
     return y_pred, y_prob
 
-def pickle_clf(scaler, clf, config):
+def pickle_clf(scaler, clf, config, root_dir):
     """(Re)fits a classifier with all available data and pickles it.
     Can then be used to make projections in conjuction with projected values.
 
@@ -135,6 +135,7 @@ def pickle_clf(scaler, clf, config):
         scaler (scaler): the specified scaling method instance.
         clf (classifier): the specified model instance.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): path to location of cfg-file.
 
     Returns:
         classifier: classifier fitted with all available data.
@@ -143,11 +144,11 @@ def pickle_clf(scaler, clf, config):
     print('INFO: fitting the classifier with all data from reference period')
 
     if config.get('pre_calc', 'XY') is '':
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'XY.npy'))))
-        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'XY.npy')), allow_pickle=True)
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy')))
+        XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy'), allow_pickle=True)
     else:
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.abspath(config.get('pre_calc', 'XY'))))
-        XY_fit = np.load(os.path.abspath(os.path.join(config.get('general', 'output_dir'), config.get('pre_calc', 'XY'))), allow_pickle=True)
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
+        XY_fit = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
 
     X_fit, Y_fit = data.split_XY_data(XY_fit, config)
     X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)
@@ -155,8 +156,8 @@ def pickle_clf(scaler, clf, config):
 
     clf.fit(X_ft_fit, Y_fit)
 
-    print('INFO: dumping classifier to {}'.format(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'clf.pkl'))))
-    with open(os.path.abspath(os.path.join(config.get('general', 'output_dir'), 'clf.pkl')), 'wb') as f:
+    print('INFO: dumping classifier to {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl')))
+    with open(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
         pickle.dump(clf, f)
 
     return clf
