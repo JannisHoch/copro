@@ -54,11 +54,11 @@ You can then install the model package into this environment.
     $ conda env create -f environment.yml
     $ conda activate copro
 
-To install CoPro in editable mode in this environment, run this command next:
+To install CoPro in editable mode in this environment, run this command next in the copro-folde:
 
 .. code-block:: console
 
-    $ pip install -e <path/to/copro>/copro
+    $ pip install -e .
 
 Command-line script
 --------------------
@@ -73,7 +73,7 @@ To run the model from command line, a command line script is provided. The usage
 
 .. code-block:: console
 
-    Usage: copro_runner.py [OPTIONS] CFG
+    Usage: copro_runner [OPTIONS] CFG
 
     Main command line script to execute the model.  All settings are read from
     cfg-file. One cfg-file is required argument to train, test, and evaluate
@@ -92,9 +92,15 @@ This help information can be also accessed with
 
 .. code-block:: console
 
-    $ python copro_runner.py --help
+    $ copro_runner --help
 
 All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
+
+In case issues occur, it updating ``setuptools`` may be required.
+
+.. code-block:: console
+
+    $ pip3 install --upgrade pip setuptools
 
 Example data
 ----------------
@@ -132,8 +138,8 @@ If more projections are ought to be made, multiple cfg-files can be provided wit
 .. code-block:: console
 
     $ cd path/to/copro/example
-    $ python ../scripts/copro_runner.py example_settings.cfg
-    $ python ../scripts/copro_runner.py example_settings.cfg -proj example_settings_proj.cfg
+    $ copro_runner example_settings.cfg
+    $ copro_runner example_settings.cfg -proj example_settings_proj.cfg
 
 Alternatively, the same commands can be executed using a bash-file.
 
