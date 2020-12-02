@@ -56,20 +56,20 @@ def select_period(gdf, config):
     
     return gdf
 
-def clip_to_extent(gdf, config):
+def clip_to_extent(gdf, config, root_dir):
     """As the original conflict data has global extent, this function clips the database to those entries which have occured on a specified continent.
 
     Args:
         gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): path to location of cfg-file.
 
     Returns:
         geo-dataframe: geo-dataframe containing filtered entries.
         geo-dataframe: geo-dataframe containing country polygons of selected continent.
     """    
-    
-    shp_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                          config.get('extent', 'shp'))
+
+    shp_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('extent', 'shp'))
     
     print('INFO: reading extent and spatial aggregation level from file {}'.format(shp_fo))
     extent_gdf = gpd.read_file(shp_fo)
@@ -82,13 +82,14 @@ def clip_to_extent(gdf, config):
     
     return gdf, extent_gdf
 
-def climate_zoning(gdf, extent_gdf, config):
+def climate_zoning(gdf, extent_gdf, config, root_dir):
     """This function allows for selecting only those conflicts and polygons falling in specified climate zones.
 
     Args:
         gdf (geo-dataframe): geo-dataframe containing conflict data.
         extent_gdf (geo-dataframe): all polygons of study area.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): path to location of cfg-file.
 
     Raises:
         ValueError: raised if a climate zone is specified which is not found in Koeppen-Geiger classification.
@@ -99,11 +100,15 @@ def climate_zoning(gdf, extent_gdf, config):
         dataframe: global look-up dataframe linking polygon ID with geometry information.
     """
     
-    Koeppen_Geiger_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
-                                     config.get('climate', 'shp')) 
+    # Koeppen_Geiger_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
+    #                                  config.get('climate', 'shp')) 
+
+    Koeppen_Geiger_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('climate', 'shp'))
     
-    code2class_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
-                                 config.get('climate', 'code2class'))
+    # code2class_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
+    #                              config.get('climate', 'code2class'))
+
+    code2class_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('climate', 'code2class'))
     
     KG_gdf = gpd.read_file(Koeppen_Geiger_fo)
     code2class = pd.read_csv(code2class_fo, sep='\t')
@@ -141,13 +146,14 @@ def climate_zoning(gdf, extent_gdf, config):
 
     return gdf, polygon_gdf, global_df
 
-def select(config, out_dir):
+def select(config, out_dir, root_dir):
     """Main function performing the selection steps.
     Also stores the selected conflicts and polygons to output directory.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         out_dir (str): path to output folder.
+        root_dir (str): path to location of cfg-file.
 
     Returns:
         geo-dataframe: remaining conflict data after selection process.
@@ -156,15 +162,15 @@ def select(config, out_dir):
         dataframe: global look-up dataframe linking polygon ID with geometry information.
     """  
 
-    gdf = utils.get_geodataframe(config)
+    gdf = utils.get_geodataframe(config, root_dir)
 
     gdf = filter_conflict_properties(gdf, config)
 
     gdf = select_period(gdf, config)
 
-    gdf, extent_gdf = clip_to_extent(gdf, config)
+    gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
 
-    gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config)
+    gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config, root_dir)
 
     gdf.to_file(os.path.join(out_dir, 'selected_conflicts.shp'), crs='EPSG:4326')
     polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.shp'), crs='EPSG:4326')

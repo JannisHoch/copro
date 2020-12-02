@@ -50,7 +50,7 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY(XY, config, conflict_gdf, polygon_gdf):
+def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
     """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -58,6 +58,7 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf):
     Args:
         XY (dict): initiated, i.e. empty, XY-dictionary
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): path to location of cfg-file.
         conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
 
@@ -102,17 +103,17 @@ def fill_XY(XY, config, conflict_gdf, polygon_gdf):
 
             else:
 
-                nc_ds = xr.open_dataset(os.path.join(config.get('general', 'input_dir'), config.get('data', key)))
+                nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)))
                 
                 if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                     data_series = value
-                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, key, sim_year)
+                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
                     
                 elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                     data_series = value
-                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, key, sim_year)
+                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
                     
