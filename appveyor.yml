@@ -7,3 +7,4 @@ branches:
   only:
     - master
     - dev
+    - joss_review
