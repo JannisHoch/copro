@@ -13,8 +13,8 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         out_dir (str): path to output folder.
         root_dir (str): path to location of cfg-file.
-        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
 
     Returns:
         array: X-array containing variable values.
@@ -40,17 +40,20 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
     return X, Y
 
 def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf=None):
-    """[summary]
+    """Top-level function to create the X-array.
+    If the X-data was pre-computed and specified in cfg-file, the data is loaded.
+    If not, variable values are read from file and stored in array. 
+    The resulting array is by default saved as npy-format to file.
 
     Args:
-        config ([type]): [description]
-        out_dir ([type]): [description]
-        root_dir ([type]): [description]
-        polygon_gdf ([type]): [description]
-        conflict_gdf ([type], optional): [description]. Defaults to None.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        out_dir (str): path to output folder.
+        root_dir (str): path to location of cfg-file.
+        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
 
     Returns:
-        [type]: [description]
+        array: X-array containing variable values.
     """    
 
     if config.get('pre_calc', 'XY') is '':
