@@ -15,11 +15,11 @@ It is now possible to activate this environment with
 
     $ conda activate copro
 
-To install CoPro in editable mode in this environment, run this command next
+To install CoPro in editable mode in this environment, run this command next in the CoPro-folder:
 
 .. code-block:: console
 
-    $ pip install -e <path/to/copro>/copro
+    $ pip install -e .
 
 From PyPI
 ------------

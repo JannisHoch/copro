@@ -54,7 +54,7 @@ You can then install the model package into this environment.
     $ conda env create -f environment.yml
     $ conda activate copro
 
-To install CoPro in editable mode in this environment, run this command next in the copro-folde:
+To install CoPro in editable mode in this environment, run this command next in the CoPro-folder:
 
 .. code-block:: console
 
@@ -96,7 +96,7 @@ This help information can be also accessed with
 
 All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
 
-In case issues occur, it updating ``setuptools`` may be required.
+In case issues occur, updating ``setuptools`` may be required.
 
 .. code-block:: console
 
