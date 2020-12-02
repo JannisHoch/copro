@@ -16,7 +16,7 @@ To run the model, a command line script is provided. The usage of the script is 
 
 .. code-block:: console
 
-    Usage: copro_runner.py [OPTIONS] CFG
+    Usage: copro_runner [OPTIONS] CFG
 
     Main command line script to execute the model.  All settings are read from
     cfg-file. One cfg-file is required argument to train, test, and evaluate
@@ -35,13 +35,19 @@ This help information can be also accessed with
 
 .. code-block:: console
 
-    $ python copro_runner.py --help
+    $ copro_runner --help
 
 All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
 
 .. note::
 
     Multiple projections can be made based on a reference model by providing multiple cfg-files with a -proj/--projection-settings flag.
+
+In case issues occur, updating ``setuptools`` may be required.
+
+.. code-block:: console
+
+    $ pip3 install --upgrade pip setuptools
 
 Reference run
 ^^^^^^^^^^^^^^^^
