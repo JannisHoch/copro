@@ -9,16 +9,16 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings("ignore")
 
-@click.group()
-def cli():
-    pass
+# @click.group()
+# def cli():
+#     pass
 
 @click.command()
 @click.argument('cfg', type=click.Path())
 @click.option('--projection-settings', '-proj', help='path to cfg-file with settings for a projection run', multiple=True, type=click.Path())
 @click.option('--verbose', '-v', help='command line switch to turn on verbose mode', is_flag=True)
 
-def main(cfg, projection_settings=[], verbose=False):   
+def cli(cfg, projection_settings=[], verbose=False):   
     """Main command line script to execute the model. 
     All settings are read from cfg-file.
     One cfg-file is required argument to train, test, and evaluate the model.
@@ -125,6 +125,3 @@ def main(cfg, projection_settings=[], verbose=False):
             y_df = copro.pipeline.run_prediction(X, scaler, config)
 
             df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(y_df, global_df, out_dir=out_dir, make_proj=True)
-
-if __name__ == '__main__':
-    main()
