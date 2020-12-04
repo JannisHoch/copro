@@ -25,7 +25,7 @@ def define_scaling(config):
     elif config.get('machine_learning', 'scaler') == 'RobustScaler':
         scaler = preprocessing.RobustScaler()
     elif config.get('machine_learning', 'scaler') == 'QuantileTransformer':
-        scaler = preprocessing.QuantileTransformer()
+        scaler = preprocessing.QuantileTransformer(random_state=42)
     else:
         raise ValueError('no supported scaling-algorithm selected - choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer')
 
@@ -47,11 +47,11 @@ def define_model(config):
     """    
     
     if config.get('machine_learning', 'model') == 'NuSVC':
-        clf = svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, probability=True, degree=10, gamma=10)
+        clf = svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, probability=True, degree=10, gamma=10, random_state=42)
     elif config.get('machine_learning', 'model') == 'KNeighborsClassifier':
         clf = neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance')
     elif config.get('machine_learning', 'model') == 'RFClassifier':
-        clf = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100})
+        clf = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)
     else:
         raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
 
