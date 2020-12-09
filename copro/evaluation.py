@@ -323,6 +323,7 @@ def get_feature_importance(clf, config, out_dir):
     dict_out = dict()
     for key, x in zip(config.items('data'), range(len(arr))):
         dict_out[key[0]] = arr[x]
+    dict_out['conflict_t-1'] = arr[-1]
 
     df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
 

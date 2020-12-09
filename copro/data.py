@@ -22,7 +22,8 @@ def initiate_XY_data(config):
     XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
-    XY['conflict'] = pd.Series(dtype=int)
+    XY['conflict_t-1'] = pd.Series(dtype=bool)
+    XY['conflict'] = pd.Series(dtype=bool)
 
     if config.getboolean('general', 'verbose'): print('{}'.format(XY) + os.linesep)
 
@@ -73,7 +74,8 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
 
     # go through all simulation years as specified in config-file
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
-    for sim_year in model_period:
+
+    for (sim_year, i) in zip(model_period, range(len(model_period))):
 
         print('INFO: entering year {}'.format(sim_year))
 
@@ -83,7 +85,16 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
             if key == 'conflict':
             
                 data_series = value
-                data_list = conflict.conflict_in_year_bool(conflict_gdf, polygon_gdf, config, sim_year)
+                data_list = conflict.conflict_in_year_bool(conflict_gdf, polygon_gdf, sim_year)
+                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                XY[key] = data_series
+
+            elif key == 'conflict_t-1':
+
+                data_series = value
+                if i==0: t_0_flag = True
+                else: t_0_flag = None
+                data_list = conflict.conflict_in_previous_year(conflict_gdf, polygon_gdf, sim_year, t_0_flag=t_0_flag)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
