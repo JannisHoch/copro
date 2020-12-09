@@ -152,3 +152,28 @@ def split_XY_data(XY, config):
         print('DEBUG: a fraction of {} percent in the data corresponds to conflicts.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
+
+def neighboring_polys(config, extent_gdf, identifier='watprovID'):
+
+    # initialise empty dataframe
+    df = pd.DataFrame()
+
+    # go through each polygon aka water province
+    for i in range(len(extent_gdf)):
+        if config.getboolean('general', 'verbose'): print('DEBUG: finding touching neighbours for identifier {} {}'.format(identifier, extent_gdf[identifier].iloc[i]))
+        # get geometry of current polygon
+        wp = extent_gdf.geometry.iloc[i]
+        # check which polygons in geodataframe (i.e. all water provinces) touch the current polygon
+        # also create a dataframe from result (boolean)
+        # the transpose is needed to easier append
+        df_temp = pd.DataFrame(extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]).T
+        # append the dataframe
+        df = df.append(df_temp)
+
+    # replace generic indices with actual water province IDs
+    df.set_index(extent_gdf[identifier], inplace=True)
+
+    # replace generic columns with actual water province IDs
+    df.columns = extent_gdf[identifier].values
+
+    return df
