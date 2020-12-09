@@ -3,20 +3,19 @@ import pandas as pd
 import numpy as np
 import os, sys
 
-def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year): 
+def conflict_in_year_bool(conflict_gdf, extent_gdf, sim_year): 
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
     Args:
-        conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data)
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        sim_year (int): year for which data is extracted
+        conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data).
+        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
+        sim_year (int): year for which data is extracted.
 
     Raises:
-        AssertionError: raised if the length of output list does not match length of input geo-dataframe
+        AssertionError: raised if the length of output list does not match length of input geo-dataframe.
 
     Returns:
-        list: list containing 0/1 per polygon depending on conflict occurence
+        list: list containing 0/1 per polygon depending on conflict occurence.
     """    
 
     # select the entries which occured in this year
@@ -27,19 +26,67 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, config, sim_year):
     
     # determine the aggregated amount of fatalities in one region (e.g. water province)
     try:
-        fatalities_per_watProv = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+        fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
     except:
-        fatalities_per_watProv = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+        fatalities_per_poly = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i in range(len(extent_gdf)):
         try:
-            i_watProv = extent_gdf.iloc[i]['watprovID']
+            i_poly = extent_gdf.iloc[i]['watprovID']
         except:
-            i_watProv = extent_gdf.iloc[i]['name']
-        if i_watProv in fatalities_per_watProv.index.values:
+            i_poly = extent_gdf.iloc[i]['name']
+        if i_poly in fatalities_per_poly.index.values:
+            list_out.append(1)
+        else:
+            list_out.append(0)
+            
+    if not len(extent_gdf) == len(list_out):
+        raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
+
+    return list_out
+
+def conflict_in_previous_year(conflict_gdf, extent_gdf, sim_year, t_0_flag=None):
+    """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
+    If the current time step is the first (t=0), then conflict data of this year is used instead due to the lack of earlier data.
+
+    Args:
+        conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data).
+        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
+        sim_year (int): year for which data is extracted.
+        t_0_flag (bool, optional): Flag whether first time step is run. If so, needs to be set to True. Defaults to None.
+
+    Raises:
+        ValueError: raised if t_0_flag is invalid.
+        AssertionError: raised if the length of output list does not match length of input geo-dataframe.
+
+    Returns:
+        list: list containing 0/1 per polygon depending on conflict occurence.
+    """    
+
+    # if it is the first time step (t_0), the data of this year will be used
+    if t_0_flag == True:
+        print('... it is the first year, so no conflict for previous year is known')
+        temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]
+    # else, the data from the previous time step (t-1) is used
+    elif t_0_flag == None:
+        temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year-1]  
+    else:
+        raise ValueError('ERROR: the t_0_flag should either be None or True.') 
+    
+    # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
+    data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
+
+    fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+
+    # loop through all regions and check if exists in sub-set
+    # if so, this means that there was conflict and thus assign value 1
+    list_out = []
+    for i in range(len(extent_gdf)):
+        i_poly = extent_gdf.iloc[i]['watprovID']
+        if i_poly in fatalities_per_poly.index.values:
             list_out.append(1)
         else:
             list_out.append(0)

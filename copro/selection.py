@@ -99,14 +99,8 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
         geo-dataframe: polygons of study area clipped to climate zones.
         dataframe: global look-up dataframe linking polygon ID with geometry information.
     """
-    
-    # Koeppen_Geiger_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
-    #                                  config.get('climate', 'shp')) 
 
     Koeppen_Geiger_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('climate', 'shp'))
-    
-    # code2class_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')),
-    #                              config.get('climate', 'code2class'))
 
     code2class_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('climate', 'code2class'))
     

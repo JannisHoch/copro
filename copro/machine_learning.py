@@ -78,14 +78,14 @@ def split_scale_train_test_split(X, Y, config, scaler):
         arrays: arrays containing training-data and test-data as well as IDs and geometry for training-data and test-data.
     """ 
 
-    ##- separate arrays for geomety and variable values
+    ##- separate arrays for ID, geometry, and sample values per polygon
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
     if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
-    ##- combining geometry and scaled variable values
+    ##- combining ID, geometry and scaled sample values per polygon
     X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
