@@ -68,7 +68,6 @@ def conflict_in_previous_year(conflict_gdf, extent_gdf, sim_year, t_0_flag=None)
 
     # if it is the first time step (t_0), the data of this year will be used
     if t_0_flag == True:
-        print('... it is the first year, so no conflict for previous year is known')
         temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]
     # else, the data from the previous time step (t-1) is used
     elif t_0_flag == None:
