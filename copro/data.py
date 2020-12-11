@@ -114,7 +114,7 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
 
             else:
 
-                nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)))
+                nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
                 
                 if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                     data_series = value
