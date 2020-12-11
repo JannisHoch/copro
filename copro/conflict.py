@@ -68,6 +68,7 @@ def conflict_in_previous_year(conflict_gdf, extent_gdf, sim_year, t_0_flag=None)
 
     # if it is the first time step (t_0), the data of this year will be used
     if t_0_flag == True:
+        print('DEBUG: first year of simulation period -> conflict at t-1 set to conflict at t')
         temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]
     # else, the data from the previous time step (t-1) is used
     elif t_0_flag == None:
@@ -78,17 +79,21 @@ def conflict_in_previous_year(conflict_gdf, extent_gdf, sim_year, t_0_flag=None)
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
 
-    fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+    # determine log-transformed count of unique conflicts per water province
+    # the id column refers to the conflict id, not the water province id!
+    print('DEBUG: computing log-transformed count of conflicts at t-1')
+    conflicts_per_poly = np.log(data_merged.id.groupby(data_merged['watprovID']).count().to_frame())
 
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i in range(len(extent_gdf)):
         i_poly = extent_gdf.iloc[i]['watprovID']
-        if i_poly in fatalities_per_poly.index.values:
-            list_out.append(1)
+        if i_poly in conflicts_per_poly.index.values:
+            val = float(conflicts_per_poly.id.loc[conflicts_per_poly.index == i_poly].values[0])
+            list_out.append(val)
         else:
-            list_out.append(0)
+            list_out.append(float(0.))
             
     if not len(extent_gdf) == len(list_out):
         raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
