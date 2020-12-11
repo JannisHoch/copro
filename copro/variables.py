@@ -161,10 +161,13 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
         if (zonal_stats[0][stat_func] == None) and (config.getboolean('general', 'verbose')): 
             print('WARNING: NaN computed!')
+            if ln_flag:
+                print('INFO: setting NaN to 0')
+                zonal_stats[0][stat_func] = 0
         # elif (zonal_stats[0][stat_func] == -math.inf) and (config.getboolean('general', 'verbose')):
         elif (zonal_stats[0][stat_func] == -math.inf):
-            print('INFO: set -inf to None')
-            zonal_stats[0][stat_func] = None
+            print('INFO: setting {} to 0'.format(zonal_stats[0][stat_func]))
+            zonal_stats[0][stat_func] = 0
 
         list_out.append(zonal_stats[0][stat_func])
 
