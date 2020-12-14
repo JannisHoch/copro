@@ -152,3 +152,4 @@ example/*.html
 example/conflicts.*
 example/polygons.*
 example/global_df.npy
+example/neighboring_matrix.csv
