@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import os, sys
 
-def conflict_in_year_bool(conflict_gdf, extent_gdf, sim_year): 
+def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year): 
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
     Args:
@@ -48,7 +48,7 @@ def conflict_in_year_bool(conflict_gdf, extent_gdf, sim_year):
 
     return list_out
 
-def conflict_in_previous_year(conflict_gdf, extent_gdf, sim_year, t_0_flag=None):
+def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, t_0_flag=None):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
     If the current time step is the first (t=0), then conflict data of this year is used instead due to the lack of earlier data.
 
@@ -68,7 +68,7 @@ def conflict_in_previous_year(conflict_gdf, extent_gdf, sim_year, t_0_flag=None)
 
     # if it is the first time step (t_0), the data of this year will be used
     if t_0_flag == True:
-        print('DEBUG: first year of simulation period -> conflict at t-1 set to conflict at t')
+        if config.getboolean('general', 'verbose'): print('DEBUG: first year of simulation period -> conflict at t-1 set to conflict at t')
         temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]
     # else, the data from the previous time step (t-1) is used
     elif t_0_flag == None:
@@ -81,7 +81,7 @@ def conflict_in_previous_year(conflict_gdf, extent_gdf, sim_year, t_0_flag=None)
 
     # determine log-transformed count of unique conflicts per water province
     # the id column refers to the conflict id, not the water province id!
-    print('DEBUG: computing log-transformed count of conflicts at t-1')
+    if config.getboolean('general', 'verbose'): print('DEBUG: computing log-transformed count of conflicts at t-1')
     conflicts_per_poly = np.log(data_merged.id.groupby(data_merged['watprovID']).count().to_frame())
 
     # loop through all regions and check if exists in sub-set
