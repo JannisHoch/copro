@@ -6,6 +6,7 @@ import rasterstats as rstats
 import numpy as np
 import os, sys
 import math
+from distutils import util
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -44,13 +45,14 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
     else:
         nc_fo = data_fo[0]
-        ln_flag = bool(data_fo[1])
+        ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
-
-    print(nc_fo)
-    print(ln_flag)
+    if config.getboolean('general', 'verbose'): 
+        if ln_flag:
+            print('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+        else:
+            print('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -71,7 +73,6 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     # initialize output list
     list_out = []
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    print('DEBUG: computing zonal statistic with method {}'.format(stat_method))
     for i in range(len(extent_gdf)):
 
         # province i
@@ -83,7 +84,6 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
         # # if specified, log-transform value
         if ln_flag:
-            if config.getboolean('general', 'verbose'): print('DEBUG: log-transform variable {}'.format(var_name))
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val = np.log(val)
         
@@ -134,10 +134,14 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
     else:
         nc_fo = data_fo[0]
-        ln_flag = bool(data_fo[1])
+        ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
+    if config.getboolean('general', 'verbose'): 
+        if ln_flag:
+            print('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+        else:
+            print('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -162,7 +166,6 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     # initialize output list
     list_out = []
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    print('DEBUG: computing zonal statistic with method {}'.format(stat_method))
     for i in range(len(extent_gdf)):
 
         # province i
@@ -174,7 +177,6 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
         # # if specified, log-transform value
         if ln_flag:
-            if config.getboolean('general', 'verbose'): print('DEBUG: log-transform variable {}'.format(var_name))
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val = np.log(val)
         
