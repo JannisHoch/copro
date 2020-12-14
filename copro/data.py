@@ -75,6 +75,8 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
     # go through all simulation years as specified in config-file
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
 
+    neighboring_matrix = neighboring_polys(config, polygon_gdf)
+
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
         print('INFO: entering year {}'.format(sim_year))
@@ -94,7 +96,7 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
                 data_series = value
                 if i==0: t_0_flag = True
                 else: t_0_flag = None
-                data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, t_0_flag=t_0_flag)
+                data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, neighboring_matrix, t_0_flag=t_0_flag)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
@@ -166,12 +168,13 @@ def split_XY_data(XY, config):
 
 def neighboring_polys(config, extent_gdf, identifier='watprovID'):
 
+    print('DEBUG: determining matrix with neighboring polygons')
+
     # initialise empty dataframe
     df = pd.DataFrame()
 
     # go through each polygon aka water province
     for i in range(len(extent_gdf)):
-        if config.getboolean('general', 'verbose'): print('DEBUG: finding touching neighbours for identifier {} {}'.format(identifier, extent_gdf[identifier].iloc[i]))
         # get geometry of current polygon
         wp = extent_gdf.geometry.iloc[i]
         # check which polygons in geodataframe (i.e. all water provinces) touch the current polygon
@@ -188,3 +191,14 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
     df.columns = extent_gdf[identifier].values
 
     return df
+
+def find_neighbors(watprovID, neighboring_matrix):
+
+    print('DEBUG: searching neighbors of watprovID {}'.format(watprovID))
+
+    neighbours = neighboring_matrix.loc[neighboring_matrix.index == watprovID].T
+    
+    actual_neighbours = neighbours.loc[neighbours[watprovID] == True].index.values
+    print('...neighbors are {}'.format(actual_neighbours))
+
+    return actual_neighbours
