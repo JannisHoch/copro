@@ -85,7 +85,7 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
             if key == 'conflict':
             
                 data_series = value
-                data_list = conflict.conflict_in_year_bool(conflict_gdf, polygon_gdf, sim_year)
+                data_list = conflict.conflict_in_year_bool(config, conflict_gdf, polygon_gdf, sim_year)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
@@ -94,7 +94,7 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
                 data_series = value
                 if i==0: t_0_flag = True
                 else: t_0_flag = None
-                data_list = conflict.conflict_in_previous_year(conflict_gdf, polygon_gdf, sim_year, t_0_flag=t_0_flag)
+                data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, t_0_flag=t_0_flag)
                 data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                 XY[key] = data_series
 
