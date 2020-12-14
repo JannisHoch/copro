@@ -10,7 +10,7 @@ import math
 import warnings
 warnings.filterwarnings("ignore")
 
-def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year, stat_func='mean'):
+def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
     By default, the mean value of all cells within a polygon is computed.
     The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
@@ -30,7 +30,6 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year, st
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
         sim_year (int): year for which data is extracted.
-        stat_func (str, optional): Statistical function to be applied, choose from available options in rasterstats package. Defaults to 'mean'.
 
     Raises:
         ValueError: raised if the extracted variable at a time step does not contain data
@@ -41,15 +40,12 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year, st
 
     data_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name)).rsplit(',')
 
-    if len(data_fo) == 1:
+    if len(data_fo) != 3:
+        raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
+    else:
         nc_fo = data_fo[0]
-        ln_flag = False
-    elif len(data_fo) == 2:
-        nc_fo = data_fo[0]
-        if data_fo[1] == 'ln':
-            ln_flag = True
-        else:
-            raise ValueError('ERROR: no valid ln flag set')
+        ln_flag = bool(data_fo[1])
+        stat_method = str(data_fo[2])
 
     if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
@@ -62,7 +58,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year, st
     nc_var = nc_ds[var_name]
     if ln_flag:
         nc_var = np.log(nc_var)
-        print('DEBUG: log-transform variable {}'.format(var_name))
+        if config.getboolean('general', 'verbose'): print('DEBUG: log-transform variable {}'.format(var_name))
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
 
@@ -75,21 +71,38 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year, st
     # initialize output list
     list_out = []
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
+    print('DEBUG: computing zonal statistic with method {}'.format(stat_method))
     for i in range(len(extent_gdf)):
+
+        # province i
         prov = extent_gdf.iloc[i]
-        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
-        if (zonal_stats[0][stat_func] == None) and (config.getboolean('general', 'verbose')): 
+
+        # compute zonal stats for this province
+        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method)
+        val = zonal_stats[0][stat_method]
+
+        # # if specified, log-transform value
+        if ln_flag:
+            if config.getboolean('general', 'verbose'): print('DEBUG: log-transform variable {}'.format(var_name))
+            # works only if zonal stats is not None, i.e. if it's None it stays None
+            if val != None: val = np.log(val)
+        
+        # in case log-transformed value results in -inf, replace with None
+        if val == -math.inf:
+            if config.getboolean('general', 'verbose'): print('INFO: set -inf to None')
+            val = None
+
+        # print a warning if result is None
+        if (val == None) and (config.getboolean('general', 'verbose')): 
             print('WARNING: NaN computed!')
 
-        print(zonal_stats[0][stat_func])
-
-        list_out.append(zonal_stats[0][stat_func])
+        list_out.append(val)
 
     if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
 
     return list_out
 
-def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year, stat_func='mean'):
+def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
     By default, the mean value of all cells within a polygon is computed.
     The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
@@ -106,7 +119,6 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
         sim_year (int): year for which data is extracted.
-        stat_func (str, optional): Statistical function to be applied, choose from available options in rasterstats package. Defaults to 'mean'.
 
     Raises:
         ValueError: raised if specfied year cannot be found in years in nc-file
@@ -118,15 +130,12 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
     data_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name)).rsplit(',')
 
-    if len(data_fo) == 1:
+    if len(data_fo) != 3:
+        raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
+    else:
         nc_fo = data_fo[0]
-        ln_flag = False
-    elif len(data_fo) == 2:
-        nc_fo = data_fo[0]
-        if data_fo[1] == 'ln':
-            ln_flag = True
-        else:
-            raise ValueError('no valid ln flag set')
+        ln_flag = bool(data_fo[1])
+        stat_method = str(data_fo[2])
 
     if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
@@ -134,9 +143,6 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     nc_ds = xr.open_dataset(nc_fo)
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
-    if ln_flag:
-        nc_var = np.log(nc_var)
-        print('DEBUG: log-transform variable {}'.format(var_name))
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     if sim_year not in years:
@@ -156,20 +162,32 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     # initialize output list
     list_out = []
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
+    print('DEBUG: computing zonal statistic with method {}'.format(stat_method))
     for i in range(len(extent_gdf)):
-        prov = extent_gdf.iloc[i]
-        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_func)
-        if (zonal_stats[0][stat_func] == None) and (config.getboolean('general', 'verbose')): 
-            print('WARNING: NaN computed!')
-            if ln_flag:
-                print('INFO: setting NaN to 0')
-                zonal_stats[0][stat_func] = 0
-        # elif (zonal_stats[0][stat_func] == -math.inf) and (config.getboolean('general', 'verbose')):
-        elif (zonal_stats[0][stat_func] == -math.inf):
-            print('INFO: setting {} to 0'.format(zonal_stats[0][stat_func]))
-            zonal_stats[0][stat_func] = 0
 
-        list_out.append(zonal_stats[0][stat_func])
+        # province i
+        prov = extent_gdf.iloc[i]
+
+        # compute zonal stats for this province
+        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method)
+        val = zonal_stats[0][stat_method]
+
+        # # if specified, log-transform value
+        if ln_flag:
+            if config.getboolean('general', 'verbose'): print('DEBUG: log-transform variable {}'.format(var_name))
+            # works only if zonal stats is not None, i.e. if it's None it stays None
+            if val != None: val = np.log(val)
+        
+        # in case log-transformed value results in -inf, replace with None
+        if val == -math.inf:
+            if config.getboolean('general', 'verbose'): print('INFO: set -inf to None')
+            val = None
+
+        # print a warning if result is None
+        if (val == None) and (config.getboolean('general', 'verbose')): 
+            print('WARNING: NaN computed!')
+
+        list_out.append(val)
 
     if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
 
