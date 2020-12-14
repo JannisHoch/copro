@@ -1,3 +1,4 @@
+from copro import data
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -48,7 +49,7 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year):
 
     return list_out
 
-def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, t_0_flag=None):
+def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, neighboring_matrix, t_0_flag=None):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
     If the current time step is the first (t=0), then conflict data of this year is used instead due to the lack of earlier data.
 
@@ -88,10 +89,12 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, t_0_fl
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i in range(len(extent_gdf)):
-        i_poly = extent_gdf.iloc[i]['watprovID']
+        i_poly = extent_gdf.watprovID.iloc[i]
         if i_poly in conflicts_per_poly.index.values:
             val = float(conflicts_per_poly.id.loc[conflicts_per_poly.index == i_poly].values[0])
             list_out.append(val)
+            # find neighbors of this polygon
+            nb = data.find_neighbors(i_poly, neighboring_matrix)
         else:
             list_out.append(float(0.))
             
@@ -198,3 +201,4 @@ def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
     df['correct_pred'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
     return df
+
