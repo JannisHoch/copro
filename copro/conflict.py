@@ -3,6 +3,7 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import os, sys
+import math
 
 def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year): 
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
@@ -83,20 +84,38 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, neighb
     # determine log-transformed count of unique conflicts per water province
     # the id column refers to the conflict id, not the water province id!
     if config.getboolean('general', 'verbose'): print('DEBUG: computing log-transformed count of conflicts at t-1')
-    conflicts_per_poly = np.log(data_merged.id.groupby(data_merged['watprovID']).count().to_frame())
+    conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame()
 
-    # loop through all regions and check if exists in sub-set
-    # if so, this means that there was conflict and thus assign value 1
+    # loop through all polygons and check if exists in sub-set
     list_out = []
     for i in range(len(extent_gdf)):
         i_poly = extent_gdf.watprovID.iloc[i]
         if i_poly in conflicts_per_poly.index.values:
-            val = float(conflicts_per_poly.id.loc[conflicts_per_poly.index == i_poly].values[0])
-            list_out.append(val)
+            # val = float(conflicts_per_poly.id.loc[conflicts_per_poly.index == i_poly].values[0])
+            # list_out.append(val)
             # find neighbors of this polygon
             nb = data.find_neighbors(i_poly, neighboring_matrix)
+            # initialize count for total numbers of conflicts in neighbors
+            tot_nr_confl = 0.0
+            # loop through neighbors
+            for k in nb:
+                # check if there was conflict at t-1
+                if k in conflicts_per_poly.index.values:
+                    # determine number of conflicts per neigbors at t-1
+                    val = conflicts_per_poly.id.loc[conflicts_per_poly.index == k].values[0]
+                    print('DEBUG: watprovID {} has neighbor {} with {} conflict(s) in previous timestep'.format(i_poly, k, val))
+                    # add to sum
+                    tot_nr_confl += val
+            # append log-transformed sum to list
+            print('DEBUG: total number of conflicts at t-1 for watprovID {} is {}'.format(i_poly, tot_nr_confl))
+            # if tot_nr_confl == 0.0: tot_nr_confl = 1.0
+            tot_nr_confl = np.log(tot_nr_confl)
+            if tot_nr_confl == -math.inf:
+                print('WARNING: no -inf allowed; setting value for watprovID {} to 0'.format(i_poly))
+                tot_nr_confl = 0.0
+            list_out.append(tot_nr_confl)
         else:
-            list_out.append(float(0.))
+            list_out.append(0.0)
             
     if not len(extent_gdf) == len(list_out):
         raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))

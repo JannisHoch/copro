@@ -22,7 +22,7 @@ def initiate_XY_data(config):
     XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
-    XY['conflict_t-1'] = pd.Series(dtype=bool)
+    XY['conflict_t-1'] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=bool)
 
     if config.getboolean('general', 'verbose'): print('{}'.format(XY) + os.linesep)
@@ -199,6 +199,5 @@ def find_neighbors(watprovID, neighboring_matrix):
     neighbours = neighboring_matrix.loc[neighboring_matrix.index == watprovID].T
     
     actual_neighbours = neighbours.loc[neighbours[watprovID] == True].index.values
-    print('...neighbors are {}'.format(actual_neighbours))
 
     return actual_neighbours
