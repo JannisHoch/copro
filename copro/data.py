@@ -79,61 +79,67 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
-        print('INFO: entering year {}'.format(sim_year))
-
-        # go through all keys in dictionary
-        for key, value in XY.items(): 
-
-            if key == 'conflict':
+        if i == 0:
             
-                data_series = value
-                data_list = conflict.conflict_in_year_bool(config, conflict_gdf, polygon_gdf, sim_year)
-                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                XY[key] = data_series
+            print('INFO: skipping first year {} to start up model'.format(sim_year))
 
-            elif key == 'conflict_t-1':
+        if i > 0:
 
-                data_series = value
-                if i==0: t_0_flag = True
-                else: t_0_flag = None
-                data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, neighboring_matrix, t_0_flag=t_0_flag)
-                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                XY[key] = data_series
+            print('INFO: entering year {}'.format(sim_year))
 
-            elif key == 'poly_ID':
-            
-                data_series = value
-                data_list = conflict.get_poly_ID(polygon_gdf)
-                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                XY[key] = data_series
+            # go through all keys in dictionary
+            for key, value in XY.items(): 
 
-            elif key == 'poly_geometry':
-            
-                data_series = value
-                data_list = conflict.get_poly_geometry(polygon_gdf, config)
-                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                XY[key] = data_series
-
-            else:
-
-                nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
+                if key == 'conflict':
                 
-                if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                     data_series = value
-                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                    data_list = conflict.conflict_in_year_bool(config, conflict_gdf, polygon_gdf, sim_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
-                    
-                elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                    data_series = value
-                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                    XY[key] = data_series
-                    
-                else:
-                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-    print('INFO: all data read')
+                elif key == 'conflict_t-1':
+
+                    data_series = value
+                    if i==0: t_0_flag = True
+                    else: t_0_flag = None
+                    data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, neighboring_matrix, t_0_flag=t_0_flag)
+                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    XY[key] = data_series
+
+                elif key == 'poly_ID':
+                
+                    data_series = value
+                    data_list = conflict.get_poly_ID(polygon_gdf)
+                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    XY[key] = data_series
+
+                elif key == 'poly_geometry':
+                
+                    data_series = value
+                    data_list = conflict.get_poly_geometry(polygon_gdf, config)
+                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    XY[key] = data_series
+
+                else:
+
+                    nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
+                    
+                    if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                        data_series = value
+                        data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                        data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                        XY[key] = data_series
+                        
+                    elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                        data_series = value
+                        data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                        data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                        XY[key] = data_series
+                        
+                    else:
+                        raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+
+            print('INFO: all data read')
     
     return pd.DataFrame.from_dict(XY).to_numpy()
 
