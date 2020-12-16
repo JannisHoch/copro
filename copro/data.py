@@ -22,10 +22,15 @@ def initiate_XY_data(config):
     XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
-    XY['conflict_t-1'] = pd.Series(dtype=float)
+    XY['conflict_t_min_1'] = pd.Series(dtype=bool)
+    XY['conflict_t_min_1_nb'] = pd.Series(dtype=float)
     XY['conflict'] = pd.Series(dtype=bool)
 
-    if config.getboolean('general', 'verbose'): print('{}'.format(XY) + os.linesep)
+    if config.getboolean('general', 'verbose'): 
+        print('DEBUG: the columns in the sample matrix used are:')
+        for key in XY:
+            print(key)
+        print('')
 
     return XY
 
@@ -46,6 +51,8 @@ def initiate_X_data(config):
     X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
+    X['conflict_t_min_1'] = pd.Series(dtype=bool)
+    X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
 
     if config.getboolean('general', 'verbose'): print('{}'.format(X) + os.linesep)
 
@@ -80,7 +87,7 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
         if i == 0:
-            
+
             print('INFO: skipping first year {} to start up model'.format(sim_year))
 
         if i > 0:
@@ -97,12 +104,17 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf):
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
-                elif key == 'conflict_t-1':
+                elif key == 'conflict_t_min_1':
 
                     data_series = value
-                    if i==0: t_0_flag = True
-                    else: t_0_flag = None
-                    data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, neighboring_matrix, t_0_flag=t_0_flag)
+                    data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year)
+                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    XY[key] = data_series
+
+                elif key == 'conflict_t_min_1_nb':
+
+                    data_series = value
+                    data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, check_neighbors=True, neighboring_matrix=neighboring_matrix)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
