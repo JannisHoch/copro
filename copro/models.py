@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import os, sys
 
-def all_data(X, Y, config, scaler, clf, out_dir):
+def all_data(X, Y, config, scaler, clf, out_dir, run_nr=None):
     """Main model workflow when all data is used. The model workflow is executed for each model simulation.
 
     Args:
@@ -24,7 +24,7 @@ def all_data(X, Y, config, scaler, clf, out_dir):
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
     
-    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config)
+    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr=run_nr)
 
     eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
 
