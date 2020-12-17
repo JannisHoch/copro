@@ -1,5 +1,6 @@
 import os
 import pickle
+import glob
 import pandas as pd
 import numpy as np
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
@@ -105,7 +106,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
 
     return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
-def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
+def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr=None):
     """Fits the classifier based on training-data and makes predictions.
     Additionally, the prediction probability is determined.
 
@@ -120,6 +121,15 @@ def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
     """    
 
     clf.fit(X_train, y_train)
+
+    clf_pickle_rep = os.path.join(out_dir, 'clfs')
+    if not os.path.isdir(clf_pickle_rep):
+        os.makedirs(clf_pickle_rep)
+
+    if run_nr != None:
+        if config.getboolean('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
+        with open(os.path.join(clf_pickle_rep, 'clf_{}.pkl'.format(run_nr)), 'wb') as f:
+            pickle.dump(clf, f)
 
     y_pred = clf.predict(X_test)
 
@@ -156,8 +166,25 @@ def pickle_clf(scaler, clf, config, root_dir):
 
     clf.fit(X_ft_fit, Y_fit)
 
-    print('INFO: dumping classifier to {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl')))
-    with open(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
-        pickle.dump(clf, f)
+    # print('INFO: dumping classifier to {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl')))
+    # with open(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
+    #     pickle.dump(clf, f)
 
     return clf
+
+def load_clfs(config, out_dir):
+    """[summary]
+
+    Args:
+        config ([type]): [description]
+        out_dir ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """   
+
+    clfs = os.listdir(os.path.join(out_dir, 'clfs'))
+
+    assert len(clfs), len(config.getint('settings', 'n_runs'))
+
+    return clfs

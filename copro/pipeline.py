@@ -89,7 +89,7 @@ def prepare_ML(config):
 
     return scaler, clf
 
-def run_reference(X, Y, config, scaler, clf, out_dir):
+def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
     """Top-level function to run one of the four supported models.
 
     Args:
@@ -110,7 +110,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir):
     """    
 
     if config.getint('general', 'model') == 1:
-        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir)
+        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir, run_nr=run_nr)
     elif config.getint('general', 'model') == 2:
         X_df, y_df, eval_dict = models.leave_one_out(X, Y, config, scaler, clf, out_dir)
     elif config.getint('general', 'model') == 3:
