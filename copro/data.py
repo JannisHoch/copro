@@ -211,8 +211,15 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
     return df
 
 def find_neighbors(watprovID, neighboring_matrix):
+    """[summary]
 
-    print('DEBUG: searching neighbors of watprovID {}'.format(watprovID))
+    Args:
+        watprovID ([type]): [description]
+        neighboring_matrix ([type]): [description]
+
+    Returns:
+        [type]: [description]
+    """    
 
     neighbours = neighboring_matrix.loc[neighboring_matrix.index == watprovID].T
     
