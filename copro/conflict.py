@@ -31,6 +31,10 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year):
         fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
     except:
         fatalities_per_poly = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+
+    # TODO: store boolean map of conflict in last simulation year
+    if sim_year == config.getint('settings', 'y_end'):
+        print('TODO: store boolean map of conflict in last simulation year {} to output folder'.format(sim_year))
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
@@ -78,7 +82,7 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
     # determine log-transformed count of unique conflicts per water province
     # the id column refers to the conflict id, not the water province id!
     if config.getboolean('general', 'verbose'): 
-        if check_neighbors: print('DEBUG: computing log-transformed count of conflicts in neighboring polygons at t-1')
+        if check_neighbors: print('DEBUG: checking for conflicts in neighboring polygons at t-1')
         else: print('DEBUG: checking for conflict event in polygon at t-1')
 
     conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame()
