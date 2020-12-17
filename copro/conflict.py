@@ -5,7 +5,7 @@ import numpy as np
 import os, sys
 import math
 
-def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year): 
+def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir): 
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
     Args:
@@ -32,9 +32,14 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year):
     except:
         fatalities_per_poly = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
 
+    out_dir = os.path.join(out_dir, 'files')
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+
     # TODO: store boolean map of conflict in last simulation year
     if sim_year == config.getint('settings', 'y_end'):
         print('TODO: store boolean map of conflict in last simulation year {} to output folder'.format(sim_year))
+        
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1

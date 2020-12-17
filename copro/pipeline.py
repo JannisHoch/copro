@@ -25,7 +25,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
 
         XY = data.initiate_XY_data(config)
 
-        XY = data.fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf)
+        XY = data.fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
 
         print('INFO: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
         np.save(os.path.join(out_dir,'XY'), XY)
