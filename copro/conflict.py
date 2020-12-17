@@ -93,9 +93,6 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
 
             if check_neighbors:
 
-                # if neighboring_matrix == None:
-                #     raise ValueError('ERROR: a valid lookup matrix for neighboring polygons must be provided if model is ought to check for conflicts in neighboring polygons!')
-
                 # determine log-scaled number of conflict events in neighboring polygons
                 val = calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly)
                 # append resulting value
@@ -126,13 +123,12 @@ def calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly):
 
     Returns:
         [type]: [description]
-    """    
+    """ 
 
     # find neighbors of this polygon
     nb = data.find_neighbors(i_poly, neighboring_matrix)
 
-    # initialize count for total numbers of conflicts in neighbors
-    tot_nr_confl = 0.0
+    nb_count = []
 
     # loop through neighbors
     for k in nb:
@@ -140,23 +136,12 @@ def calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly):
         # check if there was conflict at t-1
         if k in conflicts_per_poly.index.values:
 
-            # determine number of conflicts per neigbors at t-1
-            val = conflicts_per_poly.id.loc[conflicts_per_poly.index == k].values[0]
+            nb_count.append(1)
 
-            # add to sum
-            tot_nr_confl += val
+    if np.sum(nb_count) > 0: val = 1
+    else: val = 0
 
-    # log-transform value
-    if config.getboolean('general', 'verbose'): print('DEBUG: total number of conflicts at t-1 for watprovID {} is {}'.format(i_poly, tot_nr_confl))
-    tot_nr_confl = np.log(tot_nr_confl)
-
-    # if log-transformed value is -inf, mask with zero
-    if tot_nr_confl == -math.inf:
-
-        print('WARNING: no -inf allowed - setting value for watprovID {} to 0'.format(i_poly))
-        tot_nr_confl = 0.0
-
-    return tot_nr_confl
+    return val
 
 def get_poly_ID(extent_gdf): 
     """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'name' or 'watprovID'.
