@@ -166,9 +166,9 @@ def pickle_clf(scaler, clf, config, root_dir):
 
     clf.fit(X_ft_fit, Y_fit)
 
-    # print('INFO: dumping classifier to {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl')))
-    # with open(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
-    #     pickle.dump(clf, f)
+    print('INFO: dumping classifier to {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl')))
+    with open(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
+        pickle.dump(clf, f)
 
     return clf
 
