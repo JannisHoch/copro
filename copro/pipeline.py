@@ -60,7 +60,7 @@ def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf=None):
 
         X = data.initiate_X_data(config)
 
-        X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf)
+        X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
 
         print('INFO: saving X data by default to file {}'.format(os.path.join(out_dir, 'X.npy')))
         np.save(os.path.join(out_dir,'X'), X)
