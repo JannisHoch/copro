@@ -47,6 +47,8 @@ Installation
 To install copro, first clone the code from GitHub. It is advised to create an individual python environment first. 
 You can then install the model package into this environment.
 
+To do so, you need to have Anaconda or Miniconda installed. For installation guidelines, see `here <https://docs.anaconda.com/anaconda/install/>`_.
+
 .. code-block:: console
 
     $ git clone https://github.com/JannisHoch/copro.git
