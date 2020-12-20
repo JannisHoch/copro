@@ -162,7 +162,7 @@ def pickle_clf(scaler, clf, config, root_dir):
 
     X_fit, Y_fit = data.split_XY_data(XY_fit, config)
     X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)
-    X_ft_fit = scaler.fit_transform(X_data_fit)
+    X_ft_fit = scaler.fit_transform(X_data_fit[:, :-3])
 
     clf.fit(X_ft_fit, Y_fit)
 
