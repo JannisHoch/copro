@@ -151,7 +151,4 @@ _paper/*
 example/*.html
 
 # converted temp output
-example/conflicts.*
-example/polygons.*
-example/global_df.npy
-example/neighboring_matrix.csv
+example/temp_files/*
