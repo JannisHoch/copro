@@ -106,15 +106,15 @@ def make_output_dir(config, root_dir):
         os.makedirs(out_dir)
     else:
         for root, dirs, files in os.walk(out_dir):
-            if config.getboolean('general', 'verbose'): print('DEBUG: remove files in folder {}'.format(os.path.abspath(root)))
+            if config.getboolean('general', 'verbose'): print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
             for fo in files:
                 # print(fo)
-                if (fo == 'clf.pkl') or (fo =='XY.npy') or (fo == 'X.npy'):
+                if (fo =='XY.npy') or (fo == 'X.npy'):
                     if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
                     pass
                 else:
                     os.remove(os.path.join(root, fo))
-
+                            
     return out_dir
     
 def download_PRIO(config, root_dir):

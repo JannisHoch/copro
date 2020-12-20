@@ -1,4 +1,4 @@
-from copro import data
+from copro import data, utils
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -31,15 +31,28 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
     except:
         fatalities_per_poly = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
-
+    
+    # TODO: include this in utils
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
 
-    # TODO: store boolean map of conflict in last simulation year
     if sim_year == config.getint('settings', 'y_end'):
-        print('TODO: store boolean map of conflict in last simulation year {} to output folder'.format(sim_year))
-        
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {}'.format(sim_year))
+        # get a 1 for each polygon where there was conflict
+        bool_per_poly = fatalities_per_poly / fatalities_per_poly
+        # change column name and dtype
+        bool_per_poly = bool_per_poly.rename(columns={"total_fatalities": 'bool_conflict'}).astype(int)
+        # change index name to fit global_df
+        bool_per_poly.index = bool_per_poly.index.rename('ID')
+        # get list of all polygon IDs with their geometry information
+        global_df = utils.global_ID_geom_info(extent_gdf)
+        # merge the boolean info with geometry
+        # for all polygons without conflict, set a 0
+        data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').fillna(0)
+        # create a geodataframe and store to file
+        gdf = gpd.GeoDataFrame(data_stored, geometry=data_stored.geometry)
+        gdf.to_file(os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year)))
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
