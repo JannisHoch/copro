@@ -38,7 +38,7 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         os.makedirs(out_dir)
 
     if sim_year == config.getint('settings', 'y_end'):
-        if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {}'.format(sim_year))
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year))))
         # get a 1 for each polygon where there was conflict
         bool_per_poly = fatalities_per_poly / fatalities_per_poly
         # change column name and dtype
