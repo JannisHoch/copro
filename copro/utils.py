@@ -81,9 +81,11 @@ def parse_settings(settings_file):
         - str: absolute path to location of configurations-file.
     """    
 
+    print('INFO: parsing configurations for reference run')
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
+
     root_dir = os.path.dirname(os.path.abspath(settings_file))
 
     return config, root_dir
@@ -110,6 +112,7 @@ def parse_projection_settings(config):
         each_val = os.path.abspath(each_val)
 
         # parse each config-file specified
+        print('INFO: parsing configurations for projections')
         each_config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
         each_config.optionxform = lambda option: option
         each_config.read(each_val)
@@ -117,38 +120,48 @@ def parse_projection_settings(config):
         # update the output dictionary with key and config-object
         proj_settings_dir[each_key] = each_config
 
-    if config.getboolean('general', 'verbose'): print(proj_settings_dir)
-
     return proj_settings_dir
 
-def make_output_dir(config, root_dir):
+def make_output_dir(config, root_dir, proj_settings_dir):
     """Creates the output folder at location specfied in cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): absolute path to location of configurations-file
+        proj_settings_dir (dict): dictionary containing config-objects per projection.
 
     Returns:
         str: path to output folder
     """    
 
     out_dir = os.path.join(root_dir, config.get('general','output_dir'))
-    print('INFO: saving output to folder {}'.format(out_dir))
+    print('INFO: saving output to main folder {}'.format(out_dir))
 
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
-        os.makedirs(os.path.join(out_dir, '_REF'))
-        os.makedirs(os.path.join(out_dir, '_PROJ'))
-    else:
-        for root, dirs, files in os.walk(out_dir):
-            if config.getboolean('general', 'verbose'): print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
-            for fo in files:
-                # print(fo)
-                if (fo =='XY.npy') or (fo == 'X.npy'):
-                    if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
-                    pass
-                else:
-                    os.remove(os.path.join(root, fo))
+    out_dir_list = []
+
+    out_dir_list.append(os.path.join(out_dir, '_REF'))
+
+    out_dir_proj = os.path.join(out_dir, '_PROJ')
+    for key in proj_settings_dir:
+        out_dir_list.append(os.path.join(out_dir_proj, str(key)))
+    
+    for d in out_dir_list:
+        print('DEBUG: ...and sub-directory {}'.format(d))
+
+    # if not os.path.isdir(out_dir):
+    #     os.makedirs(out_dir)
+    #     os.makedirs(os.path.join(out_dir, '_REF'))
+    #     os.makedirs(os.path.join(out_dir, '_PROJ'))
+    # else:
+    #     for root, dirs, files in os.walk(out_dir):
+    #         if config.getboolean('general', 'verbose'): print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
+    #         for fo in files:
+    #             # print(fo)
+    #             if (fo =='XY.npy') or (fo == 'X.npy'):
+    #                 if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
+    #                 pass
+    #             else:
+    #                 os.remove(os.path.join(root, fo))
                             
     return out_dir
     
@@ -212,11 +225,11 @@ def initiate_setup(settings_file):
 
     config, root_dir = parse_settings(settings_file)
 
-    parse_projection_settings(config)
+    proj_settings_dir = parse_projection_settings(config)
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
-    out_dir = make_output_dir(config, root_dir)
+    out_dir = make_output_dir(config, root_dir, proj_settings_dir)
 
     copyfile(settings_file, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
 
