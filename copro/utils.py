@@ -105,6 +105,7 @@ def parse_projection_settings(config):
     # initiate output dictionary
     proj_settings_dir = dict()
 
+    print('INFO: parsing configurations for projections')
     # loop through all keys and values in PROJ_files section of reference config-object
     for (each_key, each_val) in config.items('PROJ_files'):
 
@@ -112,7 +113,6 @@ def parse_projection_settings(config):
         each_val = os.path.abspath(each_val)
 
         # parse each config-file specified
-        print('INFO: parsing configurations for projections')
         each_config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
         each_config.optionxform = lambda option: option
         each_config.read(each_val)
