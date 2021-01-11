@@ -88,6 +88,39 @@ def parse_settings(settings_file):
 
     return config, root_dir
 
+def parse_projection_settings(config):
+    """This function parses the (various) cfg-files for projections.
+    These cfg-files need to be specified one by one in the PROJ_files section of the cfg-file for the reference run.
+    The function returns then a dictionary with the name of the run and the associated config-object.
+
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
+
+    Returns:
+        [dict]: dictionary with name and config-object per specified projection run.
+    """    
+
+    # initiate output dictionary
+    proj_settings_dir = dict()
+
+    # loop through all keys and values in PROJ_files section of reference config-object
+    for (each_key, each_val) in config.items('PROJ_files'):
+
+        # for each value (here representing the cfg-files of the projections), get the absolute path
+        each_val = os.path.abspath(each_val)
+
+        # parse each config-file specified
+        each_config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
+        each_config.optionxform = lambda option: option
+        each_config.read(each_val)
+
+        # update the output dictionary with key and config-object
+        proj_settings_dir[each_key] = each_config
+
+    if config.getboolean('general', 'verbose'): print(proj_settings_dir)
+
+    return proj_settings_dir
+
 def make_output_dir(config, root_dir):
     """Creates the output folder at location specfied in cfg-file.
 
@@ -104,6 +137,8 @@ def make_output_dir(config, root_dir):
 
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
+        os.makedirs(os.path.join(out_dir, '_REF'))
+        os.makedirs(os.path.join(out_dir, '_PROJ'))
     else:
         for root, dirs, files in os.walk(out_dir):
             if config.getboolean('general', 'verbose'): print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
@@ -176,6 +211,8 @@ def initiate_setup(settings_file):
     print_model_info() 
 
     config, root_dir = parse_settings(settings_file)
+
+    parse_projection_settings(config)
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
