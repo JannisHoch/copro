@@ -29,7 +29,7 @@ def initiate_XY_data(config):
     if config.getboolean('general', 'verbose'): 
         print('DEBUG: the columns in the sample matrix used are:')
         for key in XY:
-            print(key)
+            print('...{}'.format(key))
         print('')
 
     return XY
@@ -54,7 +54,11 @@ def initiate_X_data(config):
     X['conflict_t_min_1'] = pd.Series(dtype=bool)
     X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
 
-    if config.getboolean('general', 'verbose'): print('{}'.format(X) + os.linesep)
+    if config.getboolean('general', 'verbose'): 
+        print('DEBUG: the columns in the sample matrix used are:')
+        for key in X:
+            print('...{}'.format(key))
+        print('')
 
     return X
 
@@ -77,10 +81,10 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir):
         array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """    
 
-    print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
+    print('INFO: reading data for period from', str(config.getint('REF_settings', 'y_start')), 'to', str(config.getint('REF_settings', 'y_end')))
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+    model_period = np.arange(config.getint('REF_settings', 'y_start'), config.getint('REF_settings', 'y_end') + 1, 1)
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
