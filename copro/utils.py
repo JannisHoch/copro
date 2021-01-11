@@ -100,7 +100,10 @@ def parse_projection_settings(config):
     """    
 
     # initiate output dictionary
-    proj_settings_dir = dict()
+    config_dict = dict()
+
+    # first entry is config-object for reference run
+    config_dict['REF'] = config
 
     # loop through all keys and values in PROJ_files section of reference config-object
     for (each_key, each_val) in config.items('PROJ_files'):
@@ -112,17 +115,17 @@ def parse_projection_settings(config):
         each_config = parse_settings(each_val)
 
         # update the output dictionary with key and config-object
-        proj_settings_dir[each_key] = each_config
+        config_dict[each_key] = each_config
 
-    return proj_settings_dir
+    return config_dict
 
-def make_output_dir(config, root_dir, proj_settings_dir):
+def make_output_dir(config, root_dir, config_dict):
     """Creates the output folder at location specfied in cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): absolute path to location of configurations-file
-        proj_settings_dir (dict): dictionary containing config-objects per projection.
+        config_dict (dict): dictionary containing config-objects per projection.
 
     Returns:
         list: list with output directories, first entry refers to main dir, second to reference situation, all following to each projection run.
@@ -137,8 +140,9 @@ def make_output_dir(config, root_dir, proj_settings_dir):
     out_dir_list.append(os.path.join(out_dir, '_REF'))
 
     out_dir_proj = os.path.join(out_dir, '_PROJ')
-    for key in proj_settings_dir:
-        out_dir_list.append(os.path.join(out_dir_proj, str(key)))
+    for key, i in zip(config_dict, range(len(config_dict))):
+        if i > 0:
+            out_dir_list.append(os.path.join(out_dir_proj, str(key)))
 
     for d, i in zip(out_dir_list, range(len(out_dir_list))):
         
@@ -212,7 +216,7 @@ def initiate_setup(settings_file):
 
     Returns:
         ConfigParser-object: parsed model configuration.
-        out_dir: path to output folder.
+        out_dir_list: list with paths to output folders; first main output folder, then reference run folder, then (multiple) folders for projection runs.
         root_dir: path to location of cfg-file.
     """  
 
@@ -222,14 +226,14 @@ def initiate_setup(settings_file):
 
     config = parse_settings(settings_file)
 
-    proj_settings_dir = parse_projection_settings(config)
+    config_dict = parse_projection_settings(config)
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
-    out_dir_list = make_output_dir(config, root_dir, proj_settings_dir)
+    out_dir_list = make_output_dir(config, root_dir, config_dict)
 
     print('DEBUG: copying cfg-file {} to folder {}'.format(settings_file, out_dir_list[0]))
-    copyfile(settings_file, os.path.join(out_dir_list[0], 'copy_of_run_setting.cfg'))
+    copyfile(settings_file, os.path.join(out_dir_list[0], 'copy_of_{}'.format(settings_file)))
 
     if config['conflict']['conflict_file'] == 'download':
         download_PRIO(config)
@@ -238,7 +242,7 @@ def initiate_setup(settings_file):
         config.set('settings', 'n_runs', str(1))
         print('INFO: changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
 
-    return config, out_dir_list, root_dir
+    return config_dict, out_dir_list, root_dir
 
 def create_artificial_Y(Y):
     """Creates an array with identical percentage of conflict points as input array.
