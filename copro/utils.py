@@ -77,18 +77,15 @@ def parse_settings(settings_file):
         settings_file (str): path to settings-file (cfg-file).
 
     Returns:
-        - ConfigParser-object: parsed model configuration.
-        - str: absolute path to location of configurations-file.
+        ConfigParser-object: parsed model configuration.
     """    
 
-    print('INFO: parsing configurations for reference run')
+    print('INFO: parsing configurations for file {}'.format(settings_file))
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
 
-    root_dir = os.path.dirname(os.path.abspath(settings_file))
-
-    return config, root_dir
+    return config
 
 def parse_projection_settings(config):
     """This function parses the (various) cfg-files for projections.
@@ -105,7 +102,6 @@ def parse_projection_settings(config):
     # initiate output dictionary
     proj_settings_dir = dict()
 
-    print('INFO: parsing configurations for projections')
     # loop through all keys and values in PROJ_files section of reference config-object
     for (each_key, each_val) in config.items('PROJ_files'):
 
@@ -113,9 +109,10 @@ def parse_projection_settings(config):
         each_val = os.path.abspath(each_val)
 
         # parse each config-file specified
-        each_config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
-        each_config.optionxform = lambda option: option
-        each_config.read(each_val)
+        # each_config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
+        # each_config.optionxform = lambda option: option
+        # each_config.read(each_val)
+        each_config = parse_settings(each_val)
 
         # update the output dictionary with key and config-object
         proj_settings_dir[each_key] = each_config
@@ -223,7 +220,9 @@ def initiate_setup(settings_file):
 
     print_model_info() 
 
-    config, root_dir = parse_settings(settings_file)
+    root_dir = os.path.dirname(os.path.abspath(settings_file))
+
+    config = parse_settings(settings_file)
 
     proj_settings_dir = parse_projection_settings(config)
 
