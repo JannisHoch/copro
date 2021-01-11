@@ -140,21 +140,23 @@ def make_output_dir(config, root_dir, proj_settings_dir):
     for key in proj_settings_dir:
         out_dir_list.append(os.path.join(out_dir_proj, str(key)))
 
-    for d in out_dir_list:
+    for d, i in zip(out_dir_list, range(len(out_dir_list))):
         
         if not os.path.isdir(d):
             print('INFO: creating output-folder {}'.format(d))
             os.makedirs(d)
 
         else:
-            for root, dirs, files in os.walk(d):
-                if config.getboolean('general', 'verbose'): print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
-                for fo in files:
-                    if (fo =='XY.npy') or (fo == 'X.npy'):
-                        if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
-                        pass
-                    else:
-                        os.remove(os.path.join(root, fo))
+            if i == 0:
+                for root, dirs, files in os.walk(d):
+                    if (config.getboolean('general', 'verbose')) and (len(files) > 0): 
+                        print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
+                    for fo in files:
+                        if (fo =='XY.npy') or (fo == 'X.npy'):
+                            if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
+                            pass
+                        else:
+                            os.remove(os.path.join(root, fo))
                             
     return out_dir_list
     
