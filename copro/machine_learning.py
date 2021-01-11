@@ -115,6 +115,9 @@ def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr=None):
         y_train ([type]): training-data of conflict data
         X_test ([type]): test-data of variable values
         clf (classifier): the specified model instance.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        out_dir (path): path to output folder
+        run_nr (int): number of fit/predict repetition and created classifier. Defaults to None.
 
     Returns:
         arrays: arrays including the predictions made and their probabilities
