@@ -81,10 +81,10 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir):
         array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """    
 
-    print('INFO: reading data for period from', str(config.getint('REF_settings', 'y_start')), 'to', str(config.getint('REF_settings', 'y_end')))
+    print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('REF_settings', 'y_start'), config.getint('REF_settings', 'y_end') + 1, 1)
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
