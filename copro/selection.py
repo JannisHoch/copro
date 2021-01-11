@@ -47,8 +47,8 @@ def select_period(gdf, config):
         geo-dataframe: geo-dataframe containing filtered entries.
     """    
 
-    t0 = config.getint('settings', 'y_start')
-    t1 = config.getint('settings', 'y_end')
+    t0 = config.getint('REF_settings', 'y_start')
+    t1 = config.getint('REF_settings', 'y_end')
     
     if config.getboolean('general', 'verbose'): print('DEBUG: focussing on period between {} and {}'.format(t0, t1))
     
