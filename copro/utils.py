@@ -103,7 +103,7 @@ def parse_projection_settings(config):
     config_dict = dict()
 
     # first entry is config-object for reference run
-    config_dict['REF'] = config
+    config_dict['_REF'] = config
 
     # loop through all keys and values in PROJ_files section of reference config-object
     for (each_key, each_val) in config.items('PROJ_files'):
@@ -115,7 +115,7 @@ def parse_projection_settings(config):
         each_config = parse_settings(each_val)
 
         # update the output dictionary with key and config-object
-        config_dict[each_key] = each_config
+        config_dict[each_key] = ([each_config])
 
     return config_dict
 
@@ -134,35 +134,43 @@ def make_output_dir(config, root_dir, config_dict):
     out_dir = os.path.join(root_dir, config.get('general','output_dir'))
     print('INFO: saving output to main folder {}'.format(out_dir))
 
-    out_dir_list = []
+    all_out_dirs = []
 
-    out_dir_list.append(out_dir)
-    out_dir_list.append(os.path.join(out_dir, '_REF'))
+    all_out_dirs.append(os.path.join(out_dir, '_REF'))
 
     out_dir_proj = os.path.join(out_dir, '_PROJ')
     for key, i in zip(config_dict, range(len(config_dict))):
         if i > 0:
-            out_dir_list.append(os.path.join(out_dir_proj, str(key)))
+            all_out_dirs.append(os.path.join(out_dir_proj, str(key)))
 
-    for d, i in zip(out_dir_list, range(len(out_dir_list))):
+    assert (len(all_out_dirs) == len(config_dict)), AssertionError('ERROR: number of output folders and config-objects do not match!')
+
+    main_dict = dict()
+
+    for key, value, i in zip(config_dict.keys(), config_dict.values(), range(len(config_dict))):
+        main_dict[key] = [value, all_out_dirs[i]]
+
+    # for d, i in zip(out_dir_list, range(len(out_dir_list))):
+    for key, value in main_dict.items():
         
+        d = value[1]
+
         if not os.path.isdir(d):
             print('INFO: creating output-folder {}'.format(d))
             os.makedirs(d)
 
         else:
-            if i == 0:
-                for root, dirs, files in os.walk(d):
-                    if (config.getboolean('general', 'verbose')) and (len(files) > 0): 
-                        print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
-                    for fo in files:
-                        if (fo =='XY.npy') or (fo == 'X.npy'):
-                            if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
-                            pass
-                        else:
-                            os.remove(os.path.join(root, fo))
+            for root, dirs, files in os.walk(d):
+                if (config.getboolean('general', 'verbose')) and (len(files) > 0): 
+                    print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
+                for fo in files:
+                    if (fo =='XY.npy') or (fo == 'X.npy'):
+                        if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
+                        pass
+                    else:
+                        os.remove(os.path.join(root, fo))
                             
-    return out_dir_list
+    return main_dict
     
 def download_PRIO(config, root_dir):
     """If specfied in cfg-file, the PRIO/UCDP data is directly downloaded and used as model input.
@@ -230,10 +238,10 @@ def initiate_setup(settings_file):
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
-    out_dir_list = make_output_dir(config, root_dir, config_dict)
+    main_dict = make_output_dir(config, root_dir, config_dict)
 
-    print('DEBUG: copying cfg-file {} to folder {}'.format(settings_file, out_dir_list[0]))
-    copyfile(settings_file, os.path.join(out_dir_list[0], 'copy_of_{}'.format(settings_file)))
+    print('DEBUG: copying cfg-file {} to folder {}'.format(settings_file, main_dict['_REF'][1]))
+    copyfile(settings_file, os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(settings_file)))
 
     if config['conflict']['conflict_file'] == 'download':
         download_PRIO(config)
@@ -242,7 +250,7 @@ def initiate_setup(settings_file):
         config.set('settings', 'n_runs', str(1))
         print('INFO: changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
 
-    return config_dict, out_dir_list, root_dir
+    return main_dict, root_dir
 
 def create_artificial_Y(Y):
     """Creates an array with identical percentage of conflict points as input array.
