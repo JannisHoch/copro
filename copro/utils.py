@@ -77,45 +77,100 @@ def parse_settings(settings_file):
         settings_file (str): path to settings-file (cfg-file).
 
     Returns:
-        - ConfigParser-object: parsed model configuration.
-        - str: absolute path to location of configurations-file.
+        ConfigParser-object: parsed model configuration.
     """    
 
+    print('INFO: parsing configurations for file {}'.format(settings_file))
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
-    root_dir = os.path.dirname(os.path.abspath(settings_file))
 
-    return config, root_dir
+    return config
 
-def make_output_dir(config, root_dir):
+def parse_projection_settings(config):
+    """This function parses the (various) cfg-files for projections.
+    These cfg-files need to be specified one by one in the PROJ_files section of the cfg-file for the reference run.
+    The function returns then a dictionary with the name of the run and the associated config-object.
+
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
+
+    Returns:
+        [dict]: dictionary with name and config-object per specified projection run.
+    """    
+
+    # initiate output dictionary
+    config_dict = dict()
+
+    # first entry is config-object for reference run
+    config_dict['_REF'] = config
+
+    # loop through all keys and values in PROJ_files section of reference config-object
+    for (each_key, each_val) in config.items('PROJ_files'):
+
+        # for each value (here representing the cfg-files of the projections), get the absolute path
+        each_val = os.path.abspath(each_val)
+
+        # parse each config-file specified
+        each_config = parse_settings(each_val)
+
+        # update the output dictionary with key and config-object
+        config_dict[each_key] = ([each_config])
+
+    return config_dict
+
+def make_output_dir(config, root_dir, config_dict):
     """Creates the output folder at location specfied in cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): absolute path to location of configurations-file
+        config_dict (dict): dictionary containing config-objects per projection.
 
     Returns:
-        str: path to output folder
+        list: list with output directories, first entry refers to main dir, second to reference situation, all following to each projection run.
     """    
 
     out_dir = os.path.join(root_dir, config.get('general','output_dir'))
-    print('INFO: saving output to folder {}'.format(out_dir))
+    print('INFO: saving output to main folder {}'.format(out_dir))
 
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
-    else:
-        for root, dirs, files in os.walk(out_dir):
-            if config.getboolean('general', 'verbose'): print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
-            for fo in files:
-                # print(fo)
-                if (fo =='XY.npy') or (fo == 'X.npy'):
-                    if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
-                    pass
-                else:
-                    os.remove(os.path.join(root, fo))
+    all_out_dirs = []
+
+    all_out_dirs.append(os.path.join(out_dir, '_REF'))
+
+    out_dir_proj = os.path.join(out_dir, '_PROJ')
+    for key, i in zip(config_dict, range(len(config_dict))):
+        if i > 0:
+            all_out_dirs.append(os.path.join(out_dir_proj, str(key)))
+
+    assert (len(all_out_dirs) == len(config_dict)), AssertionError('ERROR: number of output folders and config-objects do not match!')
+
+    main_dict = dict()
+
+    for key, value, i in zip(config_dict.keys(), config_dict.values(), range(len(config_dict))):
+        main_dict[key] = [value, all_out_dirs[i]]
+
+    # for d, i in zip(out_dir_list, range(len(out_dir_list))):
+    for key, value in main_dict.items():
+        
+        d = value[1]
+
+        if not os.path.isdir(d):
+            print('INFO: creating output-folder {}'.format(d))
+            os.makedirs(d)
+
+        else:
+            for root, dirs, files in os.walk(d):
+                if (config.getboolean('general', 'verbose')) and (len(files) > 0): 
+                    print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
+                for fo in files:
+                    if (fo =='XY.npy') or (fo == 'X.npy'):
+                        if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
+                        pass
+                    else:
+                        os.remove(os.path.join(root, fo))
                             
-    return out_dir
+    return main_dict
     
 def download_PRIO(config, root_dir):
     """If specfied in cfg-file, the PRIO/UCDP data is directly downloaded and used as model input.
@@ -169,28 +224,33 @@ def initiate_setup(settings_file):
 
     Returns:
         ConfigParser-object: parsed model configuration.
-        out_dir: path to output folder.
+        out_dir_list: list with paths to output folders; first main output folder, then reference run folder, then (multiple) folders for projection runs.
         root_dir: path to location of cfg-file.
     """  
 
     print_model_info() 
 
-    config, root_dir = parse_settings(settings_file)
+    root_dir = os.path.dirname(os.path.abspath(settings_file))
+
+    config = parse_settings(settings_file)
+
+    config_dict = parse_projection_settings(config)
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
-    out_dir = make_output_dir(config, root_dir)
+    main_dict = make_output_dir(config, root_dir, config_dict)
 
-    copyfile(settings_file, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
+    print('DEBUG: copying cfg-file {} to folder {}'.format(settings_file, main_dict['_REF'][1]))
+    copyfile(settings_file, os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(settings_file)))
 
     if config['conflict']['conflict_file'] == 'download':
         download_PRIO(config)
 
     if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
         config.set('settings', 'n_runs', str(1))
-        print('INFOL changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
+        print('INFO: changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
 
-    return config, out_dir, root_dir
+    return main_dict, root_dir
 
 def create_artificial_Y(Y):
     """Creates an array with identical percentage of conflict points as input array.

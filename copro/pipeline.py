@@ -122,7 +122,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
 
     return X_df, y_df, eval_dict
 
-def run_prediction(X, scaler, config, root_dir):
+def run_prediction(X, scaler, config, out_dir, root_dir):
     """Top-level function to run a predictive model with a already fitted classifier and new data.
 
     Args:
@@ -141,6 +141,6 @@ def run_prediction(X, scaler, config, root_dir):
     if config.getint('general', 'model') != 1:
         raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
-    y_df = models.predictive(X, scaler, config, root_dir)
+    y_df, clfs = models.predictive(X, scaler, config, out_dir, root_dir)
 
-    return y_df
+    return y_df, clfs

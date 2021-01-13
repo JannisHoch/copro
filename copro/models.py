@@ -151,7 +151,7 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def predictive(X, scaler, config, root_dir):
+def predictive(X, scaler, config, out_dir, root_dir):
     """Predictive model to use the already fitted classifier to make projections.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
 
@@ -176,16 +176,28 @@ def predictive(X, scaler, config, root_dir):
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
-    if os.path.isfile(os.path.join(root_dir, config.get('pre_calc', 'clf'))):
-        with open(os.path.join(root_dir, config.get('pre_calc', 'clf')), 'rb') as f:
-            print('INFO: loading classifier from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
-            clf = pickle.load(f)
-    else:
-        raise ValueError('ERROR: no pre-computed classifier specified in cfg-file, currently specified file {} does not exist'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
-        
-    print('INFO: making the projection')
-    y_pred = clf.predict(X_ft)
-    arr = np.column_stack((X_ID, X_geom, y_pred))
-    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])
+    clfs = machine_learning.load_clfs(config, out_dir)
 
-    return y_df
+    # if os.path.isfile(os.path.join(root_dir, config.get('pre_calc', 'clf'))):
+    #     with open(os.path.join(root_dir, config.get('pre_calc', 'clf')), 'rb') as f:
+    #         print('INFO: loading classifier from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
+    #         clf = pickle.load(f)
+    # else:
+    #     raise ValueError('ERROR: no pre-computed classifier specified in cfg-file, currently specified file {} does not exist'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
+
+    y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
+
+    print('INFO: making the projections')    
+    for clf in clfs:    
+
+        with open(os.path.join(out_dir, 'clfs', clf), 'rb') as f:
+            print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir, 'clfs')))
+            clf = pickle.load(f)
+
+        y_pred = clf.predict(X_ft)
+        arr = np.column_stack((X_ID, X_geom, y_pred))
+        y_df = y_df.append(pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred']), ignore_index=True)
+
+    print(y_df)
+
+    return y_df, clfs

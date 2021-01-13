@@ -29,7 +29,7 @@ def initiate_XY_data(config):
     if config.getboolean('general', 'verbose'): 
         print('DEBUG: the columns in the sample matrix used are:')
         for key in XY:
-            print(key)
+            print('...{}'.format(key))
         print('')
 
     return XY
@@ -54,7 +54,11 @@ def initiate_X_data(config):
     X['conflict_t_min_1'] = pd.Series(dtype=bool)
     X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
 
-    if config.getboolean('general', 'verbose'): print('{}'.format(X) + os.linesep)
+    if config.getboolean('general', 'verbose'): 
+        print('DEBUG: the columns in the sample matrix used are:')
+        for key in X:
+            print('...{}'.format(key))
+        print('')
 
     return X
 
