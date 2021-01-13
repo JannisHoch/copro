@@ -30,7 +30,6 @@ def initiate_XY_data(config):
         print('DEBUG: the columns in the sample matrix used are:')
         for key in XY:
             print('...{}'.format(key))
-        print('')
 
     return XY
 
@@ -58,7 +57,6 @@ def initiate_X_data(config):
         print('DEBUG: the columns in the sample matrix used are:')
         for key in X:
             print('...{}'.format(key))
-        print('')
 
     return X
 
