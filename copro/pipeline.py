@@ -122,7 +122,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
 
     return X_df, y_df, eval_dict
 
-def run_prediction(X, scaler, config, out_dir, root_dir):
+def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_gdf):
     """Top-level function to run a predictive model with a already fitted classifier and new data.
 
     Args:
@@ -138,9 +138,28 @@ def run_prediction(X, scaler, config, out_dir, root_dir):
         datatrame: containing model output on polygon-basis.
     """    
 
-    if config.getint('general', 'model') != 1:
+    config_REF = main_dict['_REF'][0]
+    out_dir_REF = main_dict['_REF'][1]
+
+    if config_REF.getint('general', 'model') != 1:
         raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
-    y_df, clfs = models.predictive(X, scaler, config, out_dir, root_dir)
+    print('INFO: number of projections to be made is {}'.format(len(main_dict['_REF'][0].items('PROJ_files'))))
 
-    return y_df, clfs
+    all_y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
+
+    for (each_key, each_val) in main_dict['_REF'][0].items('PROJ_files'):
+
+        print('DEBUG: loading config-object for projection run: {}'.format(each_key))
+        config_PROJ = main_dict[str(each_key)][0][0]
+        out_dir_PROJ = main_dict[str(each_key)][1]
+        print('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
+
+        print('INFO: reading sample data')
+        X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf)
+
+        y_df = models.predictive(X, scaler, config_REF, out_dir_REF, root_dir)
+
+        all_y_df = all_y_df.append(y_df, ignore_index=True)
+
+    return all_y_df

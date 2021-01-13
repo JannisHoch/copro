@@ -178,13 +178,6 @@ def predictive(X, scaler, config, out_dir, root_dir):
 
     clfs = machine_learning.load_clfs(config, out_dir)
 
-    # if os.path.isfile(os.path.join(root_dir, config.get('pre_calc', 'clf'))):
-    #     with open(os.path.join(root_dir, config.get('pre_calc', 'clf')), 'rb') as f:
-    #         print('INFO: loading classifier from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
-    #         clf = pickle.load(f)
-    # else:
-    #     raise ValueError('ERROR: no pre-computed classifier specified in cfg-file, currently specified file {} does not exist'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
-
     y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
 
     print('INFO: making the projections')    
@@ -198,6 +191,4 @@ def predictive(X, scaler, config, out_dir, root_dir):
         arr = np.column_stack((X_ID, X_geom, y_pred))
         y_df = y_df.append(pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred']), ignore_index=True)
 
-    print(y_df)
-
-    return y_df, clfs
+    return y_df
