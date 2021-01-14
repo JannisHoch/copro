@@ -161,24 +161,7 @@ def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
 
     projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_end')+1, 1)
     projection_period = projection_period.tolist()
-    print('DEBUG: the projection period is {}'.format(projection_period))
-
-    return projection_period
-
-def fill_projection_period(config_REF, out_dir_REF, config_PROJ, out_dir_PROJ):
-
-    projection_period = determine_projection_period(config_REF, config_PROJ, out_dir_PROJ)
-
-    for i in range(len(projection_period)):
-        print('INFO: entering year {} in projection period'.format(projection_period[i]))
-        if i == 0:
-            if os.path.isfile(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))):
-                print('DEBUG: reading from last conflict observation {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
-                conflict_gdf = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
-            else:
-                raise ValueError('ERROR: the file with binary conflict occurence at last time step of reference run could not be found!')
-        else:
-            conflict_gdf = None
+    print('DEBUG: the projection period is {} to {}'.format(projection_period[0], projection_period[-1]))
 
     return projection_period
 

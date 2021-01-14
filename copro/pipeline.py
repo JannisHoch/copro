@@ -4,7 +4,7 @@ import numpy as np
 import os, sys
 
 
-def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
+def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_period=None):
     """Top-level function to create the X-array and Y-array.
     If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
     If not, variable values and conflict data are read from file and stored in array. The resulting array is by default saved as npy-format to file.
@@ -144,24 +144,32 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
     if config_REF.getint('general', 'model') != 1:
         raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
-    print('INFO: number of projections to be made is {}'.format(len(main_dict['_REF'][0].items('PROJ_files'))))
-
+    # initiate output dataframe
     all_y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
 
-    for (each_key, each_val) in main_dict['_REF'][0].items('PROJ_files'):
+    # going through each projection specified
+    for (each_key, each_val) in config_REF.items('PROJ_files'):
 
-        print('DEBUG: loading config-object for projection run: {}'.format(each_key))
+        # get config-object and out-dir per projection
+        print('INFO: loading config-object for projection run: {}'.format(each_key))
         config_PROJ = main_dict[str(each_key)][0][0]
         out_dir_PROJ = main_dict[str(each_key)][1]
         print('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
-        projection_period = models.fill_projection_period(config_REF, out_dir_REF, config_PROJ, out_dir_PROJ)
+        # get projection period for this projection
+        # defined as all years starting from end of reference run until specified end of projections
+        projection_period = models.determine_projection_period(config_REF, config_PROJ, out_dir_PROJ)
 
+        # read sample data for each year
+        # i.e. we here start with time stepping
         print('INFO: reading sample data from files')
-        X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf, projection_period)
+        X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf, projection_period=projection_period)
 
+        # put all the data into the machine learning algo
+        # here the data will be used to make projections with various classifiers
         y_df = models.predictive(X, scaler, main_dict, root_dir)
 
+        # create one major output dataframe containing all output for all projections with all classifiers
         all_y_df = all_y_df.append(y_df, ignore_index=True)
 
     return all_y_df

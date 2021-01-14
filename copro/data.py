@@ -79,13 +79,15 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False
         array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """    
 
-    print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
-
     # go through all simulation years as specified in config-file
     if proj == False:
         model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
     else:
+        if proj_period == None:
+            raise ValueError('ERROR: if proj=True, also a projection period must be specified!')
         model_period = proj_period
+
+    print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
@@ -95,7 +97,7 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False
 
             print('INFO: skipping first year {} to start up model'.format(sim_year))
 
-        if i > 0:
+        if ((i > 0) and (proj == False)) or (proj == True):
 
             print('INFO: entering year {}'.format(sim_year))
 
