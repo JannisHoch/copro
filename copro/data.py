@@ -60,7 +60,7 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir):
+def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False, proj_period=None):
     """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -82,13 +82,16 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir):
     print('INFO: reading data for period from', str(config.getint('settings', 'y_start')), 'to', str(config.getint('settings', 'y_end')))
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+    if proj == False:
+        model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+    else:
+        model_period = proj_period
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
-        if i == 0:
+        if (i == 0) and (proj == False):
 
             print('INFO: skipping first year {} to start up model'.format(sim_year))
 
