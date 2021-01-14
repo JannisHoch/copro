@@ -172,19 +172,14 @@ def fill_XY_ref(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, model_
 
 def fill_XY_proj(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj, proj_year):
 
+    # TODO: update this function such that reading conflict at t-1 works with csv stored in previous timestep
+
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
     print('INFO: entering year {}'.format(proj_year))
 
     # go through all keys in dictionary
     for key, value in XY.items(): 
-
-        if key == 'conflict':
-        
-            data_series = value
-            data_list = conflict.conflict_in_year_bool(config, conflict_gdf, polygon_gdf, proj_year, out_dir)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-            XY[key] = data_series
 
         elif key == 'conflict_t_min_1':
 
