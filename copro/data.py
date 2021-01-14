@@ -60,7 +60,7 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False, proj_period=None):
+def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False, proj_year=None):
     """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -82,22 +82,30 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False
     # go through all simulation years as specified in config-file
     if proj == False:
         model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+        print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
     else:
-        if proj_period == None:
-            raise ValueError('ERROR: if proj=True, also a projection period must be specified!')
-        model_period = proj_period
+        if proj_year == None:
+            raise ValueError('ERROR: if proj=True, also a projection year must be specified!')
 
-    print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
+    if proj == False:
+        XY = fill_XY_ref(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, model_period)
+
+    elif proj == True:
+        XY = fill_XY_proj(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj, proj_year)
+
+    return pd.DataFrame.from_dict(XY).to_numpy()
+
+def fill_XY_ref(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, model_period):
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
-        if (i == 0) and (proj == False):
+        if i == 0:
 
             print('INFO: skipping first year {} to start up model'.format(sim_year))
 
-        if ((i > 0) and (proj == False)) or (proj == True):
+        else:
 
             print('INFO: entering year {}'.format(sim_year))
 
@@ -159,8 +167,75 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False
                         raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
             print('INFO: all data read')
-    
-    return pd.DataFrame.from_dict(XY).to_numpy()
+
+    return XY
+
+def fill_XY_proj(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj, proj_year):
+
+    neighboring_matrix = neighboring_polys(config, polygon_gdf)
+
+    print('INFO: entering year {}'.format(proj_year))
+
+    # go through all keys in dictionary
+    for key, value in XY.items(): 
+
+        if key == 'conflict':
+        
+            data_series = value
+            data_list = conflict.conflict_in_year_bool(config, conflict_gdf, polygon_gdf, proj_year, out_dir)
+            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            XY[key] = data_series
+
+        elif key == 'conflict_t_min_1':
+
+            data_series = value
+            data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, proj_year, proj=proj)
+            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            XY[key] = data_series
+
+        elif key == 'conflict_t_min_1_nb':
+
+            data_series = value
+            data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, proj_year, check_neighbors=True, neighboring_matrix=neighboring_matrix, proj=proj)
+            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            XY[key] = data_series
+
+        elif key == 'poly_ID':
+        
+            data_series = value
+            data_list = conflict.get_poly_ID(polygon_gdf)
+            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            XY[key] = data_series
+
+        elif key == 'poly_geometry':
+        
+            data_series = value
+            data_list = conflict.get_poly_geometry(polygon_gdf, config)
+            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            XY[key] = data_series
+
+        else:
+
+            nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
+            
+            if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                data_series = value
+                data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
+                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                XY[key] = data_series
+                
+            elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                data_series = value
+                data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
+                data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                XY[key] = data_series
+                
+            else:
+                raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+
+    print('INFO: all data read')
+
+    return XY
 
 def split_XY_data(XY, config):
     """Separates the XY-array into array containing information about variable values (X-array) and conflict data (Y-array).

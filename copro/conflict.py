@@ -57,6 +57,7 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').dropna()
         data_stored.index = data_stored.index.rename('watprovID')
         data_stored = data_stored.drop('geometry', axis=1)
+        data_stored = data_stored.astype(int)
         data_stored.to_csv(os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year)))
  
     # loop through all regions and check if exists in sub-set
@@ -76,7 +77,7 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
 
     return list_out
 
-def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None):
+def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None, proj=False):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
     If the current time step is the first (t=0), then conflict data of this year is used instead due to the lack of earlier data.
 
@@ -108,6 +109,9 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
 
     conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame().rename(columns={"id": 'conflict_count'})
+
+    if proj==True:
+        print('HERE WE NEED TO READ IN THE CONFLICT DATA FROM THE LAST OBSERVATION OR THE LAST PROJECTION (t-1)')
 
     # loop through all polygons and check if exists in sub-set
     list_out = []

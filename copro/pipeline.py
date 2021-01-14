@@ -1,4 +1,4 @@
-from copro import models, data, machine_learning, evaluation
+from copro import models, data, machine_learning, evaluation, utils
 import pandas as pd
 import numpy as np
 import os, sys
@@ -39,7 +39,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_p
 
     return X, Y
 
-def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_period):
+def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf, proj_year):
     """Top-level function to create the X-array.
     If the X-data was pre-computed and specified in cfg-file, the data is loaded.
     If not, variable values are read from file and stored in array. 
@@ -55,20 +55,9 @@ def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_pe
     Returns:
         array: X-array containing variable values.
     """    
+    X = data.initiate_X_data(config)
 
-    if config.get('pre_calc', 'XY') is '':
-
-        X = data.initiate_X_data(config)
-
-        X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=True, proj_period=projection_period)
-
-        print('INFO: saving X data by default to file {}'.format(os.path.join(out_dir, 'X.npy')))
-        np.save(os.path.join(out_dir,'X'), X)
-
-    else:
-
-        print('INFO: loading XY data from file {}'.format(os.path.join(root_dir, config.get('pre_calc', 'X'))))
-        X = np.load(os.path.join(root_dir, config.get('pre_calc', 'X')), allow_pickle=True)
+    X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=True, proj_year=proj_year)
 
     return X
 
@@ -155,19 +144,32 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
         config_PROJ = main_dict[str(each_key)][0][0]
         out_dir_PROJ = main_dict[str(each_key)][1]
         print('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
+        if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
+            os.makedirs(os.path.join(out_dir_PROJ, 'files'))
 
         # get projection period for this projection
         # defined as all years starting from end of reference run until specified end of projections
         projection_period = models.determine_projection_period(config_REF, config_PROJ, out_dir_PROJ)
 
-        # read sample data for each year
-        # i.e. we here start with time stepping
-        print('INFO: reading sample data from files')
-        X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf, projection_period=projection_period)
+        for i in range(len(projection_period)):
 
-        # put all the data into the machine learning algo
-        # here the data will be used to make projections with various classifiers
-        y_df = models.predictive(X, scaler, main_dict, root_dir)
+            proj_year = projection_period[i]
+
+            # read sample data for each year
+            # i.e. we here start with time stepping
+            print('INFO: reading sample data from files')
+            X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf, proj_year=proj_year)
+
+            # put all the data into the machine learning algo
+            # here the data will be used to make projections with various classifiers
+            y_df = models.predictive(X, scaler, main_dict, root_dir)
+
+            global_df = utils.global_ID_geom_info(selected_polygons_gdf)
+
+            print('DEBUG: storing model output for year {} to output folder'.format(proj_year))
+            df_hit = evaluation.polygon_model_accuracy(y_df, global_df, out_dir=None, make_proj=True)
+            df_hit = df_hit.drop('geometry', axis=1)
+            df_hit.to_csv(os.path.join(out_dir_PROJ, 'files', 'output_in_{}.csv'.format(proj_year)))
 
         # create one major output dataframe containing all output for all projections with all classifiers
         all_y_df = all_y_df.append(y_df, ignore_index=True)
