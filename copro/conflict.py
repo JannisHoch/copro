@@ -38,7 +38,6 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         os.makedirs(out_dir)
 
     if sim_year == config.getint('settings', 'y_end'):
-        if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year))))
         # get a 1 for each polygon where there was conflict
         bool_per_poly = fatalities_per_poly / fatalities_per_poly
         # change column name and dtype
@@ -49,10 +48,13 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         global_df = utils.global_ID_geom_info(extent_gdf)
         # merge the boolean info with geometry
         # for all polygons without conflict, set a 0
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year))))
         data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').fillna(0)
-        # create a geodataframe and store to file
-        gdf = gpd.GeoDataFrame(data_stored, geometry=data_stored.geometry)
-        gdf.to_file(os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year)))
+        data_stored.to_csv(os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year)))
+        # # create a geodataframe and store to file
+        # if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year))))
+        # gdf = gpd.GeoDataFrame(data_stored, geometry=data_stored.geometry)
+        # gdf.to_file(os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year)))
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
