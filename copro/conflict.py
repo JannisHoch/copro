@@ -5,7 +5,7 @@ import numpy as np
 import os, sys
 import math
 
-def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir): 
+def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir, proj=False): 
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
     Args:
@@ -21,7 +21,9 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
     """    
 
     # select the entries which occured in this year
-    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]   
+    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]  
+
+    assert (len(temp_sel_year) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year))
     
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
@@ -51,10 +53,6 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year))))
         data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').fillna(0)
         data_stored.to_csv(os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year)))
-        # # create a geodataframe and store to file
-        # if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year))))
-        # gdf = gpd.GeoDataFrame(data_stored, geometry=data_stored.geometry)
-        # gdf.to_file(os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year)))
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
@@ -74,7 +72,7 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
 
     return list_out
 
-def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None):
+def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None, proj=False):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
     If the current time step is the first (t=0), then conflict data of this year is used instead due to the lack of earlier data.
 
@@ -95,6 +93,8 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
 
     # get conflicts at t-1
     temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year-1]  
+
+    assert (len(temp_sel_year) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year-1))
     
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)

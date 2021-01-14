@@ -39,7 +39,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
 
     return X, Y
 
-def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf=None):
+def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_period):
     """Top-level function to create the X-array.
     If the X-data was pre-computed and specified in cfg-file, the data is loaded.
     If not, variable values are read from file and stored in array. 
@@ -60,7 +60,7 @@ def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf=None):
 
         X = data.initiate_X_data(config)
 
-        X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
+        X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=True, proj_period=projection_period)
 
         print('INFO: saving X data by default to file {}'.format(os.path.join(out_dir, 'X.npy')))
         np.save(os.path.join(out_dir,'X'), X)
@@ -155,10 +155,10 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
         out_dir_PROJ = main_dict[str(each_key)][1]
         print('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
-        gap_period = models.fill_gap_period(config_REF, config_PROJ, out_dir_PROJ)
+        projection_period = models.fill_projection_period(config_REF, out_dir_REF, config_PROJ, out_dir_PROJ)
 
         print('INFO: reading sample data from files')
-        X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf)
+        X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf, projection_period)
 
         y_df = models.predictive(X, scaler, main_dict, root_dir)
 
