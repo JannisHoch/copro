@@ -155,10 +155,12 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
         out_dir_PROJ = main_dict[str(each_key)][1]
         print('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
-        print('INFO: reading sample data')
+        gap_period = models.fill_gap_period(config_REF, config_PROJ, out_dir_PROJ)
+
+        print('INFO: reading sample data from files')
         X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf)
 
-        y_df = models.predictive(X, scaler, config_REF, out_dir_REF, root_dir)
+        y_df = models.predictive(X, scaler, main_dict, root_dir)
 
         all_y_df = all_y_df.append(y_df, ignore_index=True)
 
