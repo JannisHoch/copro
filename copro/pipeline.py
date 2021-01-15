@@ -1,6 +1,7 @@
 from copro import models, data, machine_learning, evaluation, utils
 import pandas as pd
 import numpy as np
+import pickle
 import os, sys
 
 
@@ -39,7 +40,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_p
 
     return X, Y
 
-def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf, proj_year):
+def create_X(config, out_dir, root_dir, polygon_gdf, conflict_data, proj_year):
     """Top-level function to create the X-array.
     If the X-data was pre-computed and specified in cfg-file, the data is loaded.
     If not, variable values are read from file and stored in array. 
@@ -57,7 +58,7 @@ def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf, proj_year):
     """    
     X = data.initiate_X_data(config)
 
-    X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=True, proj_year=proj_year)
+    X = data.fill_XY(X, config, root_dir, conflict_data, polygon_gdf, out_dir, proj=True, proj_year=proj_year)
 
     return X
 
@@ -111,7 +112,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
 
     return X_df, y_df, eval_dict
 
-def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_gdf):
+def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_data):
     """Top-level function to run a predictive model with a already fitted classifier and new data.
 
     Args:
@@ -165,32 +166,41 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
             # TODO: conflict at t-1 must be read; if it's the first proj_year, then from file stored in out_dir_REF/files, otherwise this needs to happen per
             # TODO: classifer separately (the functino call should then be placed in the clfs-loop)
 
+            if i == 0:
+                print('reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
+                conflict_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
+
             # read sample data for each year
             # X is identical for all classifiers
             # i.e. we here start with time stepping
             print('INFO: reading sample data from files')
             # TODO: reading the conflict at t-1 must be changed compared to reference run as we now read from different source (a csv rather than UCDP geo-dataframe)
-            X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf, proj_year=proj_year)
+            X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_data, proj_year=proj_year)
+
+            X = pd.DataFrame(X)
+            if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
+            X = X.dropna()
+            if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
 
             # initiating dataframe containing all projections from all classifiers for this timestep
             y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
 
             # now load all classifiers created in the reference run
             for clf in clfs:
-                
-                # load the pickled objects
-                with open(os.path.join(out_dir_REF, 'clfs', clf), 'rb') as f:
-                    print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
-                    clf = pickle.load(f)
 
                 # creating an individual output folder per classifier
                 if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'clfs', str(clf)))):
                     os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf)))
+                
+                # load the pickled objects
+                with open(os.path.join(out_dir_REF, 'clfs', clf), 'rb') as f:
+                    print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
+                    clf_obj = pickle.load(f)
 
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
                 # returns the prediction based on one individual classifier
-                y_df_clf = models.predictive(X, scaler, main_dict, root_dir)
+                y_df_clf = models.predictive(X, clf_obj, scaler, main_dict, root_dir)
 
                 # store this to csv in clf-specified output folder
                 # TODO: the way it is stored must be useable to be loaded in the next time step to determine conflict at t-1
@@ -204,7 +214,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
             print('DEBUG: storing model output for year {} to output folder'.format(proj_year))
-            df_hit = evaluation.polygon_model_accuracy(y_df, global_df, out_dir=None, make_proj=True)
+            df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, out_dir=None, make_proj=True)
             df_hit = df_hit.drop('geometry', axis=1)
             df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
 

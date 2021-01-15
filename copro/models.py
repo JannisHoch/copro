@@ -165,7 +165,7 @@ def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
 
     return projection_period
 
-def predictive(X, scaler, main_dict, root_dir):
+def predictive(X, clf, scaler, main_dict, root_dir):
     """Predictive model to use the already fitted classifier to make projections.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
 
@@ -182,10 +182,6 @@ def predictive(X, scaler, main_dict, root_dir):
     """    
 
     print('INFO: scaling the data from projection period')
-    X = pd.DataFrame(X)
-    if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
-    X = X.dropna()
-    if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X.to_numpy())
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
