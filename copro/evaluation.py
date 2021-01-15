@@ -149,12 +149,12 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
 
     # #- convert to geodataframe
-    # gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
+    gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
     # if (out_dir != None) and isinstance(out_dir, str):
     #     gdf_hit.to_file(os.path.join(out_dir, 'output_per_polygon.shp'), crs='EPSG:4326')
 
-    return df_hit
+    return df_hit, gdf_hit
 
 def init_out_ROC_curve():
     """initiates empty lists for range of variables needed to plot ROC-curve per simulation.

@@ -124,7 +124,7 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
             if check_neighbors:
 
                 # determine log-scaled number of conflict events in neighboring polygons
-                val = calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly)
+                val = calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly)
                 # append resulting value
                 list_out.append(val)
 
@@ -141,11 +141,43 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
 
     return list_out
 
-def calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly):
+def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, neighboring_matrix=None):
+
+    assert (len(bool_conflict) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year-1))
+
+    # loop through all polygons and check if exists in sub-set
+    list_out = []
+    for i in range(len(extent_gdf)):
+
+        i_poly = extent_gdf.watprovID.iloc[i]
+
+        if i_poly in bool_conflict.index.values:
+
+            if check_neighbors:
+
+                # if neighboring_matrix == None:
+                #     raise ValueError('ERROR: if check_neighbors=True, a matrix with neihgbouring polygons needs to be provided too!')
+
+                # determine log-scaled number of conflict events in neighboring polygons
+                val = calc_conflicts_nb(i_poly, neighboring_matrix, bool_conflict)
+                # append resulting value
+                list_out.append(val)
+
+            else:
+
+                list_out.append(1)
+
+        else:
+
+            # if polygon not in list with conflict polygons, assign 0
+            list_out.append(0)
+
+    return list_out
+
+def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
     """[summary]
 
     Args:
-        config ([type]): [description]
         i_poly ([type]): [description]
         neighboring_matrix ([type]): [description]
         conflicts_per_poly ([type]): [description]

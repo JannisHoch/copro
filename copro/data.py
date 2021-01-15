@@ -60,7 +60,7 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False, proj_year=None):
+def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, proj=False, proj_year=None):
     """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -69,7 +69,7 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False
         XY (dict): initiated, i.e. empty, XY-dictionary
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file.
-        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
+        conflict_data (geo-dataframe): geo-dataframe containing the selected conflicts.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
 
     Raises:
@@ -88,14 +88,14 @@ def fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj=False
             raise ValueError('ERROR: if proj=True, also a projection year must be specified!')
 
     if proj == False:
-        XY = fill_XY_ref(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, model_period)
+        XY = fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model_period)
 
     elif proj == True:
-        XY = fill_XY_proj(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj, proj_year)
+        XY = fill_XY_proj(XY, config, root_dir, conflict_data, polygon_gdf, proj_year)
 
     return pd.DataFrame.from_dict(XY).to_numpy()
 
-def fill_XY_ref(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, model_period):
+def fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model_period):
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
@@ -170,7 +170,7 @@ def fill_XY_ref(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, model_
 
     return XY
 
-def fill_XY_proj(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj, proj_year):
+def fill_XY_proj(XY, config, root_dir, conflict_data, polygon_gdf, proj_year):
 
     # TODO: update this function such that reading conflict at t-1 works with csv stored in previous timestep
 
@@ -181,17 +181,17 @@ def fill_XY_proj(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir, proj,
     # go through all keys in dictionary
     for key, value in XY.items(): 
 
-        elif key == 'conflict_t_min_1':
+        if key == 'conflict_t_min_1':
 
             data_series = value
-            data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, proj_year, proj=proj)
+            data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
             data_series = data_series.append(pd.Series(data_list), ignore_index=True)
             XY[key] = data_series
 
         elif key == 'conflict_t_min_1_nb':
 
             data_series = value
-            data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, proj_year, check_neighbors=True, neighboring_matrix=neighboring_matrix, proj=proj)
+            data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data, check_neighbors=True, neighboring_matrix=neighboring_matrix)
             data_series = data_series.append(pd.Series(data_list), ignore_index=True)
             XY[key] = data_series
 
