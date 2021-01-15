@@ -163,18 +163,15 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
             proj_year = projection_period[i]
             print('INFO: making projection for year {}'.format(proj_year))
 
-            # TODO: conflict at t-1 must be read; if it's the first proj_year, then from file stored in out_dir_REF/files, otherwise this needs to happen per
-            # TODO: classifer separately (the functino call should then be placed in the clfs-loop)
-
+            # for the first projection year, we need to fall back on the observed conflict at the last time step of the reference run
             if i == 0:
                 print('reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
                 conflict_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
 
             # read sample data for each year
-            # X is identical for all classifiers
-            # i.e. we here start with time stepping
             print('INFO: reading sample data from files')
-            # TODO: reading the conflict at t-1 must be changed compared to reference run as we now read from different source (a csv rather than UCDP geo-dataframe)
+            # TODO: this works nicely for the first projection year or if X would not change over time
+            # TODO: but since we will get a different X per clf, the construction for X must be happening within the clfs-loop
             X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_data, proj_year=proj_year)
 
             X = pd.DataFrame(X)
@@ -197,25 +194,39 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
                     print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
                     clf_obj = pickle.load(f)
 
+                # for all other projection years than the first one, we need to read projected conflict from the previous projection year
+                if i > 0:
+                    print('TEST: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
+                    conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
+
+                # TODO: here X must be constructed for each clf individually
+                
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
                 # returns the prediction based on one individual classifier
                 y_df_clf = models.predictive(X, clf_obj, scaler, main_dict, root_dir)
 
-                # store this to csv in clf-specified output folder
-                # TODO: the way it is stored must be useable to be loaded in the next time step to determine conflict at t-1
+                # storing the projection per clf to be used in the following timestep
                 y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year)))
+
+                # removing projection of previous time step as not needed anymore
+                if i > 0:
+                    os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)))
 
                 # append to all classifiers dataframe
                 y_df = y_df.append(y_df_clf, ignore_index=True)
 
-            y_df.to_csv(os.path.join(out_dir_PROJ, 'clfs', 'all_projections_for_{}.csv'.format(proj_year)))            
+            # TODO: for testing, stop after 10 years -> needs to be removed!
+            if i == 10:
+                break
+
+            # y_df.to_csv(os.path.join(out_dir_PROJ, 'clfs', 'all_projections_for_{}.csv'.format(proj_year))) # no need to store this to file
 
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
             print('DEBUG: storing model output for year {} to output folder'.format(proj_year))
             df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, out_dir=None, make_proj=True)
-            df_hit = df_hit.drop('geometry', axis=1)
+            # df_hit = df_hit.drop('geometry', axis=1) # maybe good to keep geometry information if we want to plot it more easily during post-processing
             df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
 
         # create one major output dataframe containing all output for all projections with all classifiers
