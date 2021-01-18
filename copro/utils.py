@@ -80,7 +80,7 @@ def parse_settings(settings_file):
         ConfigParser-object: parsed model configuration.
     """    
 
-    print('INFO: parsing configurations for file {}'.format(settings_file))
+    print('INFO: parsing configurations for file {}'.format(os.path.abspath(settings_file)))
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
@@ -240,8 +240,8 @@ def initiate_setup(settings_file):
 
     main_dict = make_output_dir(config, root_dir, config_dict)
 
-    print('DEBUG: copying cfg-file {} to folder {}'.format(settings_file, main_dict['_REF'][1]))
-    copyfile(settings_file, os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(settings_file)))
+    print('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
+    copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
     if config['conflict']['conflict_file'] == 'download':
         download_PRIO(config)
