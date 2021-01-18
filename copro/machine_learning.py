@@ -157,8 +157,8 @@ def pickle_clf(scaler, clf, config, root_dir):
     print('INFO: fitting the classifier with all data from reference period')
 
     if config.get('pre_calc', 'XY') is '':
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy')))
-        XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy'), allow_pickle=True)
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy')))
+        XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy'), allow_pickle=True)
     else:
         if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY_fit = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
