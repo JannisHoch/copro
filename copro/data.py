@@ -60,7 +60,7 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, proj=False, proj_year=None):
+def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
     """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -80,12 +80,8 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, proj=Fals
     """    
 
     # go through all simulation years as specified in config-file
-    if proj == False:
-        model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
-        print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
-    else:
-        if proj_year == None:
-            raise ValueError('ERROR: if proj=True, also a projection year must be specified!')
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+    print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
 
     XY = fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model_period)
 
@@ -111,21 +107,21 @@ def fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model
                 if key == 'conflict':
                 
                     data_series = value
-                    data_list = conflict.conflict_in_year_bool(config, conflict_gdf, polygon_gdf, sim_year, out_dir)
+                    data_list = conflict.conflict_in_year_bool(config, conflict_data, polygon_gdf, sim_year, out_dir)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'conflict_t_min_1':
 
                     data_series = value
-                    data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year)
+                    data_list = conflict.conflict_in_previous_year(config, conflict_data, polygon_gdf, sim_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'conflict_t_min_1_nb':
 
                     data_series = value
-                    data_list = conflict.conflict_in_previous_year(config, conflict_gdf, polygon_gdf, sim_year, check_neighbors=True, neighboring_matrix=neighboring_matrix)
+                    data_list = conflict.conflict_in_previous_year(config, conflict_data, polygon_gdf, sim_year, check_neighbors=True, neighboring_matrix=neighboring_matrix)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
