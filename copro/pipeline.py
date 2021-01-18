@@ -1,10 +1,11 @@
-from copro import models, data, machine_learning, evaluation
+from copro import models, data, machine_learning, evaluation, utils
 import pandas as pd
 import numpy as np
+import pickle
 import os, sys
 
 
-def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
+def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_period=None):
     """Top-level function to create the X-array and Y-array.
     If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
     If not, variable values and conflict data are read from file and stored in array. The resulting array is by default saved as npy-format to file.
@@ -39,7 +40,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
 
     return X, Y
 
-def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf=None):
+def create_X(config, out_dir, root_dir, polygon_gdf, conflict_data, proj_year):
     """Top-level function to create the X-array.
     If the X-data was pre-computed and specified in cfg-file, the data is loaded.
     If not, variable values are read from file and stored in array. 
@@ -55,20 +56,9 @@ def create_X(config, out_dir, root_dir, polygon_gdf, conflict_gdf=None):
     Returns:
         array: X-array containing variable values.
     """    
+    X = data.initiate_X_data(config)
 
-    if config.get('pre_calc', 'XY') is '':
-
-        X = data.initiate_X_data(config)
-
-        X = data.fill_XY(X, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
-
-        print('INFO: saving X data by default to file {}'.format(os.path.join(out_dir, 'X.npy')))
-        np.save(os.path.join(out_dir,'X'), X)
-
-    else:
-
-        print('INFO: loading XY data from file {}'.format(os.path.join(root_dir, config.get('pre_calc', 'X'))))
-        X = np.load(os.path.join(root_dir, config.get('pre_calc', 'X')), allow_pickle=True)
+    X = data.fill_XY(X, config, root_dir, conflict_data, polygon_gdf, out_dir, proj=True, proj_year=proj_year)
 
     return X
 
@@ -122,7 +112,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
 
     return X_df, y_df, eval_dict
 
-def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_gdf):
+def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_data):
     """Top-level function to run a predictive model with a already fitted classifier and new data.
 
     Args:
@@ -141,25 +131,109 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
     config_REF = main_dict['_REF'][0]
     out_dir_REF = main_dict['_REF'][1]
 
+    clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
+
     if config_REF.getint('general', 'model') != 1:
         raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
-    print('INFO: number of projections to be made is {}'.format(len(main_dict['_REF'][0].items('PROJ_files'))))
-
+    # initiate output dataframe
     all_y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
 
-    for (each_key, each_val) in main_dict['_REF'][0].items('PROJ_files'):
+    # going through each projection specified
+    for (each_key, each_val) in config_REF.items('PROJ_files'):
 
-        print('DEBUG: loading config-object for projection run: {}'.format(each_key))
+        # get config-object and out-dir per projection
+        print('INFO: loading config-object for projection run: {}'.format(each_key))
         config_PROJ = main_dict[str(each_key)][0][0]
         out_dir_PROJ = main_dict[str(each_key)][1]
         print('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
-        print('INFO: reading sample data')
-        X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_gdf)
+        if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
+            os.makedirs(os.path.join(out_dir_PROJ, 'files'))
+        if not os.path.isdir(os.path.join(out_dir_PROJ, 'clfs')):
+            os.makedirs(os.path.join(out_dir_PROJ, 'clfs'))
 
-        y_df = models.predictive(X, scaler, config_REF, out_dir_REF, root_dir)
+        # get projection period for this projection
+        # defined as all years starting from end of reference run until specified end of projections
+        projection_period = models.determine_projection_period(config_REF, config_PROJ, out_dir_PROJ)
 
+        # for this projection, go through all years
+        for i in range(len(projection_period)):
+
+            proj_year = projection_period[i]
+            print('INFO: making projection for year {}'.format(proj_year))
+
+            X = data.initiate_X_data(config_PROJ)
+            print('INFO: reading sample data from files')
+            X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year)
+
+            # for the first projection year, we need to fall back on the observed conflict at the last time step of the reference run
+            if i == 0:
+                print('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
+                conflict_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
+
+                print('DEBUG: combining sample data with conflict data from previous year')
+                X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf, proj_year)
+                X = pd.DataFrame.from_dict(X).to_numpy()
+
+            # initiating dataframe containing all projections from all classifiers for this timestep
+            y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
+
+            # now load all classifiers created in the reference run
+            for clf in clfs:
+
+                # creating an individual output folder per classifier
+                if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'clfs', str(clf)))):
+                    os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf)))
+                
+                # load the pickled objects
+                with open(os.path.join(out_dir_REF, 'clfs', clf), 'rb') as f:
+                    print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
+                    clf_obj = pickle.load(f)
+
+                # for all other projection years than the first one, we need to read projected conflict from the previous projection year
+                if i > 0:
+                    print('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
+                    conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
+
+                    print('DEBUG: combining sample data with conflict data for {}'.format(clf))
+                    X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf, proj_year)
+                    X = pd.DataFrame.from_dict(X).to_numpy()
+
+                X = pd.DataFrame(X)
+                if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
+                X = X.dropna()
+                if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
+                
+                # put all the data into the machine learning algo
+                # here the data will be used to make projections with various classifiers
+                # returns the prediction based on one individual classifier
+                y_df_clf = models.predictive(X, clf_obj, scaler, main_dict, root_dir)
+
+                # storing the projection per clf to be used in the following timestep
+                y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year)))
+
+                # removing projection of previous time step as not needed anymore
+                if i > 0:
+                    os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)))
+
+                # append to all classifiers dataframe
+                y_df = y_df.append(y_df_clf, ignore_index=True)
+
+            # TODO: for testing, stop after 10 years -> needs to be removed!
+            if i == 10:
+                break
+
+            # y_df.to_csv(os.path.join(out_dir_PROJ, 'clfs', 'all_projections_for_{}.csv'.format(proj_year))) # no need to store this to file
+
+            global_df = utils.global_ID_geom_info(selected_polygons_gdf)
+
+            print('DEBUG: storing model output for year {} to output folder'.format(proj_year))
+            df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, out_dir=None, make_proj=True)
+            # df_hit = df_hit.drop('geometry', axis=1) # maybe good to keep geometry information if we want to plot it more easily during post-processing
+            df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
+
+        # create one major output dataframe containing all output for all projections with all classifiers
         all_y_df = all_y_df.append(y_df, ignore_index=True)
 
     return all_y_df
