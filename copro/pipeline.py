@@ -163,21 +163,18 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
             proj_year = projection_period[i]
             print('INFO: making projection for year {}'.format(proj_year))
 
+            X = data.initiate_X_data(config_PROJ)
+            print('INFO: reading sample data from files')
+            X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year)
+
             # for the first projection year, we need to fall back on the observed conflict at the last time step of the reference run
             if i == 0:
-                print('reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
+                print('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
                 conflict_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
 
-            # read sample data for each year
-            print('INFO: reading sample data from files')
-            # TODO: this works nicely for the first projection year or if X would not change over time
-            # TODO: but since we will get a different X per clf, the construction for X must be happening within the clfs-loop
-            X = create_X(config_PROJ, out_dir_PROJ, root_dir, selected_polygons_gdf, conflict_data, proj_year=proj_year)
-
-            X = pd.DataFrame(X)
-            if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
-            X = X.dropna()
-            if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
+                print('DEBUG: combining sample data with conflict data from previous year')
+                X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf, proj_year)
+                X = pd.DataFrame.from_dict(X).to_numpy()
 
             # initiating dataframe containing all projections from all classifiers for this timestep
             y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
@@ -196,10 +193,17 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
 
                 # for all other projection years than the first one, we need to read projected conflict from the previous projection year
                 if i > 0:
-                    print('TEST: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
+                    print('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
                     conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
 
-                # TODO: here X must be constructed for each clf individually
+                    print('DEBUG: combining sample data with conflict data for {}'.format(clf))
+                    X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf, proj_year)
+                    X = pd.DataFrame.from_dict(X).to_numpy()
+
+                X = pd.DataFrame(X)
+                if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
+                X = X.dropna()
+                if config_REF.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
                 
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
