@@ -159,7 +159,7 @@ def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
         print('DEBUG: creating output folder for annual conflict maps {}'.format(os.path.join(out_dir_PROJ, 'files')))
         os.makedirs(os.path.join(out_dir_PROJ, 'files'))
 
-    projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_end')+1, 1)
+    projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_proj')+1, 1)
     projection_period = projection_period.tolist()
     print('DEBUG: the projection period is {} to {}'.format(projection_period[0], projection_period[-1]))
 
