@@ -20,12 +20,16 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         list: list containing 0/1 per polygon depending on conflict occurence.
     """    
 
+    if config.getboolean('general', 'verbose'): print('DEBUG: checking for conflict event in polygon at t')
+
     # select the entries which occured in this year
-    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]   
+    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]  
+
+    assert (len(temp_sel_year) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year))
     
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-    
+
     # determine the aggregated amount of fatalities in one region (e.g. water province)
     try:
         fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
@@ -38,7 +42,6 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         os.makedirs(out_dir)
 
     if sim_year == config.getint('settings', 'y_end'):
-        if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year))))
         # get a 1 for each polygon where there was conflict
         bool_per_poly = fatalities_per_poly / fatalities_per_poly
         # change column name and dtype
@@ -49,10 +52,13 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         global_df = utils.global_ID_geom_info(extent_gdf)
         # merge the boolean info with geometry
         # for all polygons without conflict, set a 0
-        data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').fillna(0)
-        # create a geodataframe and store to file
-        gdf = gpd.GeoDataFrame(data_stored, geometry=data_stored.geometry)
-        gdf.to_file(os.path.join(out_dir, 'conflicts_in_{}.shp'.format(sim_year)))
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year))))
+        # data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').fillna(0)
+        data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').dropna()
+        data_stored.index = data_stored.index.rename('watprovID')
+        data_stored = data_stored.drop('geometry', axis=1)
+        data_stored = data_stored.astype(int)
+        data_stored.to_csv(os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year)))
  
     # loop through all regions and check if exists in sub-set
     # if so, this means that there was conflict and thus assign value 1
@@ -67,12 +73,11 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         else:
             list_out.append(0)
             
-    if not len(extent_gdf) == len(list_out):
-        raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
+    assert (len(extent_gdf) == len(list_out)), AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
 
     return list_out
 
-def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None):
+def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None, proj=False):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
     If the current time step is the first (t=0), then conflict data of this year is used instead due to the lack of earlier data.
 
@@ -91,19 +96,22 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
         list: list containing 0/1 per polygon depending on conflict occurence if checkinf for conflict at t-1, and containing log-transformed number of conflict events in neighboring polygons if specified.
     """    
 
-    # get conflicts at t-1
-    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year-1]  
-    
-    # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
-    data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-
-    # determine log-transformed count of unique conflicts per water province
-    # the id column refers to the conflict id, not the water province id!
     if config.getboolean('general', 'verbose'): 
         if check_neighbors: print('DEBUG: checking for conflicts in neighboring polygons at t-1')
         else: print('DEBUG: checking for conflict event in polygon at t-1')
 
-    conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame()
+    # get conflicts at t-1
+    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year-1]  
+
+    assert (len(temp_sel_year) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year-1))
+    
+    # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
+    data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
+
+    conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame().rename(columns={"id": 'conflict_count'})
+
+    if proj==True:
+        print('HERE WE NEED TO READ IN THE CONFLICT DATA FROM THE LAST OBSERVATION OR THE LAST PROJECTION (t-1)')
 
     # loop through all polygons and check if exists in sub-set
     list_out = []
@@ -116,7 +124,7 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
             if check_neighbors:
 
                 # determine log-scaled number of conflict events in neighboring polygons
-                val = calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly)
+                val = calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly)
                 # append resulting value
                 list_out.append(val)
 
@@ -129,16 +137,47 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
             # if polygon not in list with conflict polygons, assign 0
             list_out.append(0)
             
-    if not len(extent_gdf) == len(list_out):
-        raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
+    assert (len(extent_gdf) == len(list_out)), AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
 
     return list_out
 
-def calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly):
+def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, neighboring_matrix=None):
+
+    assert (len(bool_conflict) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year-1))
+
+    # loop through all polygons and check if exists in sub-set
+    list_out = []
+    for i in range(len(extent_gdf)):
+
+        i_poly = extent_gdf.watprovID.iloc[i]
+
+        if i_poly in bool_conflict.index.values:
+
+            if check_neighbors:
+
+                # if neighboring_matrix == None:
+                #     raise ValueError('ERROR: if check_neighbors=True, a matrix with neihgbouring polygons needs to be provided too!')
+
+                # determine log-scaled number of conflict events in neighboring polygons
+                val = calc_conflicts_nb(i_poly, neighboring_matrix, bool_conflict)
+                # append resulting value
+                list_out.append(val)
+
+            else:
+
+                list_out.append(1)
+
+        else:
+
+            # if polygon not in list with conflict polygons, assign 0
+            list_out.append(0)
+
+    return list_out
+
+def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
     """[summary]
 
     Args:
-        config ([type]): [description]
         i_poly ([type]): [description]
         neighboring_matrix ([type]): [description]
         conflicts_per_poly ([type]): [description]
@@ -160,10 +199,29 @@ def calc_conflicts_nb(config, i_poly, neighboring_matrix, conflicts_per_poly):
 
             nb_count.append(1)
 
-    if np.sum(nb_count) > 0: val = 1
-    else: val = 0
+    if np.sum(nb_count) > 0: 
+        val = 1
+    else: 
+        val = 0
 
     return val
+
+def fill_projection_period(config_REF, out_dir_REF, config_PROJ, out_dir_PROJ):
+
+    projection_period = determine_projection_period(config_REF, config_PROJ, out_dir_PROJ)
+
+    for i in range(len(projection_period)):
+        print('INFO: entering year {} in projection period'.format(projection_period[i]))
+        if i == 0:
+            if os.path.isfile(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))):
+                print('DEBUG: reading from last conflict observation {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
+                conflict_gdf = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
+            else:
+                raise ValueError('ERROR: the file with binary conflict occurence at last time step of reference run could not be found!')
+        else:
+            conflict_gdf = None
+
+    return projection_period
 
 def get_poly_ID(extent_gdf): 
     """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'name' or 'watprovID'.

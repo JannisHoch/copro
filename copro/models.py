@@ -151,7 +151,21 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def predictive(X, scaler, config, out_dir, root_dir):
+def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
+
+    print('INFO: determinining annual conflict occurence from end of reference run until end of projection run')
+
+    if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
+        print('DEBUG: creating output folder for annual conflict maps {}'.format(os.path.join(out_dir_PROJ, 'files')))
+        os.makedirs(os.path.join(out_dir_PROJ, 'files'))
+
+    projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_proj')+1, 1)
+    projection_period = projection_period.tolist()
+    print('DEBUG: the projection period is {} to {}'.format(projection_period[0], projection_period[-1]))
+
+    return projection_period
+
+def predictive(X, clf, scaler, main_dict, root_dir):
     """Predictive model to use the already fitted classifier to make projections.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
 
@@ -168,27 +182,14 @@ def predictive(X, scaler, config, out_dir, root_dir):
     """    
 
     print('INFO: scaling the data from projection period')
-    X = pd.DataFrame(X)
-    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
-    X = X.dropna()
-    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X.to_numpy())
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
-    clfs = machine_learning.load_clfs(config, out_dir)
-
-    y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
-
     print('INFO: making the projections')    
-    for clf in clfs:    
 
-        with open(os.path.join(out_dir, 'clfs', clf), 'rb') as f:
-            print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir, 'clfs')))
-            clf = pickle.load(f)
-
-        y_pred = clf.predict(X_ft)
-        arr = np.column_stack((X_ID, X_geom, y_pred))
-        y_df = y_df.append(pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred']), ignore_index=True)
-
+    y_pred = clf.predict(X_ft)
+    arr = np.column_stack((X_ID, X_geom, y_pred))
+    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])
+    
     return y_df
