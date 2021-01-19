@@ -106,7 +106,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
 
     return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
-def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr=None):
+def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
     """Fits the classifier based on training-data and makes predictions.
     Additionally, the prediction probability is determined.
 
@@ -117,7 +117,7 @@ def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr=None):
         clf (classifier): the specified model instance.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         out_dir (path): path to output folder
-        run_nr (int): number of fit/predict repetition and created classifier. Defaults to None.
+        run_nr (int): number of fit/predict repetition and created classifier
 
     Returns:
         arrays: arrays including the predictions made and their probabilities
@@ -129,10 +129,9 @@ def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr=None):
     if not os.path.isdir(clf_pickle_rep):
         os.makedirs(clf_pickle_rep)
 
-    if run_nr != None:
-        if config.getboolean('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
-        with open(os.path.join(clf_pickle_rep, 'clf_{}.pkl'.format(run_nr)), 'wb') as f:
-            pickle.dump(clf, f)
+    if config.getboolean('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
+    with open(os.path.join(clf_pickle_rep, 'clf_{}.pkl'.format(run_nr)), 'wb') as f:
+        pickle.dump(clf, f)
 
     y_pred = clf.predict(X_test)
 
@@ -157,8 +156,8 @@ def pickle_clf(scaler, clf, config, root_dir):
     print('INFO: fitting the classifier with all data from reference period')
 
     if config.get('pre_calc', 'XY') is '':
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy')))
-        XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy'), allow_pickle=True)
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy')))
+        XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy'), allow_pickle=True)
     else:
         if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY_fit = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
@@ -168,10 +167,6 @@ def pickle_clf(scaler, clf, config, root_dir):
     X_ft_fit = scaler.fit_transform(X_data_fit)
 
     clf.fit(X_ft_fit, Y_fit)
-
-    # print('INFO: dumping classifier to {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl')))
-    # with open(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
-    #     pickle.dump(clf, f)
 
     return clf
 
@@ -188,6 +183,6 @@ def load_clfs(config, out_dir):
 
     clfs = os.listdir(os.path.join(out_dir, 'clfs'))
 
-    assert len(clfs), len(config.getint('settings', 'n_runs'))
+    assert (len(clfs), config.getint('machine_learning', 'n_runs')), AssertionError('ERROR: number of loaded classifiers does not match the specified number of runs in cfg-file!')
 
     return clfs

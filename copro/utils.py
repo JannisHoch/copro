@@ -80,14 +80,14 @@ def parse_settings(settings_file):
         ConfigParser-object: parsed model configuration.
     """    
 
-    print('INFO: parsing configurations for file {}'.format(settings_file))
+    print('INFO: parsing configurations for file {}'.format(os.path.abspath(settings_file)))
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
 
     return config
 
-def parse_projection_settings(config):
+def parse_projection_settings(config, root_dir):
     """This function parses the (various) cfg-files for projections.
     These cfg-files need to be specified one by one in the PROJ_files section of the cfg-file for the reference run.
     The function returns then a dictionary with the name of the run and the associated config-object.
@@ -109,9 +109,10 @@ def parse_projection_settings(config):
     for (each_key, each_val) in config.items('PROJ_files'):
 
         # for each value (here representing the cfg-files of the projections), get the absolute path
-        each_val = os.path.abspath(each_val)
+        each_val = os.path.abspath(os.path.join(root_dir, each_val))
 
         # parse each config-file specified
+        print('DEBUG: parsing settings from file {}'.format(each_val))
         each_config = parse_settings(each_val)
 
         # update the output dictionary with key and config-object
@@ -234,14 +235,14 @@ def initiate_setup(settings_file):
 
     config = parse_settings(settings_file)
 
-    config_dict = parse_projection_settings(config)
+    config_dict = parse_projection_settings(config, root_dir)
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
     main_dict = make_output_dir(config, root_dir, config_dict)
 
-    print('DEBUG: copying cfg-file {} to folder {}'.format(settings_file, main_dict['_REF'][1]))
-    copyfile(settings_file, os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(settings_file)))
+    print('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
+    copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
     if config['conflict']['conflict_file'] == 'download':
         download_PRIO(config)

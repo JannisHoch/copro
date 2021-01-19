@@ -206,17 +206,13 @@ def fill_X_sample(XY, config, root_dir, polygon_gdf, proj_year):
                 else:
                     raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-    print('INFO: all data read')
-
     return XY
 
-def fill_X_conflict(XY, config, conflict_data, polygon_gdf, proj_year):
+def fill_X_conflict(XY, config, conflict_data, polygon_gdf):
 
     # TODO: update this function such that reading conflict at t-1 works with csv stored in previous timestep
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
-
-    print('INFO: entering year {}'.format(proj_year))
 
     # go through all keys in dictionary
     for key, value in XY.items(): 
@@ -239,7 +235,7 @@ def fill_X_conflict(XY, config, conflict_data, polygon_gdf, proj_year):
 
             pass
 
-    print('INFO: all data read')
+    print('DEBUG: all data read')
 
     return XY
 
