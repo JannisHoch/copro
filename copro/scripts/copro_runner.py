@@ -69,7 +69,7 @@ def cli(cfg, make_plots=True, verbose=False):
         click.echo('INFO: run {} of {}'.format(n+1, config_REF.getint('machine_learning', 'n_runs')))
 
         #- run machine learning model and return outputs
-        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config_REF, scaler, clf, out_dir_REF)
+        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config_REF, scaler, clf, out_dir_REF, run_nr=n+1)
         
         #- append per model execution
         #TODO: put all this into one function
@@ -115,18 +115,6 @@ def cli(cfg, make_plots=True, verbose=False):
 
     click.echo('INFO: reference run succesfully finished')
 
-    sys.exit()
+    all_y_df = copro.pipeline.run_prediction(scaler, main_dict, root_dir, extent_active_polys_gdf)
 
-    if projection_settings is not []:
-
-        for proj in projection_settings:
-
-            click.echo(click.style('\nINFO: projection run started, based on {}'.format(os.path.abspath(proj)), fg='cyan'))
-
-            config, out_dir, root_dir = copro.utils.initiate_setup(proj)
-
-            X = copro.pipeline.create_X(config, out_dir, root_dir, extent_active_polys_gdf)
-
-            y_df = copro.pipeline.run_prediction(X, scaler, config, root_dir)
-
-            df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(y_df, global_df, out_dir=out_dir, make_proj=True)
+    click.echo('INFO: all projections succesfully finished')

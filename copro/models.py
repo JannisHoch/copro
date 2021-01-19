@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import os, sys
 
-def all_data(X, Y, config, scaler, clf, out_dir, run_nr=None):
+def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
     """Main model workflow when all data is used. The model workflow is executed for each model simulation.
 
     Args:
@@ -24,7 +24,7 @@ def all_data(X, Y, config, scaler, clf, out_dir, run_nr=None):
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
     
-    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr=run_nr)
+    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr)
 
     eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
 
@@ -155,9 +155,9 @@ def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
 
     print('INFO: determinining annual conflict occurence from end of reference run until end of projection run')
 
-    if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
-        print('DEBUG: creating output folder for annual conflict maps {}'.format(os.path.join(out_dir_PROJ, 'files')))
-        os.makedirs(os.path.join(out_dir_PROJ, 'files'))
+    # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
+    #     print('DEBUG: creating output folder for annual conflict maps {}'.format(os.path.join(out_dir_PROJ, 'files')))
+    #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
 
     projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_proj')+1, 1)
     projection_period = projection_period.tolist()

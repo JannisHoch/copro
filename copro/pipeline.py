@@ -79,7 +79,7 @@ def prepare_ML(config):
 
     return scaler, clf
 
-def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
+def run_reference(X, Y, config, scaler, clf, out_dir, run_nr):
     """Top-level function to run one of the four supported models.
 
     Args:
@@ -100,7 +100,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
     """    
 
     if config.getint('general', 'model') == 1:
-        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir, run_nr=run_nr)
+        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir, run_nr)
     elif config.getint('general', 'model') == 2:
         X_df, y_df, eval_dict = models.leave_one_out(X, Y, config, scaler, clf, out_dir)
     elif config.getint('general', 'model') == 3:
@@ -112,7 +112,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr=None):
 
     return X_df, y_df, eval_dict
 
-def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_data):
+def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
     """Top-level function to run a predictive model with a already fitted classifier and new data.
 
     Args:
@@ -148,8 +148,8 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
         out_dir_PROJ = main_dict[str(each_key)][1]
         print('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
-        if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
-            os.makedirs(os.path.join(out_dir_PROJ, 'files'))
+        # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
+        #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
         if not os.path.isdir(os.path.join(out_dir_PROJ, 'clfs')):
             os.makedirs(os.path.join(out_dir_PROJ, 'clfs'))
 
@@ -173,7 +173,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
                 conflict_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
 
                 print('DEBUG: combining sample data with conflict data from previous year')
-                X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf, proj_year)
+                X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
                 X = pd.DataFrame.from_dict(X).to_numpy()
 
             # initiating dataframe containing all projections from all classifiers for this timestep
@@ -197,7 +197,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
                     conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
 
                     print('DEBUG: combining sample data with conflict data for {}'.format(clf))
-                    X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf, proj_year)
+                    X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
                 X = pd.DataFrame(X)
@@ -219,10 +219,6 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf, conflict_
 
                 # append to all classifiers dataframe
                 y_df = y_df.append(y_df_clf, ignore_index=True)
-
-            # TODO: for testing, stop after 10 years -> needs to be removed!
-            if i == 10:
-                break
 
             # y_df.to_csv(os.path.join(out_dir_PROJ, 'clfs', 'all_projections_for_{}.csv'.format(proj_year))) # no need to store this to file
 
