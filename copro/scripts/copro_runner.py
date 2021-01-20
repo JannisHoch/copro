@@ -112,7 +112,9 @@ def cli(cfg, make_plots=True, verbose=False):
 
     #- create accuracy values per polygon and save to output folder
     #- note only the dataframe is stored, not the geo-dataframe
-    df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir_REF)
+    df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
+
+    df_hit.to_csv(os.path.join(out_dir_REF, 'output_for_REF.csv')
 
     #- plot distribution of all evaluation metrics
     if make_plots:

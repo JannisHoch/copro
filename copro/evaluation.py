@@ -101,7 +101,7 @@ def fill_out_df(out_df, y_df):
 
     return out_df
 
-def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
+def polygon_model_accuracy(df, global_df, make_proj=False):
     """Determines a range of model accuracy values for each polygon.
     Reduces dataframe with results from each simulation to values per unique polygon identifier.
     Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and conflict-only data.
@@ -109,8 +109,7 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     Args:
         df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        out_dir (str): path to output folder. If 'None', no output is stored.
-        make_proj (bool, optional): whether or not this function is used to make a projection. If False, a couple of calculations are skipped. Defaults to 'False'.
+        make_proj (bool, optional): whether or not this function is used to make a projection. If True, a couple of calculations are skipped. Defaults to 'False'.
 
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
@@ -151,13 +150,10 @@ def polygon_model_accuracy(df, global_df, out_dir, make_proj=False):
     # #- convert to geodataframe
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
-    # if (out_dir != None) and isinstance(out_dir, str):
-    #     gdf_hit.to_file(os.path.join(out_dir, 'output_per_polygon.shp'), crs='EPSG:4326')
-
     return df_hit, gdf_hit
 
 def init_out_ROC_curve():
-    """initiates empty lists for range of variables needed to plot ROC-curve per simulation.
+    """Initiates empty lists for range of variables needed to plot ROC-curve per simulation.
 
     Returns:
         lists: empty lists for variables.
@@ -259,7 +255,8 @@ def categorize_polys(gdf_hit, category='sub', mode='median'):
     return gdf_hit
 
 def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
-    """Determines the mean, median, and standard deviation of correct chance of prediction (CCP) for k parts of the overall output dataframe.
+    """
+    Determines the mean, median, and standard deviation of correct chance of prediction (CCP) for k parts of the overall output dataframe.
     Instead of evaluating the overall output dataframe at once, this can give a better feeling of the variation in CCP between model repetitions.
 
     Args:
