@@ -129,7 +129,7 @@ def make_output_dir(config, root_dir, config_dict):
         config_dict (dict): dictionary containing config-objects per projection.
 
     Returns:
-        list: list with output directories, first entry refers to main dir, second to reference situation, all following to each projection run.
+        dict: dictionary containing config-objects and output directories for reference run and all projection runs.
     """    
 
     out_dir = os.path.join(root_dir, config.get('general','output_dir'))
