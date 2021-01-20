@@ -18,18 +18,25 @@ def cli(cfg, make_plots=True, verbose=False):
     """Main command line script to execute the model. 
     All settings are read from cfg-file.
     One cfg-file is required argument to train, test, and evaluate the model.
-    Additional cfg-files can be provided as optional arguments, whereby each file corresponds to one projection to be made.
+    Multiple classifiers are trained based on different train-test data combinations.
+    Additional cfg-files for multiple projections can be provided as optional arguments, whereby each file corresponds to one projection to be made.
+    Per projection, each classifiers is used to create separate projection outcomes per time step (year).
+    All outcomes are combined after each time step to obtain the common projection outcome.
 
     Args:
         CFG (str): (relative) path to cfg-file
     """ 
   
-    #- parsing settings-file and getting path to output folder
+    #- parsing settings-file
+    #- returns dictionary with config-objects and output directories of reference run and all projections
+    #- also returns root_dir which is the path to the cfg-file
     main_dict, root_dir = copro.utils.initiate_setup(cfg)
 
+    #- get config-objct and out_dir for reference run
     config_REF = main_dict['_REF'][0]
     out_dir_REF = main_dict['_REF'][1]
 
+    #- is specified, set verbose-settings
     if verbose:
         config_REF.set('general', 'verbose', str(verbose))
 
@@ -38,15 +45,15 @@ def cli(cfg, make_plots=True, verbose=False):
     #- selecting conflicts and getting area-of-interest and aggregation level
     conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
 
+    #- plot selected polygons and conflicts
     if make_plots:
-        #- plot selected polygons and conflicts
         fig, ax = plt.subplots(1, 1)
         copro.plots.selected_polygons(extent_active_polys_gdf, figsize=(20, 10), ax=ax)
         copro.plots.selected_conflicts(conflict_gdf, ax=ax)
         plt.savefig(os.path.join(out_dir_REF, 'selected_polygons_and_conflicts.png'), dpi=300, bbox_inches='tight')
 
-    #- create X and Y arrays by reading conflict and variable files;
-    #- or by loading a pre-computed array (npy-file)
+    #- create X and Y arrays by reading conflict and variable files for reference run
+    #- or by loading a pre-computed array (npy-file) if specified in cfg-file
     X, Y = copro.pipeline.create_XY(config_REF, out_dir_REF, root_dir, extent_active_polys_gdf, conflict_gdf)
 
     #- defining scaling and model algorithms
@@ -62,8 +69,9 @@ def cli(cfg, make_plots=True, verbose=False):
     #- create plot instance for ROC plots
     fig, ax1 = plt.subplots(1, 1, figsize=(20,10))
 
-    click.echo('INFO: training and testing machine learning model')
     #- go through all n model executions
+    #- that is, create different classifiers based on different train-test data combinations
+    click.echo('INFO: training and testing machine learning model')
     for n in range(config_REF.getint('machine_learning', 'n_runs')):
         
         click.echo('INFO: run {} of {}'.format(n+1, config_REF.getint('machine_learning', 'n_runs')))
@@ -93,11 +101,12 @@ def cli(cfg, make_plots=True, verbose=False):
     copro.utils.save_to_npy(out_y_df, out_dir_REF, 'raw_output_data')
     
     #- print mean values of all evaluation metrics
-    for key in out_dict:
-        if config_REF.getboolean('general', 'verbose'):
+    if config_REF.getboolean('general', 'verbose'):
+        for key in out_dict:
             click.echo('DEBUG: average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config_REF.getint('machine_learning', 'n_runs'), np.mean(out_dict[key])))
 
-    # create accuracy values per polygon and save to output folder
+    #- create accuracy values per polygon and save to output folder
+    #- note only the dataframe is stored, not the geo-dataframe
     df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df, out_dir_REF)
 
     #- plot distribution of all evaluation metrics
@@ -106,15 +115,16 @@ def cli(cfg, make_plots=True, verbose=False):
         copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
         plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-    clf = copro.machine_learning.pickle_clf(scaler, clf, config_REF, root_dir)
     #- plot relative importance of each feature based on ALL data points
     if make_plots:
+        clf = copro.machine_learning.pickle_clf(scaler, clf, config_REF, root_dir)
         fig, ax = plt.subplots(1, 1)
         copro.plots.factor_importance(clf, config_REF, out_dir=out_dir_REF, ax=ax, figsize=(20, 10))
         plt.savefig(os.path.join(out_dir_REF, 'feature_importances.png'), dpi=300, bbox_inches='tight')
 
     click.echo('INFO: reference run succesfully finished')
 
-    all_y_df = copro.pipeline.run_prediction(scaler, main_dict, root_dir, extent_active_polys_gdf)
+    #- running prediction runs
+    copro.pipeline.run_prediction(scaler, main_dict, root_dir, extent_active_polys_gdf)
 
     click.echo('INFO: all projections succesfully finished')
