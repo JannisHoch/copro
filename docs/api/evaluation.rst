@@ -15,6 +15,4 @@ Model evaluation
    evaluation.polygon_model_accuracy
    evaluation.init_out_ROC_curve
    evaluation.save_out_ROC_curve
-   evaluation.categorize_polys
-   evaluation.calc_kFold_polygon_analysis
    evaluation.get_feature_importance

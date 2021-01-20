@@ -12,3 +12,4 @@ Machine learning
    machine_learning.split_scale_train_test_split
    machine_learning.fit_predict
    machine_learning.pickle_clf
+   machine_learning.load_clfs
