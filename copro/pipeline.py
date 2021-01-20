@@ -5,10 +5,11 @@ import pickle
 import os, sys
 
 
-def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_period=None):
+def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
     """Top-level function to create the X-array and Y-array.
     If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
-    If not, variable values and conflict data are read from file and stored in array. The resulting array is by default saved as npy-format to file.
+    If not, variable values and conflict data are read from file and stored in array. 
+    The resulting array is by default saved as npy-format to file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -22,45 +23,29 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_p
         array: Y-array containing conflict data.
     """    
 
+    # if nothing is specified in cfg-file, then initiate and fill XY data from scratch
     if config.get('pre_calc', 'XY') is '':
 
+        # initiate (empty) dictionary with all keys
         XY = data.initiate_XY_data(config)
 
+        # fill the dictionary and get array
         XY = data.fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
 
+        # save array to XY.npy out_dir
         print('INFO: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
         np.save(os.path.join(out_dir,'XY'), XY)
 
+    # if path to XY.npy is specified, read the data intead
     else:
 
         print('INFO: loading XY data from file {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
         
+    # split the XY data into sample data X and target values Y
     X, Y = data.split_XY_data(XY, config)    
 
     return X, Y
-
-def create_X(config, out_dir, root_dir, polygon_gdf, conflict_data, proj_year):
-    """Top-level function to create the X-array.
-    If the X-data was pre-computed and specified in cfg-file, the data is loaded.
-    If not, variable values are read from file and stored in array. 
-    The resulting array is by default saved as npy-format to file.
-
-    Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        out_dir (str): path to output folder.
-        root_dir (str): path to location of cfg-file.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
-
-    Returns:
-        array: X-array containing variable values.
-    """    
-    X = data.initiate_X_data(config)
-
-    X = data.fill_XY(X, config, root_dir, conflict_data, polygon_gdf, out_dir, proj=True, proj_year=proj_year)
-
-    return X
 
 def prepare_ML(config):
     """Top-level function to instantiate the scaler and model as specified in model configurations.
@@ -113,19 +98,22 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr):
     return X_df, y_df, eval_dict
 
 def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
-    """Top-level function to run a predictive model with a already fitted classifier and new data.
+    """Top-level function to execute the projections.
+    Per specified projection, conflict is projected forwards in time per time step until the projection year is reached.
+    Pear time step, the sample data and conflict data are read individually since different conflict projections are made per classifier used.
+    At the end of each time step, the projections of all classifiers are combined and output metrics determined.
 
     Args:
-        X (array): X-array containing variable values.
         scaler (scaler): the specified scaler instance.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        main_dict (dict): dictionary containing config-objects and output directories for reference run and all projection runs.
         root_dir (str): path to location of cfg-file.
+        selected_polygons_gdf (geo-dataframe): 
 
     Raises:
         ValueError: raised if another model type than the one using all data is specified in cfg-file.
 
     Returns:
-        datatrame: containing model output on polygon-basis.
+        dataframe: containing model output on polygon-basis.
     """    
 
     config_REF = main_dict['_REF'][0]
