@@ -166,6 +166,7 @@ def select(config, out_dir, root_dir):
 
     gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config, root_dir)
 
+    # TODO: save as csv rather than shp
     gdf.to_file(os.path.join(out_dir, 'selected_conflicts.shp'), crs='EPSG:4326')
     polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.shp'), crs='EPSG:4326')
 

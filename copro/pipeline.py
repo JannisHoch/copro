@@ -224,7 +224,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
             print('DEBUG: storing model output for year {} to output folder'.format(proj_year))
-            df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, out_dir=None, make_proj=True)
+            df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
             # df_hit = df_hit.drop('geometry', axis=1) # maybe good to keep geometry information if we want to plot it more easily during post-processing
             df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
 
