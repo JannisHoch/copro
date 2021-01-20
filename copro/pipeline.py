@@ -209,7 +209,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
                 # returns the prediction based on one individual classifier
-                y_df_clf = models.predictive(X, clf_obj, scaler, main_dict, root_dir)
+                y_df_clf = models.predictive(X, clf_obj, scaler)
 
                 # storing the projection per clf to be used in the following timestep
                 y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year)))
