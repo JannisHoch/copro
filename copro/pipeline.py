@@ -187,6 +187,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                     os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf)))
                 
                 # load the pickled objects
+                # TODO: keep them in memory, i.e. after reading the clfs-folder above
                 with open(os.path.join(out_dir_REF, 'clfs', clf), 'rb') as f:
                     print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
                     clf_obj = pickle.load(f)
@@ -219,8 +220,6 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
                 # append to all classifiers dataframe
                 y_df = y_df.append(y_df_clf, ignore_index=True)
-
-            # y_df.to_csv(os.path.join(out_dir_PROJ, 'clfs', 'all_projections_for_{}.csv'.format(proj_year))) # no need to store this to file
 
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 

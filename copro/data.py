@@ -7,8 +7,12 @@ import os, sys
 
 def initiate_XY_data(config):
     """Initiates an empty dictionary to contain the XY-data for each polygon. 
-    By default, the first column is for the polygon ID, the second for polygon geometry, and the last for binary conflict data (i.e. the Y-data).
-    Every column in between corresponds to the variables provided in the cfg-file (i.e. the X-data).
+    This is needed for the reference run.
+    By default, the first column is for the polygon ID, the second for polygon geometry.
+    The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
+    The last column is for binary conflict data at t (i.e. the target data).
+    
+    Every column in between corresponds to the variables provided in the cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -35,8 +39,10 @@ def initiate_XY_data(config):
 
 def initiate_X_data(config):
     """Initiates an empty dictionary to contain the X-data for each polygon. 
+    This is needed for each time step of each projection run.
     By default, the first column is for the polygon ID and the second for polygon geometry.
-    All remaining columns correspond to the variables provided in the cfg-file (i.e. the X-data).
+    The penultimate column is for boolean information about conflict at t-1 while the last column is for boolean information about conflict at t-1 in neighboring polygons.
+    All remaining columns correspond to the variables provided in the cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -82,12 +88,6 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
     # go through all simulation years as specified in config-file
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
     print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
-
-    XY = fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model_period)
-
-    return pd.DataFrame.from_dict(XY).to_numpy()
-
-def fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model_period):
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
@@ -160,7 +160,7 @@ def fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model
 
             print('INFO: all data read')
 
-    return XY
+    return pd.DataFrame.from_dict(XY).to_numpy()
 
 def fill_X_sample(XY, config, root_dir, polygon_gdf, proj_year):
 
