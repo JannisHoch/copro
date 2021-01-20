@@ -181,13 +181,13 @@ def predictive(X, clf, scaler, main_dict, root_dir):
         datatrame: containing model output on polygon-basis.
     """    
 
-    print('INFO: scaling the data from projection period')
+    # splitting the data from the ID and geometry part of X
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X.to_numpy())
-    ##- scaling only the variable values
-    X_ft = scaler.fit_transform(X_data)
+
+    print('INFO: transforming the data from projection period')
+    X_ft = scaler.transform(X_data)
 
     print('INFO: making the projections')    
-
     y_pred = clf.predict(X_ft)
     arr = np.column_stack((X_ID, X_geom, y_pred))
     y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])

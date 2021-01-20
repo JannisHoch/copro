@@ -4,6 +4,7 @@ import click
 import pandas as pd
 import numpy as np
 import os, sys
+import pickle
 import matplotlib.pyplot as plt
 
 import warnings
@@ -58,6 +59,10 @@ def cli(cfg, make_plots=True, verbose=False):
 
     #- defining scaling and model algorithms
     scaler, clf = copro.pipeline.prepare_ML(config_REF)
+
+    #- fit-transform on scaler to be used later during projections
+    click.echo('INFO: fitting scaler to sample data')
+    scaler_fitted = scaler.fit(X[: , 2:])
 
     #- initializing output variables
     #TODO: put all this into one function
@@ -125,6 +130,6 @@ def cli(cfg, make_plots=True, verbose=False):
     click.echo('INFO: reference run succesfully finished')
 
     #- running prediction runs
-    copro.pipeline.run_prediction(scaler, main_dict, root_dir, extent_active_polys_gdf)
+    copro.pipeline.run_prediction(scaler_fitted, main_dict, root_dir, extent_active_polys_gdf)
 
     click.echo('INFO: all projections succesfully finished')
