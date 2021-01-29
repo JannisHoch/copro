@@ -5,10 +5,11 @@ import pickle
 import os, sys
 
 
-def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_period=None):
+def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
     """Top-level function to create the X-array and Y-array.
     If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
-    If not, variable values and conflict data are read from file and stored in array. The resulting array is by default saved as npy-format to file.
+    If not, variable values and conflict data are read from file and stored in array. 
+    The resulting array is by default saved as npy-format to file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -22,45 +23,29 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf, projection_p
         array: Y-array containing conflict data.
     """    
 
+    # if nothing is specified in cfg-file, then initiate and fill XY data from scratch
     if config.get('pre_calc', 'XY') is '':
 
+        # initiate (empty) dictionary with all keys
         XY = data.initiate_XY_data(config)
 
+        # fill the dictionary and get array
         XY = data.fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
 
+        # save array to XY.npy out_dir
         print('INFO: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
         np.save(os.path.join(out_dir,'XY'), XY)
 
+    # if path to XY.npy is specified, read the data intead
     else:
 
         print('INFO: loading XY data from file {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
         
+    # split the XY data into sample data X and target values Y
     X, Y = data.split_XY_data(XY, config)    
 
     return X, Y
-
-def create_X(config, out_dir, root_dir, polygon_gdf, conflict_data, proj_year):
-    """Top-level function to create the X-array.
-    If the X-data was pre-computed and specified in cfg-file, the data is loaded.
-    If not, variable values are read from file and stored in array. 
-    The resulting array is by default saved as npy-format to file.
-
-    Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        out_dir (str): path to output folder.
-        root_dir (str): path to location of cfg-file.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
-
-    Returns:
-        array: X-array containing variable values.
-    """    
-    X = data.initiate_X_data(config)
-
-    X = data.fill_XY(X, config, root_dir, conflict_data, polygon_gdf, out_dir, proj=True, proj_year=proj_year)
-
-    return X
 
 def prepare_ML(config):
     """Top-level function to instantiate the scaler and model as specified in model configurations.
@@ -113,19 +98,22 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr):
     return X_df, y_df, eval_dict
 
 def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
-    """Top-level function to run a predictive model with a already fitted classifier and new data.
+    """Top-level function to execute the projections.
+    Per specified projection, conflict is projected forwards in time per time step until the projection year is reached.
+    Pear time step, the sample data and conflict data are read individually since different conflict projections are made per classifier used.
+    At the end of each time step, the projections of all classifiers are combined and output metrics determined.
 
     Args:
-        X (array): X-array containing variable values.
         scaler (scaler): the specified scaler instance.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        main_dict (dict): dictionary containing config-objects and output directories for reference run and all projection runs.
         root_dir (str): path to location of cfg-file.
+        selected_polygons_gdf (geo-dataframe): 
 
     Raises:
         ValueError: raised if another model type than the one using all data is specified in cfg-file.
 
     Returns:
-        datatrame: containing model output on polygon-basis.
+        dataframe: containing model output on polygon-basis.
     """    
 
     config_REF = main_dict['_REF'][0]
@@ -183,10 +171,11 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             for clf in clfs:
 
                 # creating an individual output folder per classifier
-                if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'clfs', str(clf)))):
-                    os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf)))
+                if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0]))):
+                    os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0]))
                 
                 # load the pickled objects
+                # TODO: keep them in memory, i.e. after reading the clfs-folder above
                 with open(os.path.join(out_dir_REF, 'clfs', clf), 'rb') as f:
                     print('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
                     clf_obj = pickle.load(f)
@@ -194,9 +183,9 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # for all other projection years than the first one, we need to read projected conflict from the previous projection year
                 if i > 0:
                     print('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
-                    conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
+                    conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
 
-                    print('DEBUG: combining sample data with conflict data for {}'.format(clf))
+                    print('DEBUG: combining sample data with conflict data for {}'.format(clf.rsplit('.')[0]))
                     X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
@@ -208,24 +197,22 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
                 # returns the prediction based on one individual classifier
-                y_df_clf = models.predictive(X, clf_obj, scaler, main_dict, root_dir)
+                y_df_clf = models.predictive(X, clf_obj, scaler)
 
                 # storing the projection per clf to be used in the following timestep
-                y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year)))
+                y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
 
                 # removing projection of previous time step as not needed anymore
                 if i > 0:
-                    os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)))
+                    os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)))
 
                 # append to all classifiers dataframe
                 y_df = y_df.append(y_df_clf, ignore_index=True)
 
-            # y_df.to_csv(os.path.join(out_dir_PROJ, 'clfs', 'all_projections_for_{}.csv'.format(proj_year))) # no need to store this to file
-
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
             print('DEBUG: storing model output for year {} to output folder'.format(proj_year))
-            df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, out_dir=None, make_proj=True)
+            df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
             # df_hit = df_hit.drop('geometry', axis=1) # maybe good to keep geometry information if we want to plot it more easily during post-processing
             df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
 
