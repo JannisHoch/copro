@@ -12,12 +12,11 @@ import warnings
 warnings.filterwarnings("ignore")
 
 def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
-    By default, the mean value of all cells within a polygon is computed.
-    The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
+    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+    In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
-    The var_name must be identical to the key in the config-file. 
+    The key in the cfg-file must be identical to variable name in netCDF-file. 
 
     NOTE:
     This function is specifically written for netCDF-files where the time variable contains integer (year-)values, e.g. 1995, 1996, ...
@@ -33,16 +32,21 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         sim_year (int): year for which data is extracted.
 
     Raises:
-        ValueError: raised if the extracted variable at a time step does not contain data
+        ValueError: raised if not everything is specified in cfg-file.
+        ValueError: raised if the extracted variable at a time step does not contain data.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf
+        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
     """   
 
+    # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
     data_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name)).rsplit(',')
 
+    # if not all of these three aspects are provided, raise error
     if len(data_fo) != 3:
         raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
+    
+    # if not, split the list into separate variables
     else:
         nc_fo = data_fo[0]
         ln_flag = bool(util.strtobool(data_fo[1]))
@@ -103,12 +107,11 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     return list_out
 
 def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
-    By default, the mean value of all cells within a polygon is computed.
-    The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
+    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+    In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
-    The var_name must be identical to the key in the config-file. 
+    The key in the cfg-file must be identical to variable name in netCDF-file. 
 
     NOTE:
     Works only with nc-files with annual data.
@@ -121,17 +124,22 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         sim_year (int): year for which data is extracted.
 
     Raises:
-        ValueError: raised if specfied year cannot be found in years in nc-file
-        ValueError: raised if the extracted variable at a time step does not contain data
+        ValueError: raised if not everything is specified in cfg-file.
+        ValueError: raised if specfied year cannot be found in years in nc-file.
+        ValueError: raised if the extracted variable at a time step does not contain data.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf
+        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
     """   
 
+    # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
     data_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name)).rsplit(',')
 
+    # if not all of these three aspects are provided, raise error
     if len(data_fo) != 3:
         raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
+    
+    # if not, split the list into separate variables
     else:
         nc_fo = data_fo[0]
         ln_flag = bool(util.strtobool(data_fo[1]))

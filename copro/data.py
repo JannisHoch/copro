@@ -7,8 +7,12 @@ import os, sys
 
 def initiate_XY_data(config):
     """Initiates an empty dictionary to contain the XY-data for each polygon. 
-    By default, the first column is for the polygon ID, the second for polygon geometry, and the last for binary conflict data (i.e. the Y-data).
-    Every column in between corresponds to the variables provided in the cfg-file (i.e. the X-data).
+    This is needed for the reference run.
+    By default, the first column is for the polygon ID, the second for polygon geometry.
+    The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
+    The last column is for binary conflict data at t (i.e. the target data).
+    
+    Every column in between corresponds to the variables provided in the cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -35,8 +39,10 @@ def initiate_XY_data(config):
 
 def initiate_X_data(config):
     """Initiates an empty dictionary to contain the X-data for each polygon. 
+    This is needed for each time step of each projection run.
     By default, the first column is for the polygon ID and the second for polygon geometry.
-    All remaining columns correspond to the variables provided in the cfg-file (i.e. the X-data).
+    The penultimate column is for boolean information about conflict at t-1 while the last column is for boolean information about conflict at t-1 in neighboring polygons.
+    All remaining columns correspond to the variables provided in the cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -73,7 +79,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
 
     Raises:
-        Warning: a warning is raised if the datetime-format of the netCDF-file does not match conventions and/or supported formats.
+        Warning: raised if the datetime-format of the netCDF-file does not match conventions and/or supported formats.
 
     Returns:
         array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
@@ -82,12 +88,6 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
     # go through all simulation years as specified in config-file
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
     print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
-
-    XY = fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model_period)
-
-    return pd.DataFrame.from_dict(XY).to_numpy()
-
-def fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model_period):
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
@@ -160,30 +160,44 @@ def fill_XY_ref(XY, config, root_dir, conflict_data, polygon_gdf, out_dir, model
 
             print('INFO: all data read')
 
-    return XY
+    return pd.DataFrame.from_dict(XY).to_numpy()
 
-def fill_X_sample(XY, config, root_dir, polygon_gdf, proj_year):
+def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
+    """Fills the X-dictionary with the data sample data besides any conflict-related data for each polygon and each year.
+    Used during the projection runs as the sample and conflict data need to be treated separately there.
 
-    # TODO: update this function such that reading conflict at t-1 works with csv stored in previous timestep
+    Args:
+        X (dict): dictionary containing keys to be sampled.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): path to location of cfg-file of reference run.
+        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        proj_year (int): year for which projection is made.
+
+    Raises:
+        Warning: raised if the datetime-format of the netCDF-file does not match conventions and/or supported formats.
+
+    Returns:
+        dict: dictionary containing sample values.
+    """    
 
     print('INFO: entering year {}'.format(proj_year))
 
     # go through all keys in dictionary
-    for key, value in XY.items(): 
+    for key, value in X.items(): 
 
         if key == 'poly_ID':
         
             data_series = value
             data_list = conflict.get_poly_ID(polygon_gdf)
             data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-            XY[key] = data_series
+            X[key] = data_series
 
         elif key == 'poly_geometry':
         
             data_series = value
             data_list = conflict.get_poly_geometry(polygon_gdf, config)
             data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-            XY[key] = data_series
+            X[key] = data_series
 
         else:
 
@@ -195,41 +209,52 @@ def fill_X_sample(XY, config, root_dir, polygon_gdf, proj_year):
                     data_series = value
                     data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                    XY[key] = data_series
+                    X[key] = data_series
                     
                 elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                     data_series = value
                     data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                    XY[key] = data_series
+                    X[key] = data_series
                     
                 else:
                     raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-    return XY
+    return X
 
-def fill_X_conflict(XY, config, conflict_data, polygon_gdf):
+def fill_X_conflict(X, config, conflict_data, polygon_gdf):
+    """Fills the X-dictionary with the conflict data for each polygon and each year.
+    Used during the projection runs as the sample and conflict data need to be treated separately there.
 
-    # TODO: update this function such that reading conflict at t-1 works with csv stored in previous timestep
+    Args:
+        X (dict): dictionary containing keys to be sampled.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        conflict_data (dataframe): dataframe containing all polygons with conflict.
+        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
 
+    Returns:
+        dict: dictionary containing sample and conflict values.
+    """    
+
+    # determine all neighbours for each polygon
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
     # go through all keys in dictionary
-    for key, value in XY.items(): 
+    for key, value in X.items(): 
 
         if key == 'conflict_t_min_1':
 
             data_series = value
             data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
             data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-            XY[key] = data_series
+            X[key] = data_series
 
         elif key == 'conflict_t_min_1_nb':
 
             data_series = value
             data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data, check_neighbors=True, neighboring_matrix=neighboring_matrix)
             data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-            XY[key] = data_series
+            X[key] = data_series
 
         else:
 
@@ -237,7 +262,7 @@ def fill_X_conflict(XY, config, conflict_data, polygon_gdf):
 
     print('DEBUG: all data read')
 
-    return XY
+    return X
 
 def split_XY_data(XY, config):
     """Separates the XY-array into array containing information about variable values (X-array) and conflict data (Y-array).
@@ -269,8 +294,19 @@ def split_XY_data(XY, config):
     return X, Y
 
 def neighboring_polys(config, extent_gdf, identifier='watprovID'):
+    """For each polygon, determines its neighboring polygons.
+    As result, a n times n look-up dataframe is obtained containing, where n is number of polygons in extent_gdf.
 
-    print('DEBUG: determining matrix with neighboring polygons')
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        extent_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        identifier (str, optional): column name in extent_gdf to be used to identify neighbors. Defaults to 'watprovID'.
+
+    Returns:
+        dataframe: look-up dataframe containing True/False statement per polygon for all other polygons.
+    """    
+
+    if config.getboolean('general', 'verbose'): print('DEBUG: determining matrix with neighboring polygons')
 
     # initialise empty dataframe
     df = pd.DataFrame()
@@ -294,19 +330,21 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
 
     return df
 
-def find_neighbors(watprovID, neighboring_matrix):
-    """[summary]
+def find_neighbors(ID, neighboring_matrix):
+    """Filters all polygons which are actually neighbors to given polygon.
 
     Args:
-        watprovID ([type]): [description]
-        neighboring_matrix ([type]): [description]
+        ID (int): ID of specific polygon under consideration.
+        neighboring_matrix (dataframe): output from neighboring_polys().
 
     Returns:
-        [type]: [description]
+        dataframe: dataframe containig IDs of all polygons that are actual neighbors.
     """    
 
-    neighbours = neighboring_matrix.loc[neighboring_matrix.index == watprovID].T
+    # locaties entry for polygon under consideration
+    neighbours = neighboring_matrix.loc[neighboring_matrix.index == ID].T
     
-    actual_neighbours = neighbours.loc[neighbours[watprovID] == True].index.values
+    # filters all actual neighbors defined as neighboring polygons with True statement
+    actual_neighbours = neighbours.loc[neighbours[ID] == True].index.values
 
     return actual_neighbours

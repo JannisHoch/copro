@@ -9,9 +9,11 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
     Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data).
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
         sim_year (int): year for which data is extracted.
+        out_dir (str): path to output folder. If 'None', no output is stored.
 
     Raises:
         AssertionError: raised if the length of output list does not match length of input geo-dataframe.
@@ -36,7 +38,6 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
     except:
         fatalities_per_poly = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
     
-    # TODO: include this in utils
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
@@ -73,15 +74,16 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         else:
             list_out.append(0)
             
-    assert (len(extent_gdf) == len(list_out)), AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
+    assert (len(extent_gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
 
     return list_out
 
-def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None, proj=False):
+def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
-    If the current time step is the first (t=0), then conflict data of this year is used instead due to the lack of earlier data.
+    If the current time step is the first (t=0), then this year is skipped and the model continues at the next time step.
 
     Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data).
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
         sim_year (int): year for which data is extracted.
@@ -110,9 +112,6 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
 
     conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame().rename(columns={"id": 'conflict_count'})
 
-    if proj==True:
-        print('HERE WE NEED TO READ IN THE CONFLICT DATA FROM THE LAST OBSERVATION OR THE LAST PROJECTION (t-1)')
-
     # loop through all polygons and check if exists in sub-set
     list_out = []
     for i in range(len(extent_gdf)):
@@ -137,12 +136,26 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
             # if polygon not in list with conflict polygons, assign 0
             list_out.append(0)
             
-    assert (len(extent_gdf) == len(list_out)), AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
+    assert (len(extent_gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
 
     return list_out
 
 def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, neighboring_matrix=None):
+    """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
+    Input conflict data (bool_conflict) must contain an index with IDs corresponding with the 'watprovID' values of extent_gdf.
+    Optionally, the algorithm can be extended to the neighboring polygons.
 
+    Args:
+        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
+        bool_conflict (dataframe): dataframe with boolean values (1) for each polygon with conflict.
+        check_neighbors (bool, optional): whether or not to check for conflict in neighboring polygons. Defaults to False.
+        neighboring_matrix (dataframe, optional): look-up dataframe listing all neighboring polygons. Defaults to None.
+
+    Returns:
+        list: containing 1 and 0 values for each polygon with conflict respectively without conflict. If check_neighbors=True, then 1 if neighboring polygon contains conflict and 0 is not.
+    """    
+
+    # assert that there are actually conflicts reported
     assert (len(bool_conflict) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year-1))
 
     # loop through all polygons and check if exists in sub-set
@@ -175,20 +188,22 @@ def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, ne
     return list_out
 
 def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
-    """[summary]
+    """Determines whether in the neighbouring polygons of a polygon i_poly conflict took place.
+    If so, a value 1 is returned, otherwise 0.
 
     Args:
-        i_poly ([type]): [description]
-        neighboring_matrix ([type]): [description]
-        conflicts_per_poly ([type]): [description]
+        i_poly (int): ID number of polygon under consideration.
+        neighboring_matrix (dataframe): look-up dataframe listing all neighboring polygons.
+        conflicts_per_poly (dataframe): dataframe with conflict informatoin per polygon.
 
     Returns:
-        [type]: [description]
+        int: 1 is conflict took place in neighboring polygon, 0 if not.
     """ 
 
     # find neighbors of this polygon
     nb = data.find_neighbors(i_poly, neighboring_matrix)
 
+    # initiate list
     nb_count = []
 
     # loop through neighbors
@@ -199,29 +214,14 @@ def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
 
             nb_count.append(1)
 
+    # if more than one neighboring polygon has conflict, return 0
     if np.sum(nb_count) > 0: 
         val = 1
+    # otherwise, return 0
     else: 
         val = 0
 
     return val
-
-def fill_projection_period(config_REF, out_dir_REF, config_PROJ, out_dir_PROJ):
-
-    projection_period = determine_projection_period(config_REF, config_PROJ, out_dir_PROJ)
-
-    for i in range(len(projection_period)):
-        print('INFO: entering year {} in projection period'.format(projection_period[i]))
-        if i == 0:
-            if os.path.isfile(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))):
-                print('DEBUG: reading from last conflict observation {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
-                conflict_gdf = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
-            else:
-                raise ValueError('ERROR: the file with binary conflict occurence at last time step of reference run could not be found!')
-        else:
-            conflict_gdf = None
-
-    return projection_period
 
 def get_poly_ID(extent_gdf): 
     """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'name' or 'watprovID'.
@@ -248,8 +248,7 @@ def get_poly_ID(extent_gdf):
             list_ID.append(extent_gdf.iloc[i]['watprovID'])
 
     # in the end, the same number of polygons should be in geodataframe and list        
-    if not len(extent_gdf) == len(list_ID):
-        raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_ID)))
+    assert (len(extent_gdf) == len(list_ID)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_ID)))
         
     return list_ID
 
@@ -278,19 +277,18 @@ def get_poly_geometry(extent_gdf, config):
         list_geometry.append(extent_gdf.iloc[i]['geometry'])
 
     # in the end, the same number of polygons should be in geodataframe and list        
-    if not len(extent_gdf) == len(list_geometry):
-        raise AssertionError('the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
+    assert (len(extent_gdf) == len(list_geometry)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
         
     return list_geometry
 
 def split_conflict_geom_data(X):
-    """Separates the unique identifier and geometry information from the variable-containing X-array.
+    """Separates the unique identifier, geometry information, and data from the variable-containing X-array.
 
     Args:
         X (array): variable-containing X-array.
 
     Returns:
-        arrays: seperate arrays with ID, geometry, and  actual data 
+        arrays: seperate arrays with ID, geometry, and actual data 
     """    
 
     X_ID = X[:, 0]
@@ -302,7 +300,7 @@ def split_conflict_geom_data(X):
 def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
     """Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe. 
     Contains therefore only the data points used in the test-sample, not in the training-sample. 
-    Additionally computes whether a correct prediction was made in column 'correct_pred'.
+    Additionally computes whether a correct prediction was made.
 
     Args:
         X_test_ID (list): list containing the unique identifier per data point.
