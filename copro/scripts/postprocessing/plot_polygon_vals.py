@@ -19,9 +19,10 @@ def main(csv_file=None, column=None, title=None, minimum_value=None, maximum_val
     fo = os.path.abspath(csv_file)
     click.echo('\nreading csv-file {}'.format(fo))
     click.echo('... and converting to dataframe')
-    df = pd.Dataframe().from_dict(fo)
+    df = pd.read_csv(fo)
     click.echo('... and converting it to geopandas dataframe')
-    df = gpd.read_file(fo)
+    print(df.head())
+    df = gpd.GeoDataFrame(df, geometry=df.geometry)
 
     click.echo('plotting column {}'.format(column))
     fig, ax = plt.subplots(1, 1)
