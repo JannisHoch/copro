@@ -171,8 +171,8 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             for clf in clfs:
 
                 # creating an individual output folder per classifier
-                if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'clfs', str(clf)))):
-                    os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf)))
+                if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0]))):
+                    os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0]))
                 
                 # load the pickled objects
                 # TODO: keep them in memory, i.e. after reading the clfs-folder above
@@ -183,9 +183,9 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # for all other projection years than the first one, we need to read projected conflict from the previous projection year
                 if i > 0:
                     print('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
-                    conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
+                    conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
 
-                    print('DEBUG: combining sample data with conflict data for {}'.format(clf))
+                    print('DEBUG: combining sample data with conflict data for {}'.format(clf.rsplit('.')[0]))
                     X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
@@ -200,11 +200,11 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 y_df_clf = models.predictive(X, clf_obj, scaler)
 
                 # storing the projection per clf to be used in the following timestep
-                y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year)))
+                y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
 
                 # removing projection of previous time step as not needed anymore
                 if i > 0:
-                    os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1)))
+                    os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)))
 
                 # append to all classifiers dataframe
                 y_df = y_df.append(y_df_clf, ignore_index=True)
