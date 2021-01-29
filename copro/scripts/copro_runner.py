@@ -114,7 +114,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #- note only the dataframe is stored, not the geo-dataframe
     df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
 
-    df_hit.to_csv(os.path.join(out_dir_REF, 'output_for_REF.csv')
+    df_hit.to_csv(os.path.join(out_dir_REF, 'output_for_REF.csv'))
 
     #- plot distribution of all evaluation metrics
     if make_plots:
@@ -122,9 +122,10 @@ def cli(cfg, make_plots=True, verbose=False):
         copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
         plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
+    df_featimp = copro.evaluation.get_feature_importance(clf, config_REF, out_dir_REF) 
+
     #- plot relative importance of each feature based on ALL data points
     if make_plots:
-        clf = copro.machine_learning.pickle_clf(scaler, clf, config_REF, root_dir)
         fig, ax = plt.subplots(1, 1)
         copro.plots.factor_importance(clf, config_REF, out_dir=out_dir_REF, ax=ax, figsize=(20, 10))
         plt.savefig(os.path.join(out_dir_REF, 'feature_importances.png'), dpi=300, bbox_inches='tight')
