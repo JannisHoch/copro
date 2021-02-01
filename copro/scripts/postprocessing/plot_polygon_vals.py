@@ -17,8 +17,7 @@ def main(file_object=None, column=None, title=None, minimum_value=None, maximum_
     """
 
     fo = os.path.abspath(file_object)
-    click.echo('\nreading csv-file_object {}'.format(fo))
-    click.echo('... and converting it to geopandas dataframe')
+    click.echo('\nreading file_object {}'.format(fo))
     df = gpd.read_file(fo)
 
     click.echo('plotting column {}'.format(column))
