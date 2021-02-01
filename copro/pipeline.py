@@ -213,8 +213,8 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
             print('DEBUG: storing model output for year {} to output folder'.format(proj_year))
             df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
-            # df_hit = df_hit.drop('geometry', axis=1) # maybe good to keep geometry information if we want to plot it more easily during post-processing
-            df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
+            # df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
+            gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
 
         # create one major output dataframe containing all output for all projections with all classifiers
         all_y_df = all_y_df.append(y_df, ignore_index=True)
