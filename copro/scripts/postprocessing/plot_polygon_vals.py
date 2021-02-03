@@ -24,7 +24,7 @@ def main(file_object=None, column=None, title=None, minimum_value=None, maximum_
     fig, ax = plt.subplots(1, 1)
     df.plot(column=column, 
             ax=ax, 
-            cmap='Reds', 
+            cmap='brg', 
             vmin=minimum_value, vmax=maximum_value,
             legend=True,
             legend_kwds={'label': str(column),
