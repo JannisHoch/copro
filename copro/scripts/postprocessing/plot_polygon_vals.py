@@ -13,7 +13,7 @@ import os
 @click.option('-cmap', '--color-map', default='brg', type=str)
 @click.option('-o', '--output-dir', help='path to output directory', type=click.Path())
 
-def main(file_object=None, column=None, title=None, minimum_value=None, maximum_value=None, color_map=None, coutput_dir=None):
+def main(file_object=None, column=None, title=None, minimum_value=None, maximum_value=None, color_map=None, output_dir=None):
     """Quick and dirty function to plot the column values of a geojson file with minimum user input, and save plot.
     """
 
