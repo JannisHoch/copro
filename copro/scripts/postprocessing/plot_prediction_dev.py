@@ -27,11 +27,16 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
     out_dict = dict()
     for idx in polygon_id:
         out_dict[idx] = list()
+
+    years = list()
     
     for geojson in all_files:
         print('reading file {}'.format(geojson))
         gdf = gpd.read_file(geojson, driver='GeoJSON')
         df = pd.DataFrame(gdf.drop(columns='geometry'))
+
+        year = int(str(str(os.path.basename(geojson)).rsplit('.')[0]).rsplit('_')[-1])
+        years.append(year)
 
         for idx in polygon_id:
             print('sampling ID {}'.format(idx))
@@ -47,11 +52,14 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
             idx_list.append(vals)
 
     df = pd.DataFrame().from_dict(out_dict)
+    years = pd.to_datetime(years, format='%Y')
+    df.index = years
 
     fig, axes = plt.subplots(nrows=len(polygon_id), ncols=1, sharex=True)
     df.plot(subplots=True, ax=axes)
     for ax in axes:
         ax.set_ylim(0, 1)
+        ax.set_yticks(np.arange(0, 1.1, 1))
     if title != None:
         ax.set_title(str(title))
     plt.savefig(os.path.abspath(os.path.join(output_dir, 'prediction_dev.png')), dpi=300, bbox_inches='tight')
