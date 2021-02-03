@@ -8,8 +8,8 @@ import os
 
 @click.command()
 @click.option('-id', '--polygon-id', multiple=True, type=int)
-@click.option('-c', '--column', help='column name')
-@click.option('-t', '--title', help='title for plot and file_object name')
+@click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
+@click.option('-t', '--title', help='title for plot and file_object name', type=str)
 @click.argument('input-dir', type=click.Path())
 @click.argument('output-dir', type=click.Path())
 
@@ -30,6 +30,7 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
 
     years = list()
     
+    print('retrieving values from column {}'.format(column))
     for geojson in all_files:
         print('reading file {}'.format(geojson))
         gdf = gpd.read_file(geojson, driver='GeoJSON')
@@ -45,7 +46,6 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
                 print('WARNING: ID {} is not in {} - NaN set'.format(idx, geojson))
                 vals = np.nan
             else:
-                print('retrieving value of column {}'.format(column))
                 vals = df[column].loc[df.ID==idx].values[0]
 
             idx_list = out_dict[idx]

@@ -8,11 +8,12 @@ import os
 @click.option('-f', '--file_object',help='path to geojson file_object')
 @click.option('-c', '--column', help='column name')
 @click.option('-t', '--title', help='title for plot and file_object name')
-@click.option('-v0', '--minimum-value')
-@click.option('-v1', '--maximum-value')
+@click.option('-v0', '--minimum-value', default=0, type=float)
+@click.option('-v1', '--maximum-value', default=1, type=float)
+@click.option('-cmap', '--color-map', default='brg', type=str)
 @click.option('-o', '--output-dir', help='path to output directory', type=click.Path())
 
-def main(file_object=None, column=None, title=None, minimum_value=None, maximum_value=None, output_dir=None):
+def main(file_object=None, column=None, title=None, minimum_value=None, maximum_value=None, color_map=None, coutput_dir=None):
     """Quick and dirty function to plot the column values of a geojson file with minimum user input, and save plot.
     """
 
@@ -24,7 +25,7 @@ def main(file_object=None, column=None, title=None, minimum_value=None, maximum_
     fig, ax = plt.subplots(1, 1)
     df.plot(column=column, 
             ax=ax, 
-            cmap='brg', 
+            cmap=color_map, 
             vmin=minimum_value, vmax=maximum_value,
             legend=True,
             legend_kwds={'label': str(column),
