@@ -11,20 +11,21 @@ import os
 @click.option('-cmap', '--color-map', default='brg', type=str)
 @click.option('-v0', '--minimum-value', default=0, type=float)
 @click.option('-v1', '--maximum-value', default=1, type=float)
+@click.option('--delete/--no-delete', help='whether or not to delete png-files', default=True)
 @click.argument('input-dir', type=click.Path())
 @click.argument('output-dir', type=click.Path())
 
-def main(input_dir=None, column=None, color_map=None, minimum_value=None, maximum_value=None, output_dir=None):
+def main(input_dir=None, column=None, color_map=None, minimum_value=None, maximum_value=None, delete=None, output_dir=None):
     """Quick and dirty function to convert all geojson files into one GIF animation.
     """
 
     input_dir = os.path.abspath(input_dir)
     click.echo('\ngetting geojson-files from {}'.format(input_dir))
 
-    temp_dir = os.path.join(output_dir, 'tmp')
-    click.echo('creating tmp-folder {}'.format(temp_dir))
-    if not os.path.isdir(temp_dir):
-        os.mkdir(temp_dir)
+    png_dir = os.path.join(output_dir, 'png')
+    click.echo('creating png-folder {}'.format(png_dir))
+    if not os.path.isdir(png_dir):
+        os.mkdir(png_dir)
 
     all_files = glob.glob(os.path.join(input_dir, '*.geojson'))
     
@@ -45,18 +46,19 @@ def main(input_dir=None, column=None, color_map=None, minimum_value=None, maximu
                               'orientation': "vertical"})
 
         ax.set_title(str(year))
-        click.echo('saving plot to tmp-folder')
-        plt.savefig(os.path.join(temp_dir, 'plt{}.png'.format(year)), dpi=300, bbox_inches='tight')
+        click.echo('saving plot to png-folder')
+        plt.savefig(os.path.join(png_dir, 'plt{}.png'.format(year)), dpi=300, bbox_inches='tight')
     
     click.echo('creating GIF from saved plots')
     # based on: https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
-    fp_in = os.path.join(temp_dir, '*.png')
+    fp_in = os.path.join(png_dir, '*.png')
     fp_out = os.path.join(output_dir, 'conflict_over_time.gif')
     img, *imgs = [Image.open(f) for f in sorted(glob.glob(fp_in))]
     img.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=500, loop=0)
 
-    click.echo('removing tmp-folder')
-    rmtree(temp_dir)
+    if delete:
+        click.echo('removing png-folder')
+        rmtree(png_dir)
 
 if __name__ == '__main__':
 
