@@ -130,9 +130,11 @@ def cli(cfg, make_plots=True, verbose=False):
         copro.plots.factor_importance(clf, config_REF, out_dir=out_dir_REF, ax=ax, figsize=(20, 10))
         plt.savefig(os.path.join(out_dir_REF, 'feature_importances.png'), dpi=300, bbox_inches='tight')
 
-    click.echo('INFO: reference run succesfully finished')
+    click.echo(click.style('\nINFO: reference run succesfully finished\n', fg='cyan'))
+
+    click.echo(click.style('INFO: starting projections\n', fg='cyan'))
 
     #- running prediction runs
     copro.pipeline.run_prediction(scaler_fitted, main_dict, root_dir, extent_active_polys_gdf)
 
-    click.echo('INFO: all projections succesfully finished')
+    click.echo(click.style('\nINFO: all projections succesfully finished\n', fg='cyan'))
