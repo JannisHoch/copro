@@ -195,15 +195,10 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 X = X.dropna()
                 if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
                 
-                click.echo(click.style(len(X),len(selected_polygons_gdf), fg='red'))
-                assert(len(X), len(selected_polygons_gdf)), AssertionError('ERROR: lenghts of polygons with data does not match number of selected polygons - {} vs {}'.format(len(X), len(selected_polygons_gdf)))
-
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
                 # returns the prediction based on one individual classifier
                 y_df_clf = models.predictive(X, clf_obj, scaler)
-
-                assert(len(y_df_clf), len(selected_polygons_gdf)), AssertionError('ERROR: number of polygons with predictions does not match number of selected plygons - {} vs {}'.format(len(y_df_clf), len(selected_polygons_gdf)))
 
                 # storing the projection per clf to be used in the following timestep
                 y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
