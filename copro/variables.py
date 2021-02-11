@@ -180,7 +180,9 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         prov = extent_gdf.iloc[i]
 
         # compute zonal stats for this province
-        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method)
+        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
+        # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
+        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
         val = zonal_stats[0][stat_method]
 
         # # if specified, log-transform value
