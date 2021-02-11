@@ -6,6 +6,7 @@ import rasterstats as rstats
 import numpy as np
 import os, sys
 import math
+import click
 from distutils import util
 
 import warnings
@@ -54,9 +55,9 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
-            print('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
         else:
-            print('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -64,7 +65,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     nc_var = nc_ds[var_name]
     if ln_flag:
         nc_var = np.log(nc_var)
-        if config.getboolean('general', 'verbose'): print('DEBUG: log-transform variable {}'.format(var_name))
+        if config.getboolean('general', 'verbose'): click.echo('DEBUG: log-transform variable {}'.format(var_name))
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
 
@@ -89,20 +90,22 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         # # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
-            if val != None: val = np.log(val)
+            if val != None: val_ln = np.log(val)
         
-        # in case log-transformed value results in -inf, replace with None
-        if val == -math.inf:
-            if config.getboolean('general', 'verbose'): print('INFO: set -inf to None')
-            val = None
+            # in case log-transformed value results in -inf, replace with None
+            if val_ln == -math.inf:
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.watprovID))
+                val = np.log(val+1)
+            else:
+                val = val_ln
 
-        # print a warning if result is None
+        # click.echo a warning if result is None
         if (val == None) and (config.getboolean('general', 'verbose')): 
-            print('WARNING: NaN computed!')
+            click.echo('WARNING: NaN computed!')
 
         list_out.append(val)
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: ... done.')
 
     return list_out
 
@@ -147,9 +150,9 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
-            print('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
         else:
-            print('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -188,19 +191,21 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         # # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
-            if val != None: val = np.log(val)
+            if val != None: val_ln = np.log(val)
         
-        # in case log-transformed value results in -inf, replace with None
-        if val == -math.inf:
-            if config.getboolean('general', 'verbose'): print('INFO: set -inf to None')
-            val = None
+            # in case log-transformed value results in -inf, replace with None
+            if val_ln == -math.inf:
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.watprovID))
+                val = np.log(val+1)
+            else:
+                val = val_ln
 
-        # print a warning if result is None
+        # click.echo a warning if result is None
         if (val == None) and (config.getboolean('general', 'verbose')): 
-            print('WARNING: NaN computed!')
+            click.echo('WARNING: NaN computed!')
 
         list_out.append(val)
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: ... done.')
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: ... done.')
 
     return list_out
