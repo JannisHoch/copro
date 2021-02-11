@@ -1,4 +1,5 @@
 from copro import conflict, variables
+import click
 import numpy as np
 import xarray as xr
 import pandas as pd
@@ -31,9 +32,9 @@ def initiate_XY_data(config):
     XY['conflict'] = pd.Series(dtype=bool)
 
     if config.getboolean('general', 'verbose'): 
-        print('DEBUG: the columns in the sample matrix used are:')
+        click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in XY:
-            print('...{}'.format(key))
+            click.echo('...{}'.format(key))
 
     return XY
 
@@ -60,9 +61,9 @@ def initiate_X_data(config):
     X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
 
     if config.getboolean('general', 'verbose'): 
-        print('DEBUG: the columns in the sample matrix used are:')
+        click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in X:
-            print('...{}'.format(key))
+            click.echo('...{}'.format(key))
 
     return X
 
@@ -87,7 +88,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
 
     # go through all simulation years as specified in config-file
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
-    print('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
+    click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
@@ -95,11 +96,11 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
 
         if i == 0:
 
-            print('INFO: skipping first year {} to start up model'.format(sim_year))
+            click.echo('INFO: skipping first year {} to start up model'.format(sim_year))
 
         else:
 
-            print('INFO: entering year {}'.format(sim_year))
+            click.echo('INFO: entering year {}'.format(sim_year))
 
             # go through all keys in dictionary
             for key, value in XY.items(): 
@@ -158,7 +159,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
                     else:
                         raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-            print('INFO: all data read')
+            click.echo('INFO: all data read')
 
     return pd.DataFrame.from_dict(XY).to_numpy()
 
@@ -180,7 +181,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         dict: dictionary containing sample values.
     """    
 
-    print('INFO: entering year {}'.format(proj_year))
+    click.echo('INFO: entering year {}'.format(proj_year))
 
     # go through all keys in dictionary
     for key, value in X.items(): 
@@ -260,7 +261,7 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
 
             pass
 
-    print('DEBUG: all data read')
+    click.echo('DEBUG: all data read')
 
     return X
 
@@ -277,10 +278,17 @@ def split_XY_data(XY, config):
     """    
 
     XY = pd.DataFrame(XY)
-    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values:', len(XY))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
 
-    XY = XY.dropna()
-    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values:', len(XY))
+    # some debugging, seems that for some reason popluation data is not added to values
+    test_df = XY[XY.isna().any(axis=1)]
+    test_df.drop(test_df.columns[[1]], axis = 1, inplace=True)
+    test_df.to_csv(os.path.join(os.path.abspath(config.get('general', 'output_dir')), '_REF', 'test_df.csv'))
+
+    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: exluding polygons containing NaNs: {}'.format(X[X.isna().any(axis=1)]))
+    # X = X.dropna()
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: filling NaNs with 0 for polygons {}'.format(XY[XY.isna().any(axis=1)]))
+    XY = XY.fillna(0)
 
     XY = XY.to_numpy()
     X = XY[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
@@ -289,7 +297,7 @@ def split_XY_data(XY, config):
 
     if config.getboolean('general', 'verbose'): 
         fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
-        print('DEBUG: a fraction of {} percent in the data corresponds to conflicts.'.format(round(fraction_Y_1, 2)))
+        click.echo('DEBUG: a fraction of {} percent in the data corresponds to conflicts.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
 
@@ -306,7 +314,7 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
         dataframe: look-up dataframe containing True/False statement per polygon for all other polygons.
     """    
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: determining matrix with neighboring polygons')
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: determining matrix with neighboring polygons')
 
     # initialise empty dataframe
     df = pd.DataFrame()

@@ -93,6 +93,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.watprovID))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
@@ -106,6 +107,8 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
             click.echo('WARNING: NaN computed!')
 
         list_out.append(val)
+
+    assert(len(extent_gdf), len(list_out)), AssertionError('ERROR: lengths do not match!')
 
     return list_out
 
@@ -192,6 +195,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.watprovID))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
@@ -205,5 +209,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
             click.echo('WARNING: {} computed for ID {}!'.format(val, prov.watprovID))
         
         list_out.append(val)
+
+    assert(len(extent_gdf), len(list_out)), AssertionError('ERROR: lengths do not match!')
 
     return list_out
