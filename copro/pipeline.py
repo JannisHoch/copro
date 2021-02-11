@@ -193,10 +193,10 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 X = pd.DataFrame(X)
                 if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
 
-                # print(X[X.isna().any(axis=1)])
-
-                X = X.dropna()
-                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
+                # if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: exluding polygons containing NaNs: {}'.format(X[X.isna().any(axis=1)]))
+                # X = X.dropna()
+                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: filling NaNs with 0 for polygons {}'.format(X[X.isna().any(axis=1)]))
+                X = X.fillna(0)
                 
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
