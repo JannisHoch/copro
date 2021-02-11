@@ -190,13 +190,14 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                     X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
-                    assert(len(X), len(selected_polygons_gdf)), AssertionError('ERROR: lenghts of polygons with data does not match number of selected polygons - {} vs {}'.format(len(X), len(selected_polygons_gdf)))
-
                 X = pd.DataFrame(X)
                 if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
                 X = X.dropna()
                 if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
                 
+                click.echo(click.style(len(X),len(selected_polygons_gdf), fg='red'))
+                assert(len(X), len(selected_polygons_gdf)), AssertionError('ERROR: lenghts of polygons with data does not match number of selected polygons - {} vs {}'.format(len(X), len(selected_polygons_gdf)))
+
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
                 # returns the prediction based on one individual classifier
