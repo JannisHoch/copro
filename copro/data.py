@@ -281,9 +281,9 @@ def split_XY_data(XY, config):
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
 
     # some debugging, seems that for some reason popluation data is not added to values
-    test_df = XY[XY.isna().any(axis=1)]
-    test_df.drop(test_df.columns[[1]], axis = 1, inplace=True)
-    test_df.to_csv(os.path.join(os.path.abspath(config.get('general', 'output_dir')), '_REF', 'test_df.csv'))
+    # test_df = XY[XY.isna().any(axis=1)]
+    # test_df.drop(test_df.columns[[1]], axis = 1, inplace=True)
+    # test_df.to_csv(os.path.join(os.path.abspath(config.get('general', 'output_dir')), '_REF', 'test_df.csv'))
 
     # if config.getboolean('general', 'verbose'): click.echo('DEBUG: exluding polygons containing NaNs: {}'.format(X[X.isna().any(axis=1)]))
     # X = X.dropna()
