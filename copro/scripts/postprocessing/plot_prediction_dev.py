@@ -55,6 +55,12 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
     years = pd.to_datetime(years, format='%Y')
     df.index = years
 
+    if not os.path.isdir(os.path.abspath(output_dir)):
+        click.echo('creating output folder {}'.format(os.path.abspath(output_dir)))
+        os.makedirs(os.path.abspath(output_dir))
+
+    df.to_csv(os.path.abspath(os.path.join(output_dir, 'prediction_dev.csv')))
+
     fig, axes = plt.subplots(nrows=len(polygon_id), ncols=1, sharex=True)
     df.plot(subplots=True, ax=axes)
     for ax in axes:
