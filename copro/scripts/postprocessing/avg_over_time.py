@@ -84,6 +84,10 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
     # add geometry informatoin for each polygon
     y_out = pd.merge(y_out, global_df, on='ID', how='left')
 
+    if not os.path.isdir(os.path.abspath(output_dir)):
+        click.echo('creating output folder {}'.format(os.path.abspath(output_dir)))
+        os.makedirs(os.path.abspath(output_dir))
+
     # convert to geo-dataframe
     gdf_out = gpd.GeoDataFrame(y_out, geometry=y_out.geometry)
 
