@@ -1,5 +1,5 @@
 ---
-title: 'CoPro: a data-driven model for conflict risk projections'
+title: 'CoPro: a data-driven modelling framework for conflict risk projections'
 tags:
   - Python
   - climate change
@@ -23,7 +23,7 @@ affiliations:
    index: 1
  - name: PBL Netherlands Environmental Assessment Agency, the Hague, the Netherlands
    index: 2
-date: 30 September 2020
+date: 18 February 2021
 bibliography: bibliography.bib
 ---
 
@@ -38,7 +38,7 @@ There is increasing consensus that climate change can exacerbate the risk of (ar
 
 Since conflicts are of all times and not limited to specific regions or countries, CoPro is designed with user-flexibility in mind. Therefore, the number and variables provided to the model is not specified, allowing for bespoke model designs. Depending on the modeling exercise and data used, several machine-learning models and pre-processing algorithms are available in CoPro. In its current form, the supervised learning techniques support vector classifier, k-neighbors classifier, and random-forest classifier are implemented. Catering for different model designs is of added value because of the non-linear and sometimes irrational - 'law-breaking' [@cederman2017predicting] - nature of conflicts. On top of that, the analyses can be run at any spatial scale, allowing for better identification of sub-national drivers of conflict risk. After all, conflict onset and conflicts are often limited to specific areas where driving factors coincide. 
 
-Since the replicability of scientific results is important when developing forecast and projection models [@hegre2017introduction], a key concept in mind when establishing CoPro was to be able to produce reproducible output using transparent models. Hence, by making model code openly available and by including dedicated features in the model, we hope to advance the existing body of tools developed to project conflict risk.
+Since the replicability of scientific results is important when developing forecast and projection models [@hegre2017introduction], CoPro produces reproducible output using transparent models. Hence, by making model code openly available and by including dedicated features in the model, we hope to advance the existing body of tools developed to project conflict risk.
 
 These functionalities altogether make CoPro suited for both 'quick-and-dirty' and in-depth analyses of the relative importances of climate, environmental, and societal drivers as well as for assessments how conflict risk can change both in time and space.
 
