@@ -131,14 +131,24 @@ dmypy.json
 #output folders
 OUT*/
 
+
 #latest UCDP file too large for commit
 *ged201*
 
 # sphinx
 generated*
 
+# example input data
+example/*.zip
+example/example_data/*
+
 # article related stuff
 _paper/*
 
-# convertd htmls
+# converted htmls
 example/*.html
+
+# converted temp output
+example/conflicts.*
+example/polygons.*
+example/global_df.npy
