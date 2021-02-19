@@ -22,7 +22,7 @@ Main goal
 ---------------
 The main goal of this model is to apply machine learning techniques to make projections of future areas at risk. While the model was developed with a rather clear
 objective in mind, we put a lot of emphasis on making it flexible. We hope that other, related questions about climate and conflict can be tackled as well, and that our process
-understanding is deepend further.
+understanding is deepened further.
 
 Contents
 ---------------
@@ -33,8 +33,8 @@ Contents
    Installation
    Execution
    Model settings <model_settings>
-   Output
    Workflow <examples/index>
+   Output
    API Docs <api/index>
 
 Authors
@@ -44,7 +44,7 @@ Authors
 * Sophie de Bruin (Utrecht University, PBL)
 * Niko Wanders (Utrecht University)
 
-Corrosponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
+Corresponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
 
 Indices and tables
 -------------------

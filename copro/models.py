@@ -151,7 +151,7 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def predictive(X, scaler, config):
+def predictive(X, scaler, config, root_dir):
     """Predictive model to use the already fitted classifier to make projections.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
 
@@ -176,12 +176,12 @@ def predictive(X, scaler, config):
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
-    if os.path.isfile(os.path.abspath(config.get('pre_calc', 'clf'))):
-        with open(os.path.abspath(config.get('pre_calc', 'clf')), 'rb') as f:
-            print('INFO: loading classifier from {}'.format(os.path.abspath(config.get('pre_calc', 'clf'))))
+    if os.path.isfile(os.path.join(root_dir, config.get('pre_calc', 'clf'))):
+        with open(os.path.join(root_dir, config.get('pre_calc', 'clf')), 'rb') as f:
+            print('INFO: loading classifier from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
             clf = pickle.load(f)
     else:
-        raise ValueError('ERROR: no pre-computed classifier specified in cfg-file, currently specified file {} does not exist'.format(os.path.abspath(config.get('pre_calc', 'clf'))))
+        raise ValueError('ERROR: no pre-computed classifier specified in cfg-file, currently specified file {} does not exist'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
         
     print('INFO: making the projection')
     y_pred = clf.predict(X_ft)

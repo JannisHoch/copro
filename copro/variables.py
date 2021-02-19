@@ -9,7 +9,7 @@ import os, sys
 import warnings
 warnings.filterwarnings("ignore")
 
-def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
+def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year, stat_func='mean'):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
     By default, the mean value of all cells within a polygon is computed.
     The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
@@ -24,10 +24,11 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
     Works only with nc-files with annual data.
 
     Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
-        config (config): parsed configuration settings of run 
-        var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file
-        sim_year (int): year for which data is extracted
+        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
+        config (config): parsed configuration settings of run.
+        root_dir (str): path to location of cfg-file. 
+        var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
+        sim_year (int): year for which data is extracted.
         stat_func (str, optional): Statistical function to be applied, choose from available options in rasterstats package. Defaults to 'mean'.
 
     Raises:
@@ -37,8 +38,10 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
         list: list containing statistical value per polygon, i.e. with same length as extent_gdf
     """   
     # get path to netCDF-file.
-    nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                         config.get('data', var_name))
+    # nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
+    #                      config.get('data', var_name))
+
+    nc_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))
 
     if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 
@@ -70,7 +73,7 @@ def nc_with_float_timestamp(extent_gdf, config, var_name, sim_year, stat_func='m
 
     return list_out
 
-def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year, stat_func='mean'):
+def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year, stat_func='mean'):
     """This function extracts a statistical value from a netCDF-file (specified in the config-file) for each polygon specified in extent_gdf for a given year.
     By default, the mean value of all cells within a polygon is computed.
     The resulting list does not contain additional meta-information about the files or polygons and is mostly intended for data-driven approaches such as machine learning.
@@ -83,9 +86,10 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
 
     Args:
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
-        config (config): parsed configuration settings of run 
-        var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file
-        sim_year (int): year for which data is extracted
+        config (config): parsed configuration settings of run.
+        root_dir (str): path to location of cfg-file. 
+        var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
+        sim_year (int): year for which data is extracted.
         stat_func (str, optional): Statistical function to be applied, choose from available options in rasterstats package. Defaults to 'mean'.
 
     Raises:
@@ -96,8 +100,10 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, var_name, sim_year,
         list: list containing statistical value per polygon, i.e. with same length as extent_gdf
     """   
     # get path to netCDF-file.
-    nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                         config.get('data', var_name))
+    # nc_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
+    #                      config.get('data', var_name))
+
+    nc_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))
     
     if config.getboolean('general', 'verbose'): print('DEBUG: calculating mean {0} per aggregation unit from file {1} for year {2}'.format(var_name, nc_fo, sim_year))
 

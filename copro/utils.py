@@ -11,11 +11,12 @@ from datetime import date
 import click
 import copro
 
-def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
+def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
     """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): path to location of cfg-file.
         longitude (str, optional): column name with longitude coordinates. Defaults to 'longitude'.
         latitude (str, optional): column name with latitude coordinates. Defaults to 'latitude'.
         crs (str, optional): coordinate system to be used for georeferencing. Defaults to 'EPSG:4326'.
@@ -23,10 +24,8 @@ def get_geodataframe(config, longitude='longitude', latitude='latitude', crs='EP
     Returns:
         geo-dataframe: ge-referenced conflict data.
     """     
-
-    # construct path to file with conflict data
-    conflict_fo = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 
-                               config.get('conflict', 'conflict_file'))
+    
+    conflict_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
     print('INFO: reading csv file to dataframe {}'.format(conflict_fo))
@@ -78,26 +77,29 @@ def parse_settings(settings_file):
         settings_file (str): path to settings-file (cfg-file).
 
     Returns:
-        ConfigParser-object: parsed model configuration.
+        - ConfigParser-object: parsed model configuration.
+        - str: absolute path to location of configurations-file.
     """    
 
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
+    root_dir = os.path.dirname(os.path.abspath(settings_file))
 
-    return config
+    return config, root_dir
 
-def make_output_dir(config):
+def make_output_dir(config, root_dir):
     """Creates the output folder at location specfied in cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): absolute path to location of configurations-file
 
     Returns:
         str: path to output folder
     """    
 
-    out_dir = os.path.abspath(config.get('general','output_dir'))
+    out_dir = os.path.join(root_dir, config.get('general','output_dir'))
     print('INFO: saving output to folder {}'.format(out_dir))
 
     if not os.path.isdir(out_dir):
@@ -115,14 +117,15 @@ def make_output_dir(config):
 
     return out_dir
     
-def download_PRIO(config):
+def download_PRIO(config, root_dir):
     """If specfied in cfg-file, the PRIO/UCDP data is directly downloaded and used as model input.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): absolute path to location of configurations-file
     """    
 
-    path = os.path.join(os.path.abspath(config.get('general', 'input_dir')), 'UCDP')
+    path = os.path.join(os.path.join(root_dir, config.get('general', 'input_dir')), 'UCDP')
 
     if not os.path.isdir(path):
         os.mkdir(path)
@@ -166,16 +169,17 @@ def initiate_setup(settings_file):
 
     Returns:
         ConfigParser-object: parsed model configuration.
-        out_dir: path to output folder
+        out_dir: path to output folder.
+        root_dir: path to location of cfg-file.
     """  
 
     print_model_info() 
 
-    config = parse_settings(settings_file)
+    config, root_dir = parse_settings(settings_file)
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
-    out_dir = make_output_dir(config)
+    out_dir = make_output_dir(config, root_dir)
 
     copyfile(settings_file, os.path.join(out_dir, 'copy_of_run_setting.cfg'))
 
@@ -186,7 +190,7 @@ def initiate_setup(settings_file):
         config.set('settings', 'n_runs', str(1))
         print('INFOL changed nr of runs to {}'.format(config.getint('settings', 'n_runs')))
 
-    return config, out_dir
+    return config, out_dir, root_dir
 
 def create_artificial_Y(Y):
     """Creates an array with identical percentage of conflict points as input array.
