@@ -47,6 +47,8 @@ Installation
 To install copro, first clone the code from GitHub. It is advised to create an individual python environment first. 
 You can then install the model package into this environment.
 
+To do so, you need to have Anaconda or Miniconda installed. For installation guidelines, see `here <https://docs.anaconda.com/anaconda/install/>`_.
+
 .. code-block:: console
 
     $ git clone https://github.com/JannisHoch/copro.git
@@ -59,6 +61,12 @@ To install CoPro in editable mode in this environment, run this command next in 
 .. code-block:: console
 
     $ pip install -e .
+
+When using Jupyter Notebook, it can be handy to have the copro environment available. It can be installed into Jupyter Notebook with the following command:
+
+.. code-block:: console
+
+    $ python -m ipykernel install --name=copro
 
 Command-line script
 --------------------
@@ -106,6 +114,7 @@ Example data
 ----------------
 
 Example data for demonstration purposes can be downloaded from `Zenodo <https://zenodo.org/record/4297295>`_.
+To facilitate this process, the bash-script ``download_example_data.sh`` can be called in the example folder.
 
 With this (or other) data, the provided configuration-files (cfg-files) can be used to perform a reference run or a projection run. 
 All output is stored in the output directory specified in the cfg-files. 
@@ -122,6 +131,8 @@ They can all be run and converted to html-files by executing the provided shell-
     $ sh run_notebooks.sh
 
 It is of course also possible to execute the notebook cell-by-cell and explore the full range of possibilities.
+Note that in this case the notebooks need to be run in the right order as some temporary files will be saved to file in one notebook and loaded in another!
+This is due to the re-initalization of the model at the beginning of each notebook and resulting deletion of all files in existing output folders.
 
 The notebooks are also used to exemplify the `Workflow <https://copro.readthedocs.io/en/latest/examples/index.html>`_ of CoPro.
 
