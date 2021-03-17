@@ -12,7 +12,8 @@ requirements = ['Click>=7.0',
                 'rasterstats==0.14',
                 'geopandas==0.8.0',
                 'numpy==1.18.1',
-                'scikit-learn>=0.22.1',]
+                'scikit-learn>=0.22.1',
+                'seaborn==0.11']
 
 setup_requirements = ['pytest-runner', ]
 
@@ -49,6 +50,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/JannisHoch/copro',
-    version='0.0.7',
+    version='0.0.8b',
     zip_safe=False,
 )

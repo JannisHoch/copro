@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import os, sys
 
-def all_data(X, Y, config, scaler, clf, out_dir):
+def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
     """Main model workflow when all data is used. The model workflow is executed for each model simulation.
 
     Args:
@@ -24,7 +24,7 @@ def all_data(X, Y, config, scaler, clf, out_dir):
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
     
-    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config)
+    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr)
 
     eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
 
@@ -52,7 +52,7 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
         DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
 
-    raise DeprecationWarning('WARNING: the leave-one-out model will be most likely be deprecated in near future')
+    raise DeprecationWarning('WARNING: the leave-one-out model is not supported anymore and will be deprecated in a future release')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
@@ -93,7 +93,7 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
         DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
 
-    raise DeprecationWarning('WARNING: the single-variable model will be most likely be deprecated in near future')
+    raise DeprecationWarning('WARNING: the single-variable model is not supported anymore and will be deprecated in a future release')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
@@ -136,6 +136,7 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
     """   
 
     print('INFO: dubbelsteenmodel running')
+    raise DeprecationWarning('WARNING: the dubbelsteenmodel model is not supported anymore and will be deprecated in a future release')
 
     Y = utils.create_artificial_Y(Y)
 
@@ -151,41 +152,56 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def predictive(X, scaler, config, root_dir):
+def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
+    """Determines the period for which projections need to be made. 
+    This is defined as the period between the end year of the reference run and the specified projection year for each projection.
+
+    Args:
+        config_REF (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
+        config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run..
+        out_dir_PROJ (str): path to output folder of a projection run.
+
+    Returns:
+        list: list containing all years of the projection period.
+    """    
+
+    print('INFO: determinining annual conflict occurence from end of reference run until end of projection run')
+
+    # get all years of projection period
+    projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_proj')+1, 1)
+    # convert to list
+    projection_period = projection_period.tolist()
+    print('DEBUG: the projection period is {} to {}'.format(projection_period[0], projection_period[-1]))
+
+    return projection_period
+
+def predictive(X, clf, scaler):
     """Predictive model to use the already fitted classifier to make projections.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
 
     Args:
         X (array): array containing the variable values plus unique identifer and geometry information.
-        scaler (scaler): the specified scaling method instance.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-
-    Raises:
-        ValueError: raised if path to pickled classifier is incorrect.
+        clf (classifier): the fitted specified classifier instance.
+        scaler (scaler): the fitted specified scaling method instance.
 
     Returns:
         datatrame: containing model output on polygon-basis.
     """    
 
-    print('INFO: scaling the data from projection period')
-    X = pd.DataFrame(X)
-    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points including missing values: {}'.format(len(X)))
-    X = X.dropna()
-    if config.getboolean('general', 'verbose'): print('DEBUG: number of data points excluding missing values: {}'.format(len(X)))
+    # splitting the data from the ID and geometry part of X
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X.to_numpy())
-    ##- scaling only the variable values
-    X_ft = scaler.fit_transform(X_data)
 
-    if os.path.isfile(os.path.join(root_dir, config.get('pre_calc', 'clf'))):
-        with open(os.path.join(root_dir, config.get('pre_calc', 'clf')), 'rb') as f:
-            print('INFO: loading classifier from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
-            clf = pickle.load(f)
-    else:
-        raise ValueError('ERROR: no pre-computed classifier specified in cfg-file, currently specified file {} does not exist'.format(os.path.join(root_dir, config.get('pre_calc', 'clf'))))
-        
-    print('INFO: making the projection')
+    # transforming the data
+    # fitting is not needed as already happend before
+    print('INFO: transforming the data from projection period')
+    X_ft = scaler.transform(X_data)
+
+    # make projection with transformed data
+    print('INFO: making the projections')    
     y_pred = clf.predict(X_ft)
+
+    # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
     arr = np.column_stack((X_ID, X_geom, y_pred))
     y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])
-
+    
     return y_df

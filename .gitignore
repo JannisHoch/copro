@@ -131,6 +131,8 @@ dmypy.json
 #output folders
 OUT*/
 
+#pictures
+*.png
 
 #latest UCDP file too large for commit
 *ged201*
@@ -149,6 +151,4 @@ _paper/*
 example/*.html
 
 # converted temp output
-example/conflicts.*
-example/polygons.*
-example/global_df.npy
+example/temp_files/*
