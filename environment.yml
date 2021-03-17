@@ -28,6 +28,7 @@ dependencies:
   - pip
   - colorama
   - setuptools>=49.6
+  - pillow==8.1.0
   - pip:
     - rasterstats==0.14.0
     

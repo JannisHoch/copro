@@ -1,5 +1,6 @@
 import os
 import pickle
+import glob
 import pandas as pd
 import numpy as np
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
@@ -70,22 +71,18 @@ def split_scale_train_test_split(X, Y, config, scaler):
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaling method instance.
 
-    Raises:
-        AssertionError: raised if after all manipulations the number of unique identifiers does not match number of data points in test-data.
-        AssertionError: raised if after all manipulations the number of geometries does not match number of data points in test-data.
-
     Returns:
         arrays: arrays containing training-data and test-data as well as IDs and geometry for training-data and test-data.
     """ 
 
-    ##- separate arrays for geomety and variable values
+    ##- separate arrays for ID, geometry, and sample values per polygon
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
     if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     ##- scaling only the variable values
     X_ft = scaler.fit_transform(X_data)
 
-    ##- combining geometry and scaled variable values
+    ##- combining ID, geometry and scaled sample values per polygon
     X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
@@ -97,32 +94,48 @@ def split_scale_train_test_split(X, Y, config, scaler):
     X_train_ID, X_train_geom, X_train = conflict.split_conflict_geom_data(X_train)
     X_test_ID, X_test_geom, X_test = conflict.split_conflict_geom_data(X_test)
 
-    if not len(X_test_ID) == len(X_test):
-        raise AssertionError('lenght X_test_ID does not match lenght X_test - {} vs {}'.format(len(X_test_ID), len(X_test)))
+    assert (len(X_test_ID) == len(X_test)), AssertionError('ERROR: lenght X_test_ID does not match lenght X_test - {} vs {}'.format(len(X_test_ID), len(X_test)))
 
-    if not len(X_test_geom) == len(X_test):
-        raise AssertionError('lenght X_test_geom does not match lenght X_test - {} vs {}'.format(len(X_test_geom), len(X_test)))
+    assert (len(X_test_geom) == len(X_test)), AssertionError('ERROR: lenght X_test_geom does not match lenght X_test - {} vs {}'.format(len(X_test_geom), len(X_test)))
 
     return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
-def fit_predict(X_train, y_train, X_test, clf, config, pickle_dump=True):
-    """Fits the classifier based on training-data and makes predictions.
+def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
+    """Fits classifier based on training-data and makes predictions.
+    Per run_nr, different X_train and y_train data is employed.
+    The fitted classifier is dumped to file with pickle.
     Additionally, the prediction probability is determined.
 
     Args:
-        X_train (array): training-data of variable values
-        y_train ([type]): training-data of conflict data
-        X_test ([type]): test-data of variable values
+        X_train (array): training-data of variable values.
+        y_train (array): training-data of conflict data.
+        X_test (array): test-data of variable values.
         clf (classifier): the specified model instance.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        out_dir (path): path to output folder.
+        run_nr (int): number of fit/predict repetition and created classifier.
 
     Returns:
         arrays: arrays including the predictions made and their probabilities
     """    
 
+    # fit the classifier with training data
     clf.fit(X_train, y_train)
 
+    # create folder to store all classifiers with pickle
+    clf_pickle_rep = os.path.join(out_dir, 'clfs')
+    if not os.path.isdir(clf_pickle_rep):
+        os.makedirs(clf_pickle_rep)
+
+    # dump all classifiers
+    if config.getboolean('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
+    with open(os.path.join(clf_pickle_rep, 'clf_{}.pkl'.format(run_nr)), 'wb') as f:
+        pickle.dump(clf, f)
+
+    # make prediction
     y_pred = clf.predict(X_test)
 
+    # make prediction of probability
     y_prob = clf.predict_proba(X_test)
 
     return y_pred, y_prob
@@ -144,8 +157,8 @@ def pickle_clf(scaler, clf, config, root_dir):
     print('INFO: fitting the classifier with all data from reference period')
 
     if config.get('pre_calc', 'XY') is '':
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy')))
-        XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), 'XY.npy'), allow_pickle=True)
+        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy')))
+        XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy'), allow_pickle=True)
     else:
         if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY_fit = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
@@ -156,8 +169,21 @@ def pickle_clf(scaler, clf, config, root_dir):
 
     clf.fit(X_ft_fit, Y_fit)
 
-    print('INFO: dumping classifier to {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl')))
-    with open(os.path.join(root_dir, config.get('general', 'output_dir'), 'clf.pkl'), 'wb') as f:
-        pickle.dump(clf, f)
-
     return clf
+
+def load_clfs(config, out_dir):
+    """Loads the file names of all previously classifiers to a list.
+
+    Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        out_dir (path): path to output folder.
+
+    Returns:
+        list: list with file names of classifiers.
+    """ 
+
+    clfs = os.listdir(os.path.join(out_dir, 'clfs'))
+
+    assert (len(clfs), config.getint('machine_learning', 'n_runs')), AssertionError('ERROR: number of loaded classifiers does not match the specified number of runs in cfg-file!')
+
+    return clfs

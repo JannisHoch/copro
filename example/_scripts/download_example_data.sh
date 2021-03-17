@@ -12,5 +12,8 @@ wget curl https://zenodo.org/record/4297295/files/example_data.zip
 echo unzip data
 unzip example_data.zip -d example_data
 
+echo copy data
+cp example_data ../example_data
+
 echo remove zip-file
 rm example_data.zip
