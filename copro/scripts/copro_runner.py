@@ -114,7 +114,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #- note only the dataframe is stored, not the geo-dataframe
     df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
 
-    df_hit.to_csv(os.path.join(out_dir_REF, 'output_for_REF.csv'))
+    gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
 
     #- plot distribution of all evaluation metrics
     if make_plots:
