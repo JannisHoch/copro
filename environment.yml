@@ -30,5 +30,6 @@ dependencies:
   - pillow==8.1.0
   - pip:
     - geopandas>=0.8.0
+    - fiona
     - rasterstats==0.14.0
     
