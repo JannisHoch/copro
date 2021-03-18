@@ -33,11 +33,13 @@ def filter_conflict_properties(gdf, config):
         elif key == 'best':
             if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
             gdf = gdf.loc[(gdf[key] >= selection_criteria[key])]
+            print(gdf)
 
         # for other criteria, select all entries matching the specified value(s) per criterion
         else:
             if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
             gdf = gdf.loc[(gdf[key].isin(selection_criteria[key]))]
+            print(gdf)
 
     return gdf
 
@@ -179,15 +181,12 @@ def select(config, out_dir, root_dir):
 
     # selected conflicts falling in a specified time period
     gdf = select_period(gdf, config)
-    print(gdf.head())
 
     # clip conflicts to a spatial extent defined as polygons
     gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
-    print(gdf.head())
 
     # clip conflicts and polygons to specified climate zones
     gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config, root_dir)
-    print(gdf.head())
 
     # save conflict data and polygon to shp-file
     # TODO: save as csv rather than shp
