@@ -25,6 +25,9 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
 
+.. image:: https://joss.theoj.org/papers/1f03334e56413ff71f65092ecc609aa4/status.svg
+    :target: https://joss.theoj.org/papers/1f03334e56413ff71f65092ecc609aa4
+
 Model purpose
 --------------
 
