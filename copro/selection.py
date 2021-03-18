@@ -171,18 +171,23 @@ def select(config, out_dir, root_dir):
 
     # get the conflict data
     gdf = utils.get_geodataframe(config, root_dir)
+    print(gdf.head())
 
     # filter based on conflict properties
     gdf = filter_conflict_properties(gdf, config)
+    print(gdf.head())
 
     # selected conflicts falling in a specified time period
     gdf = select_period(gdf, config)
+    print(gdf.head())
 
     # clip conflicts to a spatial extent defined as polygons
     gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
+    print(gdf.head())
 
     # clip conflicts and polygons to specified climate zones
     gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config, root_dir)
+    print(gdf.head())
 
     # save conflict data and polygon to shp-file
     # TODO: save as csv rather than shp
