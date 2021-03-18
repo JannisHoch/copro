@@ -1,5 +1,5 @@
 pip install -e .
 
-wget -q -O example_data.zip https://zenodo.org/record/4297295/files/example_data.zip
+wget -q -O example_data.zip https://zenodo.org/record/4616689/files/example_data.zip
 
 unzip example_data.zip -d ./example/example_data
