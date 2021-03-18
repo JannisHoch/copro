@@ -225,7 +225,7 @@ def download_UCDP(config, root_dir):
 
     return
 
-def click.echo_model_info():
+def print_model_info():
     """click.echos a header with main model information.
     """    
 
@@ -252,8 +252,8 @@ def initiate_setup(settings_file, verbose=None):
         root_dir: path to location of cfg-file.
     """  
 
-    # click.echo model info, i.e. author names, license info etc.
-    click.echo_model_info() 
+    # print model info, i.e. author names, license info etc.
+    print_model_info()
 
     # get name of directory where cfg-file is stored
     root_dir = os.path.dirname(os.path.abspath(settings_file))
