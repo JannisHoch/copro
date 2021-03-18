@@ -238,12 +238,13 @@ def print_model_info():
 
     return
 
-def initiate_setup(settings_file):
+def initiate_setup(settings_file, verbose=None):
     """Initiates the model set-up. 
     It parses the cfg-file, creates an output folder, copies the cfg-file to the output folder, and, if specified, downloads conflict data.
 
     Args:
         settings_file (str): path to settings-file (cfg-file).
+        verbose (bool, optional): whether model is verbose or not, e.g. prints DEBUG output or not. If None, then the setting in cfg-file counts. Otherwise verbose can be set directly to function which superseded the cfg-file. Defaults to None.
 
     Returns:
         ConfigParser-object: parsed model configuration.
@@ -259,6 +260,11 @@ def initiate_setup(settings_file):
 
     # parse cfg-file and get config-object for reference run
     config = parse_settings(settings_file)
+
+    if (verbose == None) and (config.getboolean('general', 'verbose') == True):
+        verbose = True
+    elif (verbose == None) and (config.getboolean('general', 'verbose') == False):
+        verbose = False
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
