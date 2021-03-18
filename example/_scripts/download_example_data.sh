@@ -5,9 +5,9 @@
 
 echo download zip-file
 # for WIN
-curl https://zenodo.org/record/4616689/files/example_data.zip -o example_data.zip
+curl https://zenodo.org/record/4617719/files/example_data.zip -o example_data.zip
 # for UNIX
-wget curl https://zenodo.org/record/4616689/files/example_data.zip
+wget curl https://zenodo.org/record/4617719/files/example_data.zip
 
 echo unzip data
 unzip example_data.zip -d example_data
