@@ -20,26 +20,29 @@ def filter_conflict_properties(gdf, config):
                           'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(',')}
     
     print('INFO: filtering based on conflict properties.')
+
+    print(len(gdf))
     
     # go through all criteria
     for key in selection_criteria:
 
-        # if nothing is specified, pass
-        if selection_criteria[key] == '':
-            if config.getboolean('general', 'verbose'): print('DEBUG: passing key', key, 'as it is empty')
-            pass
-
         # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
-        elif key == 'best':
-            if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
-            gdf = gdf.loc[(gdf[key] >= selection_criteria[key])]
-            print(gdf)
+        if key == 'best':
+            if selection_criteria[key] == '':
+                pass
+            else:
+                if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
+                gdf = gdf[gdf['best'] >= selection_criteria['best']]
+            print(len(gdf))
 
         # for other criteria, select all entries matching the specified value(s) per criterion
-        else:
-            if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
-            gdf = gdf.loc[(gdf[key].isin(selection_criteria[key]))]
-            print(gdf)
+        if key == 'type_of_violence':
+            if selection_criteria[key] == '':
+                pass
+            else:
+                if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
+                gdf = gdf[gdf[key].isin(selection_criteria[key])]
+            print(len(gdf))
 
     return gdf
 
@@ -173,11 +176,9 @@ def select(config, out_dir, root_dir):
 
     # get the conflict data
     gdf = utils.get_geodataframe(config, root_dir)
-    print(gdf.head())
 
     # filter based on conflict properties
     gdf = filter_conflict_properties(gdf, config)
-    print(gdf.head())
 
     # selected conflicts falling in a specified time period
     gdf = select_period(gdf, config)
