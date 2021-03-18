@@ -5,7 +5,6 @@ channels:
 
 dependencies:
   - python>=3.6
-  - geopandas>=0.8.0
   - xarray>=0.15.1
   - pandas>=1.0.3
   - numpy>=1.18.1
@@ -30,5 +29,6 @@ dependencies:
   - setuptools>=49.6
   - pillow==8.1.0
   - pip:
+    - geopandas>=0.8.0
     - rasterstats==0.14.0
     
