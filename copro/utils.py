@@ -261,10 +261,8 @@ def initiate_setup(settings_file, verbose=None):
     # parse cfg-file and get config-object for reference run
     config = parse_settings(settings_file)
 
-    if (verbose == None) and (config.getboolean('general', 'verbose') == True):
-        verbose = True
-    elif (verbose == None) and (config.getboolean('general', 'verbose') == False):
-        verbose = False
+    if verbose != None:
+        config.set('general', 'verbose', str(verbose))
 
     print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
