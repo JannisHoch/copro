@@ -10,7 +10,6 @@ dependencies:
   - numpy>=1.18.1
   - matplotlib==3.2.1
   - rtree>=0.9.4
-  - rasterio>=1.1.0
   - pytest>=5.4.2
   - pytest-runner
   - descartes
@@ -30,6 +29,7 @@ dependencies:
   - pillow==8.1.0
   - pip:
     - geopandas>=0.8.0
+    - rasterio>=1.1.0
     - fiona
     - rasterstats==0.14.0
     
