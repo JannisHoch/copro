@@ -20,8 +20,6 @@ def filter_conflict_properties(gdf, config):
                           'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(',')}
     
     print('INFO: filtering based on conflict properties.')
-
-    print(len(gdf))
     
     # go through all criteria
     for key in selection_criteria:
@@ -33,7 +31,6 @@ def filter_conflict_properties(gdf, config):
             else:
                 if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
                 gdf = gdf[gdf['best'] >= selection_criteria['best']]
-            print(len(gdf))
 
         # for other criteria, select all entries matching the specified value(s) per criterion
         if key == 'type_of_violence':
@@ -42,7 +39,6 @@ def filter_conflict_properties(gdf, config):
             else:
                 if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
                 gdf = gdf[gdf[key].isin(selection_criteria[key])]
-            print(len(gdf))
 
     return gdf
 
