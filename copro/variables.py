@@ -108,7 +108,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
         list_out.append(val)
 
-    assert(len(extent_gdf), len(list_out)), AssertionError('ERROR: lengths do not match!')
+    assert len(extent_gdf) == len(list_out), AssertionError('ERROR: lengths do not match!')
 
     return list_out
 
@@ -210,6 +210,6 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         
         list_out.append(val)
 
-    assert(len(extent_gdf), len(list_out)), AssertionError('ERROR: lengths do not match!')
+    assert len(extent_gdf) == len(list_out), AssertionError('ERROR: lengths do not match!')
 
     return list_out
