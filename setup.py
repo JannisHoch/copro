@@ -5,15 +5,15 @@
 from setuptools import setup, find_packages
 
 requirements = ['Click>=7.0', 
-                'xarray==0.15.1',
-                'pandas==1.0.3',
-                'rasterio==1.1.0',
+                'xarray>=0.15.1',
+                'pandas>=1.0.3',
+                'rasterio>=1.1.0',
                 'rioxarray>=0.0.26',
-                'rasterstats==0.14',
-                'geopandas==0.8.0',
-                'numpy==1.18.1',
+                'rasterstats>=0.14',
+                'geopandas>=0.8.0',
+                'numpy>=1.18.1',
                 'scikit-learn>=0.22.1',
-                'seaborn==0.11']
+                'seaborn>=0.11']
 
 setup_requirements = ['pytest-runner', ]
 
