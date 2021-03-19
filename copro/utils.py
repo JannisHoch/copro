@@ -29,11 +29,11 @@ def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude
     conflict_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('conflict', 'conflict_file'))
 
     # read file to pandas dataframe
-    print('INFO: reading csv file to dataframe {}'.format(conflict_fo))
+    click.echo('INFO: reading csv file to dataframe {}'.format(conflict_fo))
     df = pd.read_csv(conflict_fo)
 
     # convert dataframe to geo-dataframe
-    if config.getboolean('general', 'verbose'): print('DEBUG: translating to geopandas dataframe')
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: translating to geopandas dataframe')
     gdf = gpd.GeoDataFrame(df,
                           geometry=gpd.points_from_xy(df[longitude], df[latitude]),
                           crs=crs)
@@ -41,7 +41,7 @@ def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude
     return gdf
 
 def show_versions():
-    """Prints the version numbers by the main python-packages used.
+    """click.echos the version numbers by the main python-packages used.
     """ 
        
     from copro import __version__ as cm_version
@@ -60,17 +60,17 @@ def show_versions():
     if gpd_version < '0.7.0':
         sys.exit('please upgrade geopandas to version 0.7.0, your current version is {}. To avoid the problem, make sure CoPro is installed in its own conda environment.'.format(gpd_version))
 
-    print("Python version: {}".format(os_version))
-    print("copro version: {}".format(cm_version))
-    print("geopandas version: {}".format(gpd_version))
-    print("xarray version: {}".format(xr_version))
-    print("rasterio version: {}".format(rio_version))
-    print("pandas version: {}".format(pd_version))
-    print("numpy version: {}".format(np_version))
-    print("scikit-learn version: {}".format(skl_version))
-    print("matplotlib version: {}".format(mpl_version))
-    print("seaborn version: {}".format(sbs_version))
-    print("rasterstats version: {}".format(rstats_version))
+    click.echo("Python version: {}".format(os_version))
+    click.echo("copro version: {}".format(cm_version))
+    click.echo("geopandas version: {}".format(gpd_version))
+    click.echo("xarray version: {}".format(xr_version))
+    click.echo("rasterio version: {}".format(rio_version))
+    click.echo("pandas version: {}".format(pd_version))
+    click.echo("numpy version: {}".format(np_version))
+    click.echo("scikit-learn version: {}".format(skl_version))
+    click.echo("matplotlib version: {}".format(mpl_version))
+    click.echo("seaborn version: {}".format(sbs_version))
+    click.echo("rasterstats version: {}".format(rstats_version))
 
 def parse_settings(settings_file):
     """Reads the model configuration file.
@@ -82,7 +82,6 @@ def parse_settings(settings_file):
         ConfigParser-object: parsed model configuration.
     """    
 
-    print('INFO: parsing configurations for file {}'.format(os.path.abspath(settings_file)))
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
@@ -114,7 +113,7 @@ def parse_projection_settings(config, root_dir):
         each_val = os.path.abspath(os.path.join(root_dir, each_val))
 
         # parse each config-file specified
-        if config.getboolean('general', 'verbose'): print('DEBUG: parsing settings from file {}'.format(each_val))
+        if config.getboolean('general', 'verbose'): click.echo('DEBUG: parsing settings from file {}'.format(each_val))
         each_config = parse_settings(each_val)
 
         # update the output dictionary with key and config-object
@@ -136,7 +135,7 @@ def make_output_dir(config, root_dir, config_dict):
 
     # get path to main output directory as specified in cfg-file
     out_dir = os.path.join(root_dir, config.get('general','output_dir'))
-    print('INFO: saving output to main folder {}'.format(out_dir))
+    click.echo('INFO: saving output to main folder {}'.format(out_dir))
 
     # initalize list for all out-dirs
     all_out_dirs = list()
@@ -171,17 +170,17 @@ def make_output_dir(config, root_dir, config_dict):
 
         # check if out-dir exists and if not, create it
         if not os.path.isdir(d):
-            print('INFO: creating output-folder {}'.format(d))
+            click.echo('INFO: creating output-folder {}'.format(d))
             os.makedirs(d)
 
         # else, remove all files with a few exceptions
         else:
             for root, dirs, files in os.walk(d):
                 if (config.getboolean('general', 'verbose')) and (len(files) > 0): 
-                    print('DEBUG: remove files in {}'.format(os.path.abspath(root)))
+                    click.echo('DEBUG: remove files in {}'.format(os.path.abspath(root)))
                 for fo in files:
                     if (fo =='XY.npy') or (fo == 'X.npy'):
-                        if config.getboolean('general', 'verbose'): print('DEBUG: sparing {}'.format(fo))
+                        if config.getboolean('general', 'verbose'): click.echo('DEBUG: sparing {}'.format(fo))
                         pass
                     else:
                         os.remove(os.path.join(root, fo))
@@ -208,7 +207,7 @@ def download_UCDP(config, root_dir):
     # define filename of downloaded object
     filename = os.path.join(path, 'ged201-csv.zip')
 
-    print('INFO: no conflict file was specified, hence downloading data from {} to {}'.format(url, filename))
+    click.echo('INFO: no conflict file was specified, hence downloading data from {} to {}'.format(url, filename))
 
     # save URL to filename
     urllib.request.urlretrieve(url, filename)
@@ -226,7 +225,7 @@ def download_UCDP(config, root_dir):
     return
 
 def print_model_info():
-    """Prints a header with main model information.
+    """click.echos a header with main model information.
     """    
 
     click.echo('')
@@ -238,12 +237,13 @@ def print_model_info():
 
     return
 
-def initiate_setup(settings_file):
+def initiate_setup(settings_file, verbose=None):
     """Initiates the model set-up. 
     It parses the cfg-file, creates an output folder, copies the cfg-file to the output folder, and, if specified, downloads conflict data.
 
     Args:
         settings_file (str): path to settings-file (cfg-file).
+        verbose (bool, optional): whether model is verbose or not, e.g. click.echos DEBUG output or not. If None, then the setting in cfg-file counts. Otherwise verbose can be set directly to function which superseded the cfg-file. Defaults to None.
 
     Returns:
         ConfigParser-object: parsed model configuration.
@@ -252,15 +252,19 @@ def initiate_setup(settings_file):
     """  
 
     # print model info, i.e. author names, license info etc.
-    print_model_info() 
+    print_model_info()
 
     # get name of directory where cfg-file is stored
     root_dir = os.path.dirname(os.path.abspath(settings_file))
 
     # parse cfg-file and get config-object for reference run
     config = parse_settings(settings_file)
+    click.echo('INFO: reading model properties from {}'.format(settings_file))
 
-    print('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
+    if verbose != None:
+        config.set('general', 'verbose', str(verbose))
+
+    click.echo('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
     # get dictionary with all config-objects, also for projection runs
     config_dict = parse_projection_settings(config, root_dir)
@@ -269,7 +273,7 @@ def initiate_setup(settings_file):
     main_dict = make_output_dir(config, root_dir, config_dict)
 
     # copy cfg-file of reference run to out-dir of reference run
-    print('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
     copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
     # if specfied, download UCDP/PRIO data directly
@@ -279,7 +283,7 @@ def initiate_setup(settings_file):
     # if any other model than all_data is specified, set number of runs to 1
     if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
         config.set('machine_learning', 'n_runs', str(1))
-        print('INFO: changed nr of runs to {}'.format(config.getint('machine_learning', 'n_runs')))
+        click.echo('INFO: changed nr of runs to {}'.format(config.getint('machine_learning', 'n_runs')))
 
     return main_dict, root_dir
 

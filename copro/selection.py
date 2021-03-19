@@ -24,20 +24,21 @@ def filter_conflict_properties(gdf, config):
     # go through all criteria
     for key in selection_criteria:
 
-        # if nothing is specified, pass
-        if selection_criteria[key] == '':
-            if config.getboolean('general', 'verbose'): print('DEBUG: passing key', key, 'as it is empty')
-            pass
-
         # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
-        elif key == 'best':
-            if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
-            gdf = gdf.loc[(gdf[key] >= selection_criteria[key])]
+        if key == 'best':
+            if selection_criteria[key] == '':
+                pass
+            else:
+                if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
+                gdf = gdf[gdf['best'] >= selection_criteria['best']]
 
         # for other criteria, select all entries matching the specified value(s) per criterion
-        else:
-            if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
-            gdf = gdf.loc[(gdf[key].isin(selection_criteria[key]))]
+        if key == 'type_of_violence':
+            if selection_criteria[key] == '':
+                pass
+            else:
+                if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
+                gdf = gdf[gdf[key].isin(selection_criteria[key])]
 
     return gdf
 
