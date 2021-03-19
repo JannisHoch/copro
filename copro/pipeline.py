@@ -125,6 +125,9 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
     if config_REF.getint('general', 'model') != 1:
         raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
+    # initiate output dataframe
+    all_y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
+
     # going through each projection specified
     for (each_key, each_val) in config_REF.items('PROJ_files'):
 
@@ -220,4 +223,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             # df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
             gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
 
-    return 
+        # create one major output dataframe containing all output for all projections with all classifiers
+        all_y_df = all_y_df.append(y_df, ignore_index=True)
+
+    return all_y_df
