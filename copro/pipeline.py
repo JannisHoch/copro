@@ -34,7 +34,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
         XY = data.fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
 
         # save array to XY.npy out_dir
-        click.echo('INFO: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
+        if config.getboolean('general', 'verbose'): click.echo('DEBUG: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
         np.save(os.path.join(out_dir,'XY'), XY)
 
     # if path to XY.npy is specified, read the data intead
@@ -135,7 +135,11 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
         click.echo('INFO: loading config-object for projection run: {}'.format(each_key))
         config_PROJ = main_dict[str(each_key)][0][0]
         out_dir_PROJ = main_dict[str(each_key)][1]
-        click.echo('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
+
+        # aligning verbosity settings across config-objects
+        config_PROJ.set('general', 'verbose', str(config_REF.getboolean('general', 'verbose')))
+
+        if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
         # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
         #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
@@ -153,15 +157,14 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             click.echo('INFO: making projection for year {}'.format(proj_year))
 
             X = data.initiate_X_data(config_PROJ)
-            click.echo('INFO: reading sample data from files')
             X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year)
 
             # for the first projection year, we need to fall back on the observed conflict at the last time step of the reference run
             if i == 0:
-                click.echo('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
+                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
                 conflict_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
 
-                click.echo('DEBUG: combining sample data with conflict data from previous year')
+                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with conflict data from previous year')
                 X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
                 X = pd.DataFrame.from_dict(X).to_numpy()
 
@@ -178,15 +181,15 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # load the pickled objects
                 # TODO: keep them in memory, i.e. after reading the clfs-folder above
                 with open(os.path.join(out_dir_REF, 'clfs', clf), 'rb') as f:
-                    click.echo('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
+                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
                     clf_obj = pickle.load(f)
 
                 # for all other projection years than the first one, we need to read projected conflict from the previous projection year
                 if i > 0:
-                    click.echo('INFO: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
+                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
                     conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
 
-                    click.echo('DEBUG: combining sample data with conflict data for {}'.format(clf.rsplit('.')[0]))
+                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with conflict data for {}'.format(clf.rsplit('.')[0]))
                     X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
@@ -201,7 +204,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # put all the data into the machine learning algo
                 # here the data will be used to make projections with various classifiers
                 # returns the prediction based on one individual classifier
-                y_df_clf = models.predictive(X, clf_obj, scaler)
+                y_df_clf = models.predictive(X, clf_obj, scaler, config_PROJ)
 
                 # storing the projection per clf to be used in the following timestep
                 y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
@@ -215,7 +218,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
-            click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
+            if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
             df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
             # df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
             gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')

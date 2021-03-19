@@ -159,7 +159,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
                     else:
                         raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-            click.echo('INFO: all data read')
+            if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
     return pd.DataFrame.from_dict(XY).to_numpy()
 
@@ -181,7 +181,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         dict: dictionary containing sample values.
     """    
 
-    click.echo('INFO: entering year {}'.format(proj_year))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: reading sample data from files')
 
     # go through all keys in dictionary
     for key, value in X.items(): 
@@ -261,7 +261,7 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
 
             pass
 
-    click.echo('DEBUG: all data read')
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
     return X
 
