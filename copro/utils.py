@@ -82,7 +82,6 @@ def parse_settings(settings_file):
         ConfigParser-object: parsed model configuration.
     """    
 
-    click.echo('INFO: parsing configurations for file {}'.format(os.path.abspath(settings_file)))
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
     config.read(settings_file)
@@ -260,6 +259,7 @@ def initiate_setup(settings_file, verbose=None):
 
     # parse cfg-file and get config-object for reference run
     config = parse_settings(settings_file)
+    click.echo('INFO: reading model properties from {}'.format(settings_file))
 
     if verbose != None:
         config.set('general', 'verbose', str(verbose))
