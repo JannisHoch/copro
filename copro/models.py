@@ -20,7 +20,7 @@ def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
         datatrame: containing model output on polygon-basis.
         dict: dictionary containing evaluation metrics per simulation.
     """    
-    print('INFO: using all data')
+    if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
     
@@ -165,17 +165,15 @@ def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
         list: list containing all years of the projection period.
     """    
 
-    print('INFO: determinining annual conflict occurence from end of reference run until end of projection run')
-
     # get all years of projection period
     projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_proj')+1, 1)
     # convert to list
     projection_period = projection_period.tolist()
-    print('DEBUG: the projection period is {} to {}'.format(projection_period[0], projection_period[-1]))
+    print('INFO: the projection period is {} to {}'.format(projection_period[0], projection_period[-1]))
 
     return projection_period
 
-def predictive(X, clf, scaler):
+def predictive(X, clf, scaler, config):
     """Predictive model to use the already fitted classifier to make projections.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
 
@@ -183,6 +181,7 @@ def predictive(X, clf, scaler):
         X (array): array containing the variable values plus unique identifer and geometry information.
         clf (classifier): the fitted specified classifier instance.
         scaler (scaler): the fitted specified scaling method instance.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run.
 
     Returns:
         datatrame: containing model output on polygon-basis.
@@ -193,11 +192,11 @@ def predictive(X, clf, scaler):
 
     # transforming the data
     # fitting is not needed as already happend before
-    print('INFO: transforming the data from projection period')
+    if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
     X_ft = scaler.transform(X_data)
 
     # make projection with transformed data
-    print('INFO: making the projections')    
+    if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
     y_pred = clf.predict(X_ft)
 
     # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
