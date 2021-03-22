@@ -31,7 +31,7 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 .. image:: https://mybinder.org/badge_logo.svg
     :target: https://mybinder.org/v2/gh/JannisHoch/copro/to_binder?filepath=%2Fpresentations%2FvEGU21.ipynb
 
-Model purpose
+    Model purpose
 --------------
 
 As primary model output, CoPro provides maps of conflict risk (defined as the fraction conflict predictions of all predictions).
