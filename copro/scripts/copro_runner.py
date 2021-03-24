@@ -122,7 +122,12 @@ def cli(cfg, make_plots=True, verbose=False):
         copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
         plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-    df_featimp = copro.evaluation.get_feature_importance(clf, config_REF, out_dir_REF) 
+    df_feat_imp = copro.evaluation.get_feature_importance(clf, config_REF, out_dir_REF) 
+    df_perm_imp = copro.evaluation.get_permutation_importance(clf, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
+
+    from sklearn.linear_model import LinearRegression
+    reg = LinearRegression().fit(scaler.fit_transform(X[:,2:]), Y)
+    pd.DataFrame(reg.coef_, columns=['linReg_coefs'], index=df_feat_imp.index.values).to_csv(os.path.join(out_dir_REF, 'linReg_coefs.csv'))
 
     #- plot relative importance of each feature based on ALL data points
     if make_plots:
