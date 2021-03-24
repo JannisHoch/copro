@@ -163,7 +163,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
 
     df_out = pd.DataFrame.from_dict(XY)
 
-    evaluation.calc_correlation_matrix(df_out, out_dir)
+    df_corr = evaluation.calc_correlation_matrix(df_out.drop(columns='poly_ID'), out_dir)
     
     return df_out.to_numpy()
 

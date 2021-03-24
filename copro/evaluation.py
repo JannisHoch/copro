@@ -1,6 +1,6 @@
 import os, sys
 import click
-from sklearn import metrics
+from sklearn import metrics, inspection
 import pandas as pd
 import geopandas as gpd
 import numpy as np
@@ -197,9 +197,11 @@ def calc_correlation_matrix(df, out_dir):
 
     # df_corr = df_corr.drop('geometry', axis=1)
     df_corr = df.corr()
-    df_corr.to_csv(os.path.join(out_dir, 'corr_matrix.csv'))
+    
+    if (out_dir != None) and isinstance(out_dir, str):
+        df_corr.to_csv(os.path.join(out_dir, 'corr_matrix.csv'))
 
-    return
+    return df_corr
 
 def categorize_polys(gdf_hit, category='sub', mode='median'):
     """Categorizes polygons depending on the computed chance of correct predictions as main category, and number of conflicts in test-dat per polygon as sub-category.
@@ -329,3 +331,27 @@ def get_feature_importance(clf, config, out_dir):
         df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
 
     return df
+
+def get_permutation_importance(clf, X_ft, Y, df_feat_imp, out_dir):
+    """Returns a dataframe with the mean permutation importance of the features used to train a RF tree model.
+    Dataframe is stored to output directory as csv-file.
+
+    Args:
+        clf (classifier): sklearn-classifier used in the simulation.
+        X_ft (array): X-array containing variable values after scaling.
+        Y (array): Y-array containing conflict data.
+        df_feat_imp (dataframe): dataframe containing feature importances to align names across outputs.
+        out_dir (str): path to output folder. If 'None', no output is stored.
+
+    Returns:
+        dataframe: contains mean permutation importance for each feature.
+    """    
+
+    result = inspection.permutation_importance(clf, X_ft, Y, n_repeats=10, random_state=42)   
+
+    df = pd.DataFrame(result.importances_mean, columns=['permutation_importance'], index=df_feat_imp.index.values)
+
+    if (out_dir != None) and isinstance(out_dir, str):
+        df.to_csv(os.path.join(out_dir, 'mean_permutation_importances.csv'))
+
+    return df 
