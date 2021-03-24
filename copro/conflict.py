@@ -33,11 +33,9 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
 
     # determine the aggregated amount of fatalities in one region (e.g. water province)
-    try:
-        fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
-    except:
-        fatalities_per_poly = data_merged['best'].groupby(data_merged['name']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
-    
+
+    fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
@@ -56,6 +54,10 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year))))
         # data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').fillna(0)
         data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').dropna()
+        # print(global_df.head())
+        # print(bool_per_poly.head())
+        # data_stored = global_df.merge(bool_per_poly, left_index=True, right_index=True, how='left')
+        # print(data_stored)
         data_stored.index = data_stored.index.rename('watprovID')
         data_stored = data_stored.drop('geometry', axis=1)
         data_stored = data_stored.astype(int)
@@ -65,10 +67,7 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i in range(len(extent_gdf)):
-        try:
-            i_poly = extent_gdf.iloc[i]['watprovID']
-        except:
-            i_poly = extent_gdf.iloc[i]['name']
+        i_poly = extent_gdf.iloc[i]['watprovID']
         if i_poly in fatalities_per_poly.index.values:
             list_out.append(1)
         else:
@@ -224,7 +223,7 @@ def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
     return val
 
 def get_poly_ID(extent_gdf): 
-    """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'name' or 'watprovID'.
+    """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'watprovID'.
 
     Args:
         extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons.
@@ -242,10 +241,7 @@ def get_poly_ID(extent_gdf):
     # loop through all polygons
     for i in range(len(extent_gdf)):
         # append geometry of each polygon to list
-        try:
-            list_ID.append(extent_gdf.iloc[i]['name'])
-        except:
-            list_ID.append(extent_gdf.iloc[i]['watprovID'])
+        list_ID.append(extent_gdf.iloc[i]['watprovID'])
 
     # in the end, the same number of polygons should be in geodataframe and list        
     assert (len(extent_gdf) == len(list_ID)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_ID)))
