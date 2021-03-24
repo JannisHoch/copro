@@ -1,4 +1,4 @@
-from copro import conflict, variables
+from copro import conflict, variables, evaluation
 import click
 import numpy as np
 import xarray as xr
@@ -161,7 +161,11 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
 
             if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
-    return pd.DataFrame.from_dict(XY).to_numpy()
+    df_out = pd.DataFrame.from_dict(XY)
+
+    evaluation.calc_correlation_matrix(df_out, out_dir)
+    
+    return df_out.to_numpy()
 
 def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     """Fills the X-dictionary with the data sample data besides any conflict-related data for each polygon and each year.

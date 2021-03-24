@@ -185,7 +185,7 @@ def save_out_ROC_curve(tprs, aucs, out_dir):
 
     return
 
-def calc_correlation_matrix(df):
+def calc_correlation_matrix(df, out_dir):
     """Computes the correlation matrix for a dataframe.
 
     Args:
@@ -195,11 +195,11 @@ def calc_correlation_matrix(df):
         dataframe: dataframe containig correlation matrix.
     """    
 
-    df = df.drop('geometry', axis=1)
-    df = df.corr()
-    df
+    # df_corr = df_corr.drop('geometry', axis=1)
+    df_corr = df.corr()
+    df_corr.to_csv(os.path.join(out_dir, 'corr_matrix.csv'))
 
-    return df
+    return
 
 def categorize_polys(gdf_hit, category='sub', mode='median'):
     """Categorizes polygons depending on the computed chance of correct predictions as main category, and number of conflicts in test-dat per polygon as sub-category.

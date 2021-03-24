@@ -318,10 +318,7 @@ def global_ID_geom_info(gdf):
 
     # stack identifier and geometry of all polygons
     # test if gdf has column 'name', otherwise use column 'watprovID'
-    try:
-        arr = np.column_stack((gdf.name.to_numpy(), gdf.geometry.to_numpy()))
-    except:
-        arr = np.column_stack((gdf.watprovID.to_numpy(), gdf.geometry.to_numpy()))
+    arr = np.column_stack((gdf.watprovID.to_numpy(), gdf.geometry.to_numpy()))
 
     # convert to dataframe
     df = pd.DataFrame(data=arr, columns=['ID', 'geometry'])
