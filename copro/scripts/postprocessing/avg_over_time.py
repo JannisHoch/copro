@@ -76,12 +76,17 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
     y_out = pd.DataFrame()
     # get all unique IDs of polygons
     y_out['ID'] = y_df.ID.unique()
-    # add number of predictiosn made over all selected years
-    y_out = pd.merge(y_out, y_df.nr_predictions.groupby(y_df.ID).sum().to_frame(), on='ID')
-    # add number of predicted conflicts over all selected years
-    y_out = pd.merge(y_out, y_df.nr_predicted_conflicts.groupby(y_df.ID).sum().to_frame(), on='ID')
-    # determine chance of conflict over all selected years
-    y_out[column] = y_out.nr_predicted_conflicts / y_out.nr_predictions
+    if column = 'chance_of_conflict'
+        # add number of predictiosn made over all selected years
+        y_out = pd.merge(y_out, y_df.nr_predictions.groupby(y_df.ID).sum().to_frame(), on='ID')
+        # add number of predicted conflicts over all selected years
+        y_out = pd.merge(y_out, y_df.nr_predicted_conflicts.groupby(y_df.ID).sum().to_frame(), on='ID')
+        # determine chance of conflict over all selected years
+        y_out[column] = y_out.nr_predicted_conflicts / y_out.nr_predictions
+    elif column == 'avg_prob_1':
+        y_out = pd.merge(y_out, pd.to_numeric(y_df[column]).groupby(y_df.ID).mean().to_frame(), on='ID')
+    else:
+        raise ValueError('ERROR: column {} is not yet supported'.format(column))
     # add geometry informatoin for each polygon
     y_out = pd.merge(y_out, global_df, on='ID', how='left')
 
