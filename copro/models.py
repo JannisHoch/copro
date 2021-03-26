@@ -25,10 +25,12 @@ def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
     
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr)
+    y_prob_0 = y_prob[:, 0] # probability to predict 0
+    y_prob_1 = y_prob[:, 1] # probability to predict 1
 
     eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
 
-    y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+    y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
 
     X_df = pd.DataFrame(X_test)
 
