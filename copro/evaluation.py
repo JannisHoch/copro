@@ -13,7 +13,7 @@ def init_out_dict():
         dict: empty dictionary with metrics as keys.
     """    
 
-    scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score']
+    scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
 
     out_dict = {}
     for score in scores:
@@ -46,6 +46,7 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
         click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
         click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
         click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
+        click.echo('... AP score{0:0.3f}'.format(metrics.average_precision_score(y_test, y_prob[:, 1])), err=True)
 
     eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
@@ -54,6 +55,7 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
                  'Cohen-Kappa score': metrics.cohen_kappa_score(y_test, y_pred),
                  'Brier loss score': metrics.brier_score_loss(y_test, y_prob[:, 1]),
                  'ROC AUC score': metrics.roc_auc_score(y_test, y_prob[:, 1]),
+                 'AP score': metrics.average_precision_score(y_test, y_prob[:, 1]),
                 }
 
     # out = pd.DataFrame().from_dict(eval_dict)
