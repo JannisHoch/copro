@@ -137,6 +137,11 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
     df_count['nr_predicted_conflicts'] = df.y_pred.groupby(df.ID).sum()
 
+    #- per polygon ID, compute average probability that conflict occurs
+    df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
+    df_count['avg_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
+    df_count['max_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
+
     #- merge the two dataframes with ID as key
     df_temp = pd.merge(ID_count, df_count, on='ID')
 
