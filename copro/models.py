@@ -201,8 +201,13 @@ def predictive(X, clf, scaler, config):
     if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
     y_pred = clf.predict(X_ft)
 
+    # predict probabilites of outcomes
+    y_prob = clf.predict_proba(X_ft)
+    y_prob_0 = y_prob[:, 0] # probability to predict 0
+    y_prob_1 = y_prob[:, 1] # probability to predict 1
+
     # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
-    arr = np.column_stack((X_ID, X_geom, y_pred))
-    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])
+    arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1))
+    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred', 'y_prob_0', 'y_prob_1'])
     
     return y_df
