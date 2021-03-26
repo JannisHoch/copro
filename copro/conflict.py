@@ -293,7 +293,7 @@ def split_conflict_geom_data(X):
 
     return X_ID, X_geom, X_data
 
-def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
+def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1):
     """Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe. 
     Contains therefore only the data points used in the test-sample, not in the training-sample. 
     Additionally computes whether a correct prediction was made.
@@ -308,9 +308,9 @@ def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred):
         dataframe: dataframe with each input list as column plus computed 'correct_pred'.
     """   
 
-    arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred))
+    arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1))
 
-    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred'])
+    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred', 'y_prob_0', 'y_prob_1'])
 
     df['correct_pred'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
