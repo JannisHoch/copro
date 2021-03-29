@@ -13,11 +13,12 @@ import os, sys
 @click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
 @click.option('--geojson/--no-geojson', help='save output to geojson or not', default=False)
 @click.option('--png/--no-png', help='save output to png or not', default=True)
+@click.option('--verbose/--no-verbose', help='verbose on/off', default=False)
 @click.argument('input_dir', type=click.Path())
 @click.argument('output_dir',type=click.Path())
 @click.argument('selected_polygons', type=click.Path())
 
-def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=None, end_year=None, geojson=None, png=None, column=None):
+def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=None, end_year=None, geojson=None, png=None, column=None, verbose=None):
     """Post-processing script to calculate average model output over a user-specifeid period or all output geojson-files.
     """    
 
@@ -50,7 +51,7 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
             # if the year-suffix of geojson-file matches year in period, add to list
             year = int(str(str(os.path.basename(fo)).rsplit('.')[0]).rsplit('_')[-1])
             if year in period:
-                print('adding to selection')
+                if verbose: print('adding to selection')
                 selected_files.append(fo)
     # if not end/start time is specified, use all geojson-files in input-dir
     else:
@@ -65,7 +66,7 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
     # go through all geojson-files left over after selection step
     for geojson in selected_files:
         # read files and convert to datatrame
-        click.echo('reading file {}'.format(geojson))
+        if verbose: click.echo('reading file {}'.format(geojson))
         gdf = gpd.read_file(geojson, driver='GeoJSON')
         df = pd.DataFrame(gdf)
         # append to dataframe 
@@ -76,7 +77,8 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
     y_out = pd.DataFrame()
     # get all unique IDs of polygons
     y_out['ID'] = y_df.ID.unique()
-    if column = 'chance_of_conflict'
+    click.echo('reading from column {}'.format(column))
+    if column == 'chance_of_conflict':
         # add number of predictiosn made over all selected years
         y_out = pd.merge(y_out, y_df.nr_predictions.groupby(y_df.ID).sum().to_frame(), on='ID')
         # add number of predicted conflicts over all selected years
@@ -99,8 +101,8 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
 
     # if specified, save as geojson-file to output-dir
     if geojson:
-        click.echo('saving to {}'.format(os.path.abspath(os.path.join(output_dir, 'merged_output_{}.geojson'.format(suffix)))))
-        gdf_out.to_file(os.path.abspath(os.path.join(output_dir, 'merged_output_{}.geojson'.format(suffix))), driver='GeoJSON')
+        click.echo('saving to {}'.format(os.path.abspath(os.path.join(output_dir, '{}_merged_{}.geojson'.format(column, suffix)))))
+        gdf_out.to_file(os.path.abspath(os.path.join(output_dir, '{}_merged_{}.geojson'.format(column, suffix))), driver='GeoJSON')
 
     # if specified, save as png-file to output-dir
     if png:
@@ -111,8 +113,8 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
                         legend=True,
                         legend_kwds={'label': column, 'orientation': "vertical"})
 
-        click.echo('saving to {}'.format(os.path.abspath(os.path.join(output_dir, 'merged_output_{}.png'.format(suffix)))))
-        plt.savefig(os.path.abspath(os.path.join(output_dir, 'merged_output_{}.png'.format(suffix))), dpi=300, bbox_inches='tight')
+        click.echo('saving to {}'.format(os.path.abspath(os.path.join(output_dir, '{}_merged_{}.png'.format(column, suffix)))))
+        plt.savefig(os.path.abspath(os.path.join(output_dir, '{}_merged_{}.png'.format(column, suffix))), dpi=300, bbox_inches='tight')
         plt.close()
 
 if __name__ == '__main__':

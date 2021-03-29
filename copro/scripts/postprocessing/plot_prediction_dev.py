@@ -10,10 +10,11 @@ import os
 @click.option('-id', '--polygon-id', multiple=True, type=int)
 @click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
 @click.option('-t', '--title', help='title for plot and file_object name', type=str)
+@click.option('--verbose/--no-verbose', help='verbose on/off', default=False)
 @click.argument('input-dir', type=click.Path())
 @click.argument('output-dir', type=click.Path())
 
-def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=None):
+def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=None, verbose=None):
     """Quick and dirty function to plot the develoment of a column in the outputted geojson-files over time.
     """
 
@@ -32,7 +33,7 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
     
     print('retrieving values from column {}'.format(column))
     for geojson in all_files:
-        print('reading file {}'.format(geojson))
+        if verbose: print('reading file {}'.format(geojson))
         gdf = gpd.read_file(geojson, driver='GeoJSON')
         df = pd.DataFrame(gdf.drop(columns='geometry'))
 
@@ -40,7 +41,7 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
         years.append(year)
 
         for idx in polygon_id:
-            print('sampling ID {}'.format(idx))
+            if verbose: print('sampling ID {}'.format(idx))
 
             if idx not in df.ID.values: 
                 print('WARNING: ID {} is not in {} - NaN set'.format(idx, geojson))
@@ -59,7 +60,7 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
         click.echo('creating output folder {}'.format(os.path.abspath(output_dir)))
         os.makedirs(os.path.abspath(output_dir))
 
-    df.to_csv(os.path.abspath(os.path.join(output_dir, 'prediction_dev.csv')))
+    df.to_csv(os.path.abspath(os.path.join(output_dir, '{}_dev.csv'.format(column))))
 
     fig, axes = plt.subplots(nrows=len(polygon_id), ncols=1, sharex=True)
     df.plot(subplots=True, ax=axes)
@@ -68,7 +69,7 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
         ax.set_yticks(np.arange(0, 1.1, 1))
     if title != None:
         ax.set_title(str(title))
-    plt.savefig(os.path.abspath(os.path.join(output_dir, 'prediction_dev.png')), dpi=300, bbox_inches='tight')
+    plt.savefig(os.path.abspath(os.path.join(output_dir, '{}_dev.png'.format(column))), dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
 
