@@ -47,12 +47,12 @@ def main(input_dir=None, column=None, color_map=None, minimum_value=None, maximu
 
         ax.set_title(str(year))
         click.echo('saving plot to png-folder')
-        plt.savefig(os.path.join(png_dir, 'plt{}.png'.format(year)), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(png_dir, 'plt_{}_{}.png'.format(column, year)), dpi=300, bbox_inches='tight')
     
     click.echo('creating GIF from saved plots')
     # based on: https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
-    fp_in = os.path.join(png_dir, '*.png')
-    fp_out = os.path.join(output_dir, 'conflict_over_time.gif')
+    fp_in = os.path.join(png_dir, '*_{}_{}.png'.format(column, year))
+    fp_out = os.path.join(output_dir, '{}_over_time.gif'.format(column))
     img, *imgs = [Image.open(f) for f in sorted(glob.glob(fp_in))]
     img.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=500, loop=0)
 
