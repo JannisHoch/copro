@@ -51,7 +51,7 @@ def main(input_dir=None, column=None, color_map=None, minimum_value=None, maximu
     
     click.echo('creating GIF from saved plots')
     # based on: https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#gif
-    fp_in = os.path.join(png_dir, '*_{}_{}.png'.format(column, year))
+    fp_in = os.path.join(png_dir, '*_{}_*.png'.format(column))
     fp_out = os.path.join(output_dir, '{}_over_time.gif'.format(column))
     img, *imgs = [Image.open(f) for f in sorted(glob.glob(fp_in))]
     img.save(fp=fp_out, format='GIF', append_images=imgs, save_all=True, duration=500, loop=0)
