@@ -157,7 +157,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
                         XY[key] = data_series
                         
                     else:
-                        raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                        raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
             if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
