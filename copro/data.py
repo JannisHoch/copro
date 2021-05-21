@@ -291,7 +291,6 @@ def split_XY_data(XY, config):
 
     # if config.getboolean('general', 'verbose'): click.echo('DEBUG: exluding polygons containing NaNs: {}'.format(X[X.isna().any(axis=1)]))
     # X = X.dropna()
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: filling NaNs with 0 for polygons {}'.format(XY[XY.isna().any(axis=1)]))
     XY = XY.fillna(0)
 
     XY = XY.to_numpy()
