@@ -172,7 +172,10 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     if sim_year not in years:
-        raise ValueError('ERROR: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
+        click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
+        click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
+        sim_year = sim_year + 1
+        # raise ValueError('ERROR: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
     
     # get index which corresponds with sim_year in years in nc-file
     sim_year_idx = int(np.where(years == sim_year)[0])
