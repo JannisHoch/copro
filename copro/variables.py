@@ -156,7 +156,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         stat_method = str(data_fo[2])
 
     lag_time = 1
-    click.echo('INFO: applying {} year lag time'.format(lag_time))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
