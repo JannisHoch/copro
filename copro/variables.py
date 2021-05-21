@@ -53,6 +53,10 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
+    lag_time = 1
+    click.echo('INFO: applying {} year lag time'.format(lag_time))
+    sim_year = sim_year - lag_time
+
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
             click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
@@ -150,6 +154,10 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         nc_fo = data_fo[0]
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
+
+    lag_time = 1
+    click.echo('INFO: applying {} year lag time'.format(lag_time))
+    sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
