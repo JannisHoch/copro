@@ -60,7 +60,7 @@ def metrics_distribution(out_dict, metrics, **kwargs):
 
     for metric, color in zip(metrics, sns.color_palette('colorblind')):
 
-        sns.histplot(out_dict[str(metric)], ax=ax, , kde=True, stat='density', color=color, label=str(metric))
+        sns.histplot(out_dict[str(metric)], ax=ax, kde=True, stat='density', color=color, label=str(metric))
 
     plt.legend()
 
