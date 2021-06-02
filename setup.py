@@ -50,6 +50,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/JannisHoch/copro',
-    version='0.0.8b',
+    version='0.0.8',
     zip_safe=False,
 )
