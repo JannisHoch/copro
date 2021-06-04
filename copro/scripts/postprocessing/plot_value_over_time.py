@@ -7,7 +7,7 @@ import numpy as np
 import os
 
 @click.command()
-@click.option('-id', '--polygon-id', multiple=True)
+@click.option('-id', '--polygon-id', multiple=True, type=str)
 @click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
 @click.option('-t', '--title', help='title for plot and file_object name', type=str)
 @click.option('--verbose/--no-verbose', help='verbose on/off', default=False)
@@ -17,6 +17,8 @@ import os
 def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=None, verbose=None):
     """Quick and dirty function to plot the develoment of a column in the outputted geojson-files over time.
     """
+
+    click.echo(polygon_id)
 
     assert(len(polygon_id) > 0), AssertionError('please specify at least one polygon ID to be sampled or select ''all'' for sampling the entire study area')
 
