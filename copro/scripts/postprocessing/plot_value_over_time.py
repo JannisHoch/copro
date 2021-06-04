@@ -7,7 +7,7 @@ import numpy as np
 import os
 
 @click.command()
-@click.option('-id', '--polygon-id', multiple=True, type=int)
+@click.option('-id', '--polygon-id', multiple=True)
 @click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
 @click.option('-t', '--title', help='title for plot and file_object name', type=str)
 @click.option('--verbose/--no-verbose', help='verbose on/off', default=False)
@@ -18,50 +18,87 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
     """Quick and dirty function to plot the develoment of a column in the outputted geojson-files over time.
     """
 
-    assert(len(polygon_id) > 0), AssertionError('please specify one polygon ID to be sampled')
+    assert(len(polygon_id) > 0), AssertionError('please specify at least one polygon ID to be sampled or select ''all'' for sampling the entire study area')
 
+    # absolute path to input_dir
     input_dir = os.path.abspath(input_dir)
     click.echo('\ngetting geojson-files from {}'.format(input_dir))
 
+    # collect all files in input_dir
     all_files = glob.glob(os.path.join(input_dir, '*.geojson'))
 
+    if verbose:
+        if polygon_id != 'all': 
+            click.echo('sampling from IDs'.format(polygon_id))
+        else:
+            click.echo('sampling over entire study area')
+
+    # create dictionary with list for areas (either IDs or entire study area) to be sampled from
     out_dict = dict()
     for idx in polygon_id:
-        out_dict[idx] = list()
+        if polygon_id != 'all':
+            out_dict[int(idx)] = list()
+        else:
+            out_dict[idx] = list()
 
+    # create a list to keep track of year-values in files
     years = list()
     
-    print('retrieving values from column {}'.format(column))
+    # go through all files
+    click.echo('retrieving values from column {}'.format(column))
     for geojson in all_files:
-        if verbose: print('reading file {}'.format(geojson))
+
+        if verbose: click.echo('reading file {}'.format(geojson))
+        # read file and convert to geo-dataframe
         gdf = gpd.read_file(geojson, driver='GeoJSON')
+        # convert geo-dataframe to dataframe
         df = pd.DataFrame(gdf.drop(columns='geometry'))
 
+        # get year-value
         year = int(str(str(os.path.basename(geojson)).rsplit('.')[0]).rsplit('_')[-1])
         years.append(year)
 
-        for idx in polygon_id:
-            if verbose: print('sampling ID {}'.format(idx))
+        if polygon_id != 'all':
+            # go throough all IDs
+            for idx in polygon_id:
+                if verbose: 
+                    if polygon_id != 'all': 
+                        print('sampling ID {}'.format(idx))
 
-            if idx not in df.ID.values: 
-                print('WARNING: ID {} is not in {} - NaN set'.format(idx, geojson))
-                vals = np.nan
-            else:
-                vals = df[column].loc[df.ID==idx].values[0]
+                # if ID not in file, assign NaN
+                if idx not in df.ID.values: 
+                    print('WARNING: ID {} is not in {} - NaN set'.format(idx, geojson))
+                    vals = np.nan
+                # otherwise, get value of column at this ID
+                else:
+                    vals = df[column].loc[df.ID==idx].values[0]
 
+                # append this value to list in dict
+                idx_list = out_dict[idx]
+                idx_list.append(vals)
+
+        else:
+            # compute mean value over column
+            vals = df[column].mean()
+            # append this value to list in dict
             idx_list = out_dict[idx]
             idx_list.append(vals)
 
+
+    # create a dataframe from dict and assign year-values as index
     df = pd.DataFrame().from_dict(out_dict)
     years = pd.to_datetime(years, format='%Y')
     df.index = years
 
+    # create an output folder, if not yet there
     if not os.path.isdir(os.path.abspath(output_dir)):
         click.echo('creating output folder {}'.format(os.path.abspath(output_dir)))
         os.makedirs(os.path.abspath(output_dir))
 
+    # save dataframe as csv-file
     df.to_csv(os.path.abspath(os.path.join(output_dir, '{}_dev.csv'.format(column))))
 
+    # create a simple plot and save to file
     fig, axes = plt.subplots(nrows=len(polygon_id), ncols=1, sharex=True)
     df.plot(subplots=True, ax=axes)
     for ax in axes:
