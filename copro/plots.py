@@ -2,7 +2,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import geopandas as gpd
-import seaborn as sbs
+import seaborn as sns
+sns.set_palette('colorblind')
 import numpy as np
 import os, sys
 from sklearn import metrics
@@ -42,7 +43,7 @@ def selected_conflicts(conflict_gdf, **kwargs):
 
     return ax
 
-def metrics_distribution(out_dict, **kwargs):
+def metrics_distribution(out_dict, metrics, **kwargs):
     """Plots the value distribution of a range of evaluation metrics based on all model simulations.
 
     Args:
@@ -57,9 +58,10 @@ def metrics_distribution(out_dict, **kwargs):
 
     fig, ax = plt.subplots(1, 1, **kwargs)
 
-    sbs.histplot(out_dict['Accuracy'], ax=ax, color="k", label='Accuracy')
-    sbs.histplot(out_dict['Precision'], ax=ax, color="r", label='Precision')
-    sbs.histplot(out_dict['Recall'], ax=ax, color="b", label='Recall')
+    for metric, color in zip(metrics, sns.color_palette('colorblind')):
+
+        sns.histplot(out_dict[str(metric)], ax=ax, kde=True, stat='density', color=color, label=str(metric))
+
     plt.legend()
 
     return ax
@@ -79,7 +81,7 @@ def correlation_matrix(df, **kwargs):
 
     df_corr = evaluation.calc_correlation_matrix(df)
 
-    ax = sbs.heatmap(df_corr, **kwargs)
+    ax = sns.heatmap(df_corr, **kwargs)
     
     return ax
 
