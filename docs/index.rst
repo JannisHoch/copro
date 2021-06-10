@@ -3,6 +3,8 @@ copro
 
 This is the documentation website CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
+A software description paper was published in `JOSS <https://doi.org/10.21105/joss.02855>`_.
+
 .. image:: https://travis-ci.com/JannisHoch/copro.svg?branch=dev
     :target: https://travis-ci.com/JannisHoch/copro
 
@@ -18,6 +20,9 @@ This is the documentation website CoPro, a machine-learning tool for conflict ri
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
 
+.. image:: https://joss.theoj.org/papers/10.21105/joss.02855/status.svg
+    :target: https://doi.org/10.21105/joss.02855
+
 Main goal
 ---------------
 The main goal of this model is to apply machine learning techniques to make projections of future areas at risk. While the model was developed with a rather clear
@@ -28,7 +33,7 @@ Contents
 ---------------
 .. toctree::
    :numbered:
-   :maxdepth: 2
+   :maxdepth: 1
 
    Installation
    Execution

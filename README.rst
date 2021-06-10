@@ -100,7 +100,7 @@ To run the model from command line, a command line script is provided. The usage
     Args:     CFG (str): (relative) path to cfg-file
 
     Options:
-    -plt, --make_plots PATH   add additional output plots
+    -plt, --make_plots        add additional output plots
     -v, --verbose             command line switch to turn on verbose mode
 
 This help information can be also accessed with
