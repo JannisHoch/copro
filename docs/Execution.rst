@@ -18,18 +18,19 @@ To run the model, a command line script is provided. The usage of the script is 
 
     Usage: copro_runner [OPTIONS] CFG
 
-    Main command line script to execute the model.  All settings are read from
-    cfg-file. One cfg-file is required argument to train, test, and evaluate
-    the model. Additional cfg-files can be provided as optional arguments,
-    whereby each file corresponds to one projection to be made.
+    Main command line script to execute the model. 
+    All settings are read from cfg-file.
+    One cfg-file is required argument to train, test, and evaluate the model.
+    Multiple classifiers are trained based on different train-test data combinations.
+    Additional cfg-files for multiple projections can be provided as optional arguments, whereby each file corresponds to one projection to be made.
+    Per projection, each classifiers is used to create separate projection outcomes per time step (year).
+    All outcomes are combined after each time step to obtain the common projection outcome.
 
     Args:     CFG (str): (relative) path to cfg-file
 
     Options:
-    -proj, --projection-settings PATH   path to cfg-file with settings for a projection run
-
-    -v, --verbose                       command line switch to turn on verbose mode
-    --help                              Show this message and exit.
+    -plt, --make_plots        add additional output plots
+    -v, --verbose             command line switch to turn on verbose mode
 
 This help information can be also accessed with
 
@@ -37,11 +38,15 @@ This help information can be also accessed with
 
     $ copro_runner --help
 
-All data and settings are retrieved from the settings-file (cfg-file) which needs to be provided as inline argument.
+All data and settings are retrieved from the configuration-file (cfg-file) which needs to be provided as command line argument.
+A typical command would thus look like this:
 
-.. note::
+.. code-block:: console
 
-    Multiple projections can be made based on a reference model by providing multiple cfg-files with a -proj/--projection-settings flag.
+    $ copro_runner settings.cfg
+
+In the cfg-file, the various settings of the simulation are defined.
+For more details, see INSERT LINK.
 
 In case issues occur, updating ``setuptools`` may be required.
 
@@ -70,3 +75,9 @@ Based on the relations established between sample data and target data of the re
 
     In order to re-use the classifier, the number of sample data features used in the projection runs must be identical to the feature number used in the reference run.
 
+Binder
+--------
+
+There is also a notebook running on `Binder <https://mybinder.org/v2/gh/JannisHoch/copro/update_docs?filepath=%2Fexample%2Fnb_binder.ipynb>`_. 
+
+Please check it out to go through the model execution step-by-step and interactively explore the functionalities of CoPro.

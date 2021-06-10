@@ -1,7 +1,10 @@
 Installation
 =========================
 
-To install copro from GitHub, first clone the code. It is advised to create an individual python environment first. 
+From GitHub
+------------
+
+To install CoPro from GitHub, first clone the code. It is advised to create a separate environment first. 
 
 .. note::
 
