@@ -41,8 +41,8 @@ Contents
    :numbered:
    :maxdepth: 1
 
-   Installation <installation>
-   Execution <execution>
+   Installation <Installation>
+   Execution <Execution>
    Model settings <model_settings>
    Workflow <examples/index>
    Output <Output>
