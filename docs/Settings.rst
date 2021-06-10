@@ -68,6 +68,14 @@ This file looks like this, taken from the example run and data.
     # number of repetitions
     n_runs=10
 
+.. note::
+
+    All paths for ``input_dir``, ``output_dir``, and in ``[PROJ_files]`` are relative to the location of the cfg-file.
+
+.. important::
+
+    Empty spaces should be avoided in the cfg-file, besides for those lines commented out with '#'.
+
 The specifics
 ----------------
 
@@ -75,8 +83,8 @@ Here, the different sections are explained briefly.
 
 **[general]**
 
-- *input_dir*: (relative) path to the directory where the input data is stored. This requires all input data to be stored in one main folder;
-- *output_dir*: (relative) path to the directory where output will be stored. If the folder does not exist yet, it will be created;
+- *input_dir*: (relative) path to the directory where the input data is stored. This requires all input data to be stored in one main folder, sub-folders are possible;
+- *output_dir*: (relative) path to the directory where output will be stored. If the folder does not exist yet, it will be created. CoPro will automatically create the sub-folders ``_REF`` for output for the reference run, and ``_PROJ`` for output from the (various) projection runs;
 - *model*: the type of simulation to be run can be specified here. Currently, for different models are available:
 
     1. 'all data': all variable values are used to fit the model and predict results;
@@ -93,35 +101,72 @@ Here, the different sections are explained briefly.
 **[settings]**
 
 - *y_start*: the start year of the simulation;
-- *y_end*: the end year of the simulation. All data between y_start and y_end will be used to train and test the model;
-- *n_runs*: the number repetitions of the split-sample test for training and testing the model. By repeating these steps multiple times, coincidental results can be avoided.
+- *y_end*: the end year of the simulation. Period between ``y_start`` and ``y_end`` will be used to train and test the model;
+
+**[PROJ_files]**
+A key section. Here, one (slightly different) cfg-file per projection needs to be provided. 
+This way, multiple projection runs can be defined from within the "main" cfg-file.
+
+The conversion is that the projection name is defined as value here.
+For example, the projections "SSP1" and "SSP2" would be defined as
+
+.. code-block:: console
+
+    SSP1=/path/to/ssp1.cfg
+    SSP2=/path/to/ssp2.cfg
+
+A cfg-file for a projection is shorter than the main cfg-file used as command line argument and looks like this:
+
+.. code-block:: console
+
+    [general]
+    input_dir=./example_data
+    verbose=True
+
+    [settings]
+    # year for which projection is to be made
+    y_proj=2015
+
+    [pre_calc]
+    # if nothing is specified, the XY array will be stored in output_dir
+    # if XY already pre-calculated, then provide (absolute) path to npy-file
+    XY=
+
+    [data]
+    # specify the path to the nc-file, whether the variable shall be log-transformed (True, False), and which statistical function should be applied
+    # these three settings need to be separated by a comma
+    # NOTE: variable name here needs to be identical with variable name in nc-file
+    # NOTE: only statistical functions supported by rasterstats are valid
+    precipitation=hydro/precipitation_monthTot_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
+    temperature=hydro/temperature_monthAvg_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
+    gdp=gdp/gdp_Africa.nc,True,mean
+
 
 **[pre_calc]**
 
-- *XY*: if the XY-data was already pre-computed in a previous run and stored as npy-file, it can be specified here and will be loaded from file. If nothing is specified, the model will save the XY-data by default to the output directory as ``XY.npy``;
-- *clf*: path to the pickled fitted classifier from the reference run. Needed for projection runs only!
+- *XY*: if the XY-data was already pre-computed in a previous run and stored as npy-file, it can be specified here and will be loaded from file to save time. If nothing is specified, the model will save the XY-data by default to the output directory as ``XY.npy``;
 
 **[extent]**
 
-- *shp*: the provided shape-file defines the area for which the model is applied. At the same time, it also defines at which aggregation level the output is determined.
+- *shp*: the provided shape-file defines the boundaries for which the model is applied. At the same time, it also defines at which aggregation level the output is determined.
 
 .. note:: 
 
-    The shp-file should contain multiple polygons covering the study area. Their size defines the output aggregation level. It is also possible to provide only one polygon, but model behaviour is not well tested for this case.
+    The shp-file can contain multiple polygons covering the study area. Their size defines the output aggregation level. It is also possible to provide only one polygon, but model behaviour is not well tested for this case.
 
 **[conflict]**
 
-- *conflict_file*: path to the csv-file containing the conflict dataset. It is also possible to define 'download', then the latest conflict dataset is downloaded and used as input;
+- *conflict_file*: path to the csv-file containing the conflict dataset. It is also possible to define ``download``, then the latest conflict dataset (currently version 20.1) is downloaded and used as input;
 - *min_nr_casualties*: minimum number of reported casualties required for a conflict to be considered in the model;
 - *type_of_violence*: the types of violence to be considered can be specified here. Multiple values can be specified. Types of violence are:
 
-    1. state-based armed conflict: a contested incompatibility that concerns government and/or territory where the use of armed force between two parties, of which at least one is the government of a state, results in at least 25 battle-related deaths in one calendar year;
-    2. non-state conflict: the use of armed force between two organized armed groups, neither of which is the government of a state, which results in at least 25 battle-related deaths in a year;
-    3. one-sided violence: the deliberate use of armed force by the government of a state or by a formally organized group against civilians which results in at least 25 deaths in a year.
+    1. 'state-based armed conflict': a contested incompatibility that concerns government and/or territory where the use of armed force between two parties, of which at least one is the government of a state, results in at least 25 battle-related deaths in one calendar year;
+    2. 'non-state conflict': the use of armed force between two organized armed groups, neither of which is the government of a state, which results in at least 25 battle-related deaths in a year;
+    3. 'one-sided violence': the deliberate use of armed force by the government of a state or by a formally organized group against civilians which results in at least 25 deaths in a year.
 
 .. important::
 
-    CoPro currently only works with UCDP data. As other data sources will be supported in the future, the conflict selection process will be come more elaborated.
+    CoPro currently only works with UCDP data.
 
 **[climate]**
 
@@ -135,15 +180,33 @@ Here, the different sections are explained briefly.
 
 **[data]**
 
-In this section, all variables to be used in the model need to be provided. The main convention is that the name of the file agrees with the variable name in the file. Only netCDF-files with annual data are supported.
+In this section, all variables to be used in the model need to be provided. 
+The paths are relative to ``input_dir``.
+Only netCDF-files with annual data are supported.
 
-For example, if the variable precipitation is provided in a file, this should be noted as follows
+The main convention is that the name of the file agrees with the variable name in the file.
+For example, if the variable ``precipitation`` is provided in a nc-file, this should be noted as follows
+
+.. code-block:: console
 
     [data]
     precipitation=/path/to/file/precipitation_file.nc
+
+CoPro furthermore requires information whether the values sampled from a file are ought to be log-transformed.
+
+Besides, it is possible to define a statistical function that is applied when sampling from file per polygon of the ``shp-file``.
+CoPro makes use of the ``zonal_stats`` function available within `rasterstats <https://pythonhosted.org/rasterstats/rasterstats.html>`_.
+
+To determine the log-scaled mean value of precipitation per polygon, the following notation is required:
+
+.. code-block:: console
+
+    [data]
+    precipitation=/path/to/file/precipitation_file.nc,True,mean
 
 **[machine_learning]**
 
 - *scaler*: the scaling algorithm used to scale the variable values to comparable scales. Currently supported are ``MinMaxScaler``, ``StandardScaler``, ``RobustScaler``, and ``QuantileTransformer``;
 - *model*: the machine learning algorithm to be applied. Currently supported are ``NuSVC``, ``KNeighborsClassifier``, and ``RFClassifier``;
 - *train_fraction*: the fraction of the XY-data to be used to train the model. The remaining data (1-train_fraction) will be used to predict and evaluate the model.
+- *n_runs*: the number of classifiers to use
