@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 
 @click.command()
 @click.argument('cfg', type=click.Path())
-@click.option('--make_plots', '-plt', help='add additional output plots')
+@click.option('--make_plots', '-plt', help='add additional output plots', type=bool)
 @click.option('--verbose', '-v', help='command line switch to turn on verbose mode', is_flag=True)
 
 def cli(cfg, make_plots=True, verbose=False):   
