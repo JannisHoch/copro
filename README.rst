@@ -1,9 +1,6 @@
 ===============
-Overview
-===============
-
 CoPro
-----------------
+===============
 
 Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
