@@ -1,4 +1,4 @@
-copro
+CoPro
 =========================
 
 This is the documentation website CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
