@@ -43,9 +43,10 @@ Contents
 
    Installation <Installation>
    Execution <Execution>
-   Model settings <model_settings>
+   Settings <Settings>
    Workflow <examples/index>
    Output <Output>
+   Post-processing <Postprocessing>
    API <api/index>
 
 Authors

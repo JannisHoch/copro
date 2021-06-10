@@ -1,9 +1,74 @@
 .. _settings:
 
-Model settings
+Settings
 =========================
 
-The main model settings need to be specified in a configuration file (cfg-file). 
+The cfg-file
+----------------
+
+The main model settings need to be specified in a configuration file (``cfg-file``). 
+This file looks like this, taken from the example run and data.
+
+    [general]
+    input_dir=./example_data
+    output_dir=./OUT
+    # 1: all data; 2: leave-one-out model; 3: single variable model; 4: dubbelsteenmodel
+    # Note that only 1 supports sensitivity_analysis
+    model=1
+    verbose=True
+
+    [settings]
+    # start year
+    y_start=2000
+    # end year
+    y_end=2012
+
+    [PROJ_files]
+    # cfg-files
+    proj_nr_1=./example_settings_proj.cfg
+
+    [pre_calc]
+    # if nothing is specified, the XY array will be stored in output_dir
+    # if XY already pre-calculated, then provide path to npy-file
+    XY=
+
+    [extent]
+    shp=waterProvinces/waterProvinces_Africa_eliminatedPolysLE20000km2.shp
+
+    [conflict]
+    # either specify path to file or state 'download' to download latest PRIO/UCDP dataset
+    conflict_file=UCDP/ged201.csv
+    min_nr_casualties=1
+    # 1=state-based armed conflict; 2=non-state conflict; 3=one-sided violence
+    type_of_violence=1,2,3
+
+    [climate]
+    shp=KoeppenGeiger/2000/Koeppen_Geiger_1976-2000.shp
+    # define either one or more classes (use abbreviations!) or specify nothing for not filtering
+    zones=BWh,BSh
+    code2class=KoeppenGeiger/classification_codes.txt
+
+    [data]
+    # specify the path to the nc-file, whether the variable shall be log-transformed (True, False), and which statistical function should be applied
+    # these three settings need to be separated by a comma
+    # NOTE: variable name here needs to be identical with variable name in nc-file
+    # NOTE: only statistical functions supported by rasterstats are valid
+    precipitation=hydro/precipitation_monthTot_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
+    temperature=hydro/temperature_monthAvg_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
+    gdp=gdp/gdp_Africa.nc,True,mean
+
+    [machine_learning]
+    # choose from: MinMaxScaler, StandardScaler, RobustScaler, QuantileTransformer
+    scaler=QuantileTransformer
+    # choose from: NuSVC, KNeighborsClassifier, RFClassifier
+    model=RFClassifier
+    train_fraction=0.7
+    # number of repetitions
+    n_runs=10
+
+The specifics
+----------------
+
 Here, the different sections are explained briefly. 
 
 **[general]**
@@ -19,7 +84,7 @@ Here, the different sections are explained briefly.
 
 .. note::
 
-    the 'leave-one-out' and 'single variables' models are only tested in beta-state. They produce only limited output (see :ref:`Output`). 
+    All model types except ``all_data`` will be deprecated in a future release.
 
 - *verbose*: if True, additional messages will be printed.
 
