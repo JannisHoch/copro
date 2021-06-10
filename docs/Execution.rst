@@ -38,7 +38,7 @@ This help information can be also accessed with
 
     $ copro_runner --help
 
-All data and settings are retrieved from the configuration-file (cfg-file) which needs to be provided as command line argument.
+All data and settings are retrieved from the configuration-file (``cfg-file``) which needs to be provided as command line argument.
 A typical command would thus look like this:
 
 .. code-block:: console
@@ -46,7 +46,7 @@ A typical command would thus look like this:
     $ copro_runner settings.cfg
 
 In the cfg-file, the various settings of the simulation are defined.
-For more details, see INSERT LINK.
+For more details, see :ref:`Settings`.
 
 In case issues occur, updating ``setuptools`` may be required.
 
