@@ -9,6 +9,8 @@ The cfg-file
 The main model settings need to be specified in a configuration file (``cfg-file``). 
 This file looks like this, taken from the example run and data.
 
+.. code-block:: console
+
     [general]
     input_dir=./example_data
     output_dir=./OUT
