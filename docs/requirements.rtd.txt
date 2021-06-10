@@ -28,6 +28,6 @@ git+https://github.com/pandas-dev/pydata-sphinx-theme.git@master
 rasterstats==0.14.0
 seaborn==0.10.1
 nbsphinx==0.8.5
-jinja2=2.11.2
+jinja2==2.11.2
 nbsphinx_link==1.3.0
 setuptools==49.6
