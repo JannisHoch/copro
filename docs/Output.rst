@@ -11,7 +11,7 @@ All output is stored in the output folder as specified in the configurations-fil
     [general]
     output_dir=./path/to/store/output
 
-By default, CoPro creates two subfolders: ``_REF`` and ``_PROJ``. In the latter, another sub-folder will be created per projection defined in the cfg-file.
+By default, CoPro creates two sub-folders: ``_REF`` and ``_PROJ``. In the latter, another sub-folder will be created per projection defined in the cfg-file.
 In the example below, this would be the folders ``/_PROJ/SSP1`` and ``/_PROJ/SSP2``.
 
 .. code-block:: console
@@ -47,14 +47,16 @@ In addition to the output files listed below, the cfg-file is automatically copi
 +-------------------------------+---------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------+
 | ``feature_importance.csv``    | Importance of each model variable in making projections                                     | this is a property of RF Classifiers and thus only obtainable if RF Classifier is used      |                                                                               | 
 +-------------------------------+---------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------+
-| ``permutation_importance.csv``| Mean permutation importance per model variable                                              | computed with `sklearn.inspection.permutation_importance <https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html>`_| 
+| ``permutation_importance.csv``| Mean permutation importance per model variable                                              | computed with sklearn.inspection.permutation_importance_                                    | 
 +-------------------------------+---------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------+
 | ``ROC_data_tprs.csv``         | False-positive rates per repetition of the split-sample test repetition                     | file can e.g. be loaded with pandas.read_csv(); data can be used to later plot ROC-curve    | 
 +-------------------------------+---------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------+
 | ``ROC_data_aucs.csv``         | Area-under-curve values per repetition of the split-sample test repetition                  | file can e.g. be loaded with pandas.read_csv(); data can be used to later plot ROC-curve    | 
 +-------------------------------+---------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------+
-| ``output_for_REF.geojson``    | GeoJSON-file containing resulting conflict risk estimates per polygon                       | based on out-of-sample projections of _REF run                                                         | 
+| ``output_for_REF.geojson``    | GeoJSON-file containing resulting conflict risk estimates per polygon                       | based on out-of-sample projections of _REF run                                              | 
 +-------------------------------+---------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------+
+
+.. _sklearn.inspection.permutation_importance: https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html
 
 _PROJ
 ^^^^^^
