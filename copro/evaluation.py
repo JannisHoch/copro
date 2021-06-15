@@ -359,6 +359,6 @@ def get_permutation_importance(clf, X_ft, Y, df_feat_imp, out_dir):
     df = pd.DataFrame(result.importances_mean, columns=['permutation_importance'], index=df_feat_imp.index.values)
 
     if (out_dir != None) and isinstance(out_dir, str):
-        df.to_csv(os.path.join(out_dir, 'mean_permutation_importances.csv'))
+        df.to_csv(os.path.join(out_dir, 'permutation_importances.csv'))
 
     return df 
