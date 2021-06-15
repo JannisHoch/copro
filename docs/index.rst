@@ -1,7 +1,7 @@
 CoPro
 =========================
 
-This is the documentation website CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
+This is the documentation of CoPro, a machine-learning tool for conflict risk projections.
 
 A software description paper was published in `JOSS <https://doi.org/10.21105/joss.02855>`_.
 
@@ -31,15 +31,16 @@ A software description paper was published in `JOSS <https://doi.org/10.21105/jo
 
 Main goal
 ---------------
-With CoPro it is possible to apply machine-learning techniques to make projections of future areas at risk. While the model was developed with a rather clear
-objective in mind, we put a lot of emphasis on making it flexible. We hope that other, related questions about climate and conflict can be tackled as well, and that our process
-understanding is deepened further.
+With CoPro it is possible to apply machine-learning techniques to make projections of future areas at risk. CoPro was developed with a rather clear
+application in mind, unravelling the interplay of socio-economic development, climate change, and conflict occurrence. 
+Nevertheless, we put a lot of emphasis on making it flexible. 
+We hope that other, related questions about climate and conflict can be tackled as well, and that process understanding is deepened further.
 
 Contents
 ---------------
 .. toctree::
    :numbered:
-   :maxdepth: 1
+   :maxdepth: 2
 
    Installation <Installation>
    Execution <Execution>
@@ -60,6 +61,8 @@ Corresponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
 
 Indices and tables
 -------------------
-* :ref:`genindex`
-* :ref:`modindex`
+
 * :ref:`search`
+* :ref:`genindex`
+.. * :ref:`modindex`
+

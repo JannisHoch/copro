@@ -7,13 +7,13 @@ The cfg-file
 ----------------
 
 The main model settings need to be specified in a configuration file (``cfg-file``). 
-This file looks like this, taken from the example run and data.
+This file looks like this.
 
 .. code-block:: console
 
     [general]
-    input_dir=./example_data
-    output_dir=./OUT
+    input_dir=./path/to/input_data
+    output_dir=./path/to/store/output
     # 1: all data. 2: leave-one-out model. 3: single variable model. 4: dubbelsteenmodel
     # Note that only 1 supports sensitivity_analysis
     model=1
@@ -27,7 +27,7 @@ This file looks like this, taken from the example run and data.
 
     [PROJ_files]
     # cfg-files
-    proj_nr_1=./example_settings_proj.cfg
+    proj_nr_1=./path/to/projection/settings_proj.cfg
 
     [pre_calc]
     # if nothing is specified, the XY array will be stored in output_dir
@@ -35,29 +35,29 @@ This file looks like this, taken from the example run and data.
     XY=
 
     [extent]
-    shp=waterProvinces/waterProvinces_Africa_eliminatedPolysLE20000km2.shp
+    shp=folder/with/polygons.shp
 
     [conflict]
     # either specify path to file or state 'download' to download latest PRIO/UCDP dataset
-    conflict_file=UCDP/ged201.csv
+    conflict_file=folder/with/conflict_data.csv
     min_nr_casualties=1
     # 1=state-based armed conflict. 2=non-state conflict. 3=one-sided violence
     type_of_violence=1,2,3
 
     [climate]
-    shp=KoeppenGeiger/2000/Koeppen_Geiger_1976-2000.shp
+    shp=folder/with/climate_zones.shp
     # define either one or more classes (use abbreviations!) or specify nothing for not filtering
-    zones=BWh,BSh
-    code2class=KoeppenGeiger/classification_codes.txt
+    zones=
+    code2class=folder/with/classification_codes.txt
 
     [data]
     # specify the path to the nc-file, whether the variable shall be log-transformed (True, False), and which statistical function should be applied
     # these three settings need to be separated by a comma
     # NOTE: variable name here needs to be identical with variable name in nc-file
     # NOTE: only statistical functions supported by rasterstats are valid
-    precipitation=hydro/precipitation_monthTot_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
-    temperature=hydro/temperature_monthAvg_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
-    gdp=gdp/gdp_Africa.nc,True,mean
+    precipitation=folder/with/precipitation_data.nc,False,mean
+    temperature=folder/with/temperature_data.nc,False,mean
+    population=folder/with/population_data.nc,True,sum
 
     [machine_learning]
     # choose from: MinMaxScaler, StandardScaler, RobustScaler, QuantileTransformer
@@ -70,7 +70,7 @@ This file looks like this, taken from the example run and data.
 
 .. note::
 
-    All paths for ``input_dir``, ``output_dir``, and in ``[PROJ_files]`` are relative to the location of the cfg-file.
+    All paths for ``input_dir``, ``output_dir``, and in ``[PROJ_files]`` are relative to the location of the cfg-file. 
 
 .. important::
 
@@ -133,21 +133,21 @@ A cfg-file for a projection is shorter than the main cfg-file used as command li
 .. code-block:: console
 
     [general]
-    input_dir=./example_data
+    input_dir=./path/to/input_data
     verbose=True
 
     [settings]
     # year for which projection is to be made
-    y_proj=2015
+    y_proj=2050
 
     [data]
     # specify the path to the nc-file, whether the variable shall be log-transformed (True, False), and which statistical function should be applied
     # these three settings need to be separated by a comma
     # NOTE: variable name here needs to be identical with variable name in nc-file
     # NOTE: only statistical functions supported by rasterstats are valid
-    precipitation=hydro/precipitation_monthTot_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
-    temperature=hydro/temperature_monthAvg_output_2000-01-31_to_2015-12-31_Africa_yearmean.nc,True,mean
-    gdp=gdp/gdp_Africa.nc,True,mean
+    precipitation=folder/with/precipitation_data.nc,False,mean
+    temperature=folder/with/temperature_data.nc,False,mean
+    population=folder/with/population_data.nc,True,sum
 
 [pre_calc]
 ^^^^^^^^^^^^^^^^
@@ -190,7 +190,7 @@ Multiple values can be specified. Types of violence are:
 ``shp``: the provided shape-file defines the areas of the different Köppen-Geiger climate zones.
 
 ``zones``: abbreviations of the climate zones to be considered in the model.
- Can either be 'None' or one or multiple abbreviations.
+Can either be 'None' or one or multiple abbreviations.
 
 ``code2class``: converting the abbreviations to class-numbers used in the shp-file.
 
@@ -211,7 +211,7 @@ For example, if the variable ``precipitation`` is provided in a nc-file, this sh
 .. code-block:: console
 
     [data]
-    precipitation=/path/to/file/precipitation_file.nc
+    precipitation=folder/with/precipitation_data.nc
 
 CoPro furthermore requires information whether the values sampled from a file are ought to be log-transformed.
 
@@ -223,16 +223,25 @@ To determine the log-scaled mean value of precipitation per polygon, the followi
 .. code-block:: console
 
     [data]
-    precipitation=/path/to/file/precipitation_file.nc,True,mean
+    precipitation=folder/with/precipitation_data.nc,False,mean
 
 [machine_learning]
 ^^^^^^^^^^^^^^^^^^^^
 
 ``scaler``: the scaling algorithm used to scale the variable values to comparable scales. 
-Currently supported are ``MinMaxScaler``, ``StandardScaler``, ``RobustScaler``, and ``QuantileTransformer``.
+Currently supported are 
+
+    - `MinMaxScaler <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html>`_;
+    - `StandardScaler <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html>`_;
+    - `RobustScaler <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html>`_;
+    - `QuantileTransformer <https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html>`_.
 
 ``model``: the machine learning algorithm to be applied. 
-Currently supported are ``NuSVC``, ``KNeighborsClassifier``, and ``RFClassifier``.
+Currently supported are 
+
+    - `NuSVC <https://scikit-learn.org/stable/modules/generated/sklearn.svm.NuSVC.html>`_; 
+    - `KNeighborsClassifier <https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html>`_;
+    - `RFClassifier <https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html>`_.
 
 ``train_fraction``: the fraction of the XY-data to be used to train the model. 
 The remaining data (1-train_fraction) will be used to predict and evaluate the model.
