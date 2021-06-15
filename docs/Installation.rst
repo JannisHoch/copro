@@ -34,11 +34,11 @@ From PyPI
 
 .. todo::
 
-    This is not yet supported.
+    This is not yet supported. Feel invited to provide a pull request enabling installation via PyPI.
 
 From conda
 ------------
 
 .. todo::
 
-    This is not yet supported.
+    This is not yet supported. Feel invited to provide a pull request enabling installation via conda.
