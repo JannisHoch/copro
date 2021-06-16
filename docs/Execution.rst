@@ -56,6 +56,6 @@ In case issues occur, updating ``setuptools`` may be required.
 Binder
 --------
 
-There is also a notebook running on `Binder <https://mybinder.org/v2/gh/JannisHoch/copro/update_docs?filepath=%2Fexample%2Fnb_binder.ipynb>`_. 
+There is also a notebook running on `Binder <https://mybinder.org/v2/gh/JannisHoch/copro/dev?filepath=%2Fexample%2Fnb_binder.ipynb>`_. 
 
 Please check it out to go through the model execution step-by-step and interactively explore the functionalities of CoPro.
