@@ -3,7 +3,7 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import os, sys
-import math
+import click
 
 def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir): 
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
@@ -27,7 +27,8 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
     # select the entries which occured in this year
     temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year]  
 
-    assert (len(temp_sel_year) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year))
+    if len(temp_sel_year) == 0:
+        click.echo('WARNING: no conflicts were found in sampled conflict data set for year {}'.format(sim_year))
     
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
@@ -54,10 +55,6 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         if config.getboolean('general', 'verbose'): print('DEBUG: storing boolean conflict map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'conflicts_in_{}.csv'.format(sim_year))))
         # data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').fillna(0)
         data_stored = pd.merge(bool_per_poly, global_df, on='ID', how='right').dropna()
-        # print(global_df.head())
-        # print(bool_per_poly.head())
-        # data_stored = global_df.merge(bool_per_poly, left_index=True, right_index=True, how='left')
-        # print(data_stored)
         data_stored.index = data_stored.index.rename('watprovID')
         data_stored = data_stored.drop('geometry', axis=1)
         data_stored = data_stored.astype(int)
@@ -166,9 +163,6 @@ def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, ne
         if i_poly in bool_conflict.index.values:
 
             if check_neighbors:
-
-                # if neighboring_matrix == None:
-                #     raise ValueError('ERROR: if check_neighbors=True, a matrix with neihgbouring polygons needs to be provided too!')
 
                 # determine log-scaled number of conflict events in neighboring polygons
                 val = calc_conflicts_nb(i_poly, neighboring_matrix, bool_conflict)
@@ -287,6 +281,8 @@ def split_conflict_geom_data(X):
         arrays: seperate arrays with ID, geometry, and actual data 
     """    
 
+    # first column corresponds to ID, second to geometry
+    # all remaining columns are actual data
     X_ID = X[:, 0]
     X_geom = X[:, 1]
     X_data = X[: , 2:]
@@ -308,10 +304,14 @@ def get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0,
         dataframe: dataframe with each input list as column plus computed 'correct_pred'.
     """   
 
+    # stack separate columns horizontally
     arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1))
 
+    # convert array to dataframe
     df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred', 'y_prob_0', 'y_prob_1'])
 
+    # compute whether a prediction is correct
+    # if so, assign 1; otherwise, assign 0
     df['correct_pred'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
 
     return df

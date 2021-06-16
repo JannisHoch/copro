@@ -4,7 +4,7 @@ import pandas as pd
 import geopandas as gpd
 import rasterstats as rstats
 import numpy as np
-import os, sys
+import os
 import math
 import click
 from distutils import util

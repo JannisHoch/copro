@@ -1,11 +1,14 @@
 Installation
 =========================
 
-To install copro from GitHub, first clone the code. It is advised to create an individual python environment first. 
+From GitHub
+------------
+
+To install CoPro from GitHub, first clone the code. It is advised to create a separate environment first. 
 
 .. note::
 
-    It is advised to use Anaconda or Miniconda to install CoPro as this was used to develop and test the model.
+    We recommend to use Anaconda or Miniconda to install CoPro as this was used to develop and test the model.
     For installation instructions, see `here <https://docs.anaconda.com/anaconda/install/>`_.
 
 .. code-block:: console
@@ -31,11 +34,11 @@ From PyPI
 
 .. todo::
 
-    This is not yet supported.
+    This is not yet supported. Feel invited to provide a pull request enabling installation via PyPI.
 
 From conda
 ------------
 
 .. todo::
 
-    This is not yet supported.
+    This is not yet supported. Feel invited to provide a pull request enabling installation via conda.
