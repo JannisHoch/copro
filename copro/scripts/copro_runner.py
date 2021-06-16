@@ -125,12 +125,6 @@ def cli(cfg, make_plots=True, verbose=False):
     df_feat_imp = copro.evaluation.get_feature_importance(clf, config_REF, out_dir_REF) 
     df_perm_imp = copro.evaluation.get_permutation_importance(clf, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
 
-    #- plot relative importance of each feature based on ALL data points
-    if make_plots:
-        fig, ax = plt.subplots(1, 1)
-        copro.plots.factor_importance(clf, config_REF, out_dir=out_dir_REF, ax=ax, figsize=(20, 10))
-        plt.savefig(os.path.join(out_dir_REF, 'feature_importances.png'), dpi=300, bbox_inches='tight')
-
     click.echo(click.style('\nINFO: reference run succesfully finished\n', fg='cyan'))
 
     click.echo(click.style('INFO: starting projections\n', fg='cyan'))

@@ -137,22 +137,4 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
     ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05], **kwargs)
 
     ax.legend(loc="lower right")
-
-def factor_importance(df, out_dir=None, **kwargs):
-    """Plots the relative importance of each factor as bar plot. Note, this works only for RFClassifier as ML-model!
-
-    Args:
-        df (dataframe): dataframe containing feature importances determined with evaluation.get_feature_importance(). 
-        out_dir (str, optional): path to output folder. If None, output is not saved. Defaults to None.
-
-    Kwargs:
-        Matplotlib-supported keyword arguments.
-
-    Returns:
-        ax: Matplotlib axis object.
-    """    
-
-    ax = df.plot.bar(**kwargs)
-
-    return ax
     

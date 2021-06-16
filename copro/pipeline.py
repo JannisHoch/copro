@@ -149,7 +149,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
         # get projection period for this projection
         # defined as all years starting from end of reference run until specified end of projections
-        projection_period = models.determine_projection_period(config_REF, config_PROJ)
+        projection_period = utils.determine_projection_period(config_REF, config_PROJ)
 
         # for this projection, go through all years
         for i in range(len(projection_period)):

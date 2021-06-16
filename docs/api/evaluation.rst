@@ -15,4 +15,6 @@ Model evaluation
    evaluation.polygon_model_accuracy
    evaluation.init_out_ROC_curve
    evaluation.save_out_ROC_curve
+   evaluation.calc_correlation_matrix
    evaluation.get_feature_importance
+   evaluation.get_permutation_importance
