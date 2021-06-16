@@ -17,6 +17,17 @@ import os
 
 def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=None, output_dir=None, verbose=None):
     """Quick and dirty function to plot the develoment of a column in the outputted geojson-files over time.
+    The script uses all geoJSON-files located in input-dir and retrieves values from them.
+    Possible to plot obtain development for multiple polygons (indicated via their ID) or entire study area.
+    If the latter, then different statistics can be chosen (mean, max, min, std).
+
+    Args:
+        input-dir (str): path to input directory with geoJSON-files located per projection year.
+        output-dir (str): path to directory where output will be stored.
+
+    Output:
+        a csv-file containing values per time step.
+        a png-file showing development over time.
     """
 
     click.echo('\nPLOTTING VARIABLE DEVELOPMENT OVER TIME')
