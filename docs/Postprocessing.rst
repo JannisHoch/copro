@@ -6,6 +6,12 @@ In addition to quick plots to evaluate model output, they also produce files for
 
 The scripts are located under ``/copro/scripts/postprocessing``.
 
+The here shown help print-outs can always be accessed with 
+
+.. code-block:: console
+
+    python <SCRIPT_FILE_NAME> --help
+
 plot_value_over_time.py
 ------------------------
 
@@ -69,6 +75,28 @@ avg_over_time.py
 
 plot_polygon_vals.py
 -----------------------
+
+.. code-block:: console
+
+    Usage: python plot_polygon_vals.py [OPTIONS] FILE_OBJECT OUTPUT_DIR
+
+        Quick and dirty function to plot the column values of a geojson file with
+        minimum user input, and save plot. Mainly used for quick inspection of
+        model output in specific years.
+
+        Args:     
+            file-object (str): path to geoJSON-file whose values are to be plotted.     
+            output-dir (str): path to directory where plot will be saved.
+
+        Output:     
+            a png-file of values per polygon.
+
+    Options:
+        -c, --column TEXT           column name
+        -t, --title TEXT            title for plot and file_object name
+        -v0, --minimum-value FLOAT
+        -v1, --maximum-value FLOAT
+        -cmap, --color-map TEXT
 
 geojson2gif.py
 ---------------
