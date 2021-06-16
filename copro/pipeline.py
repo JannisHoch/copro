@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import pickle
 import click
-import os, sys
+import os
 
 
 def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
@@ -85,6 +85,7 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr):
         dict: dictionary containing evaluation metrics per simulation.
     """    
 
+    # depending on selection, run corresponding model with data
     if config.getint('general', 'model') == 1:
         X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir, run_nr)
     elif config.getint('general', 'model') == 2:
@@ -148,7 +149,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
         # get projection period for this projection
         # defined as all years starting from end of reference run until specified end of projections
-        projection_period = models.determine_projection_period(config_REF, config_PROJ, out_dir_PROJ)
+        projection_period = models.determine_projection_period(config_REF, config_PROJ)
 
         # for this projection, go through all years
         for i in range(len(projection_period)):
@@ -213,6 +214,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # append to all classifiers dataframe
                 y_df = y_df.append(y_df_clf, ignore_index=True)
 
+            # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
             if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))

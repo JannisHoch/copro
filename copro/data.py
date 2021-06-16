@@ -7,7 +7,7 @@ import os, sys
 
 
 def initiate_XY_data(config):
-    """Initiates an empty dictionary to contain the XY-data for each polygon. 
+    """Initiates an empty dictionary to contain the XY-data for each polygon, ie. both sample data and target data. 
     This is needed for the reference run.
     By default, the first column is for the polygon ID, the second for polygon geometry.
     The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
@@ -22,6 +22,8 @@ def initiate_XY_data(config):
         dict: emtpy dictionary to be filled, containing keys for each variable (X), binary conflict data (Y) plus meta-data.
     """
 
+    # Initialize dictionary
+    # some entries are set by default, besides the ones corresponding to input data variables
     XY = {}
     XY['poly_ID'] = pd.Series()
     XY['poly_geometry'] = pd.Series()
@@ -39,7 +41,7 @@ def initiate_XY_data(config):
     return XY
 
 def initiate_X_data(config):
-    """Initiates an empty dictionary to contain the X-data for each polygon. 
+    """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data. 
     This is needed for each time step of each projection run.
     By default, the first column is for the polygon ID and the second for polygon geometry.
     The penultimate column is for boolean information about conflict at t-1 while the last column is for boolean information about conflict at t-1 in neighboring polygons.
@@ -50,8 +52,10 @@ def initiate_X_data(config):
 
     Returns:
         dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
-    """    
-    
+    """   
+
+    # Initialize dictionary
+    # some entries are set by default, besides the ones corresponding to input data variables
     X = {}
     X['poly_ID'] = pd.Series()
     X['poly_geometry'] = pd.Series()
@@ -68,7 +72,7 @@ def initiate_X_data(config):
     return X
 
 def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
-    """Fills the XY-dictionary with data for each variable and conflict for each polygon for each simulation year. 
+    """Fills the (XY-)dictionary with data for each variable and conflict for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
 
@@ -78,6 +82,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
         root_dir (str): path to location of cfg-file.
         conflict_data (geo-dataframe): geo-dataframe containing the selected conflicts.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        out_dir (path): path to output folder.
 
     Raises:
         Warning: raised if the datetime-format of the netCDF-file does not match conventions and/or supported formats.
@@ -162,8 +167,6 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
             if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
     df_out = pd.DataFrame.from_dict(XY)
-
-    df_corr = evaluation.calc_correlation_matrix(df_out.drop(columns='poly_ID'), out_dir)
     
     return df_out.to_numpy()
 
@@ -270,7 +273,7 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
     return X
 
 def split_XY_data(XY, config):
-    """Separates the XY-array into array containing information about variable values (X-array) and conflict data (Y-array).
+    """Separates the XY-array into array containing information about variable values (X-array or sample data) and conflict data (Y-array or target data).
     Thereby, the X-array also contains the information about unique identifier and polygon geometry.
 
     Args:
@@ -278,23 +281,23 @@ def split_XY_data(XY, config):
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        arrays: two separate arrays, the X-array and Y-array
+        arrays: two separate arrays, the X-array and Y-array.
     """    
 
+    # convert array to dataframe for easier handling
     XY = pd.DataFrame(XY)
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
 
-    # some debugging, seems that for some reason popluation data is not added to values
-    # test_df = XY[XY.isna().any(axis=1)]
-    # test_df.drop(test_df.columns[[1]], axis = 1, inplace=True)
-    # test_df.to_csv(os.path.join(os.path.abspath(config.get('general', 'output_dir')), '_REF', 'test_df.csv'))
-
-    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: exluding polygons containing NaNs: {}'.format(X[X.isna().any(axis=1)]))
-    # X = X.dropna()
+    # fill all missing values with 0
     XY = XY.fillna(0)
 
+    # convert dataframe back to array
     XY = XY.to_numpy()
-    X = XY[:, :-1] # since conflict is the last column, we know that all previous columns must be variable values
+    
+    # get X data
+    # since conflict is the last column, we know that all previous columns must be variable values
+    X = XY[:, :-1] 
+    # get Y data and convert to integer values
     Y = XY[:, -1]
     Y = Y.astype(int)
 
@@ -306,7 +309,7 @@ def split_XY_data(XY, config):
 
 def neighboring_polys(config, extent_gdf, identifier='watprovID'):
     """For each polygon, determines its neighboring polygons.
-    As result, a n times n look-up dataframe is obtained containing, where n is number of polygons in extent_gdf.
+    As result, a (n x n) look-up dataframe is obtained containing, where n is number of polygons in extent_gdf.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.

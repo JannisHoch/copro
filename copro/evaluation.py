@@ -15,6 +15,7 @@ def init_out_dict():
 
     scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
 
+    # initialize empty dictionary with one emtpy list per score
     out_dict = {}
     for score in scores:
         out_dict[score] = list()
@@ -48,6 +49,7 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
         click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
         click.echo('... AP score {0:0.3f}'.format(metrics.average_precision_score(y_test, y_prob[:, 1])), err=True)
 
+    # compute value per evaluation metric and assign to list
     eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
                  'Recall': metrics.recall_score(y_test, y_pred),
@@ -58,13 +60,11 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
                  'AP score': metrics.average_precision_score(y_test, y_prob[:, 1]),
                 }
 
-    # out = pd.DataFrame().from_dict(eval_dict)
-    # out.to_csv(os.path.join(out_dir, 'eval_dict.csv'))
-
     return eval_dict
 
 def fill_out_dict(out_dict, eval_dict):
     """Appends the computed metric score per run to the main output dictionary.
+    All metrics are initialized in init_out_dict().
 
     Args:
         out_dict (dict): main output dictionary.
@@ -111,7 +111,7 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     Args:
         df (dataframe): output dataframe containing results of all simulations.
         global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        make_proj (bool, optional): whether or not this function is used to make a projection. If True, a couple of calculations are skipped. Defaults to 'False'.
+        make_proj (bool, optional): whether or not this function is used to make a projection. If True, a couple of calculations are skipped as no observed data is available for projections. Defaults to 'False'.
 
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
@@ -192,76 +192,25 @@ def save_out_ROC_curve(tprs, aucs, out_dir):
 
     return
 
-def calc_correlation_matrix(df, out_dir):
-    """Computes the correlation matrix for a dataframe.
+def calc_correlation_matrix(df, out_dir=None):
+    """Computes the correlation matrix for a dataframe. 
+    The dataframe should only contain numeric values.
 
     Args:
         df (dataframe): dataframe with analysed output per polygon.
+        out_dir (str):  path to output folder. If 'None', no output is stored. Default to 'None'.
 
     Returns:
         dataframe: dataframe containig correlation matrix.
     """    
 
-    # df_corr = df_corr.drop('geometry', axis=1)
+    # determine correlation matrix
     df_corr = df.corr()
     
     if (out_dir != None) and isinstance(out_dir, str):
         df_corr.to_csv(os.path.join(out_dir, 'corr_matrix.csv'))
 
     return df_corr
-
-def categorize_polys(gdf_hit, category='sub', mode='median'):
-    """Categorizes polygons depending on the computed chance of correct predictions as main category, and number of conflicts in test-dat per polygon as sub-category.
-    This can help to identify polygons where model predictions can be trust more, particularly with respect to correct predictions of conflict areas.
-    
-    Main categories are:
-    * H: chance of correct prediction higher than treshold;
-    * L: chance of correct prediction lower than treshold.
-
-    Sub-categories are:
-    * HH: high chance of correct prediction with high number of conflicts;
-    * HL: high chance of correct prediction with low number of conflicts;
-    * LH: low chance of correct prediction with high number of conflicts;
-    * LL: low chance of correct prediction with low number of conflicts.
-
-    Args:
-        gdf_hit (geo-dataframe): geo-dataframe containing model evaluation per unique polygon.
-        category (str, optional): Which categories to define, either main or sub. Defaults to 'sub'.
-        mode (str, optional): Statistical mode used to determine categorization threshold. Defaults to 'median'.
-
-    Raises:
-        ValueError: error raised if mode is neither 'median' nor 'mean'.
-
-    Returns:
-        geo-dataframe: geo-dataframe containing polygon categorization.
-    """    
-
-    if mode == 'median':
-        average_hit_median = gdf_hit.fraction_correct_predictions.median()
-        nr_confl_median = gdf_hit.nr_observed_conflicts.median()
-    elif mode == 'mean':
-        average_hit_median = gdf_hit.fraction_correct_predictions.mean()
-        nr_confl_median = gdf_hit.nr_observed_conflicts.mean()
-    else:
-        raise ValueError('specified mode not supported - use either median (default) or mean')
-
-    gdf_hit['category'] = ''
-
-    if category == 'main':
-        gdf_hit['category'].loc[gdf_hit.fraction_correct_predictions >= average_hit_median] = 'H'
-        gdf_hit['category'].loc[gdf_hit.fraction_correct_predictions < average_hit_median] = 'L'
-
-    if category == 'sub':
-        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions >= average_hit_median) & 
-                            (gdf_hit.nr_observed_conflicts >= nr_confl_median)] = 'HH'
-        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions >= average_hit_median) & 
-                            (gdf_hit.nr_observed_conflicts < nr_confl_median)] = 'HL'
-        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions < average_hit_median) & 
-                            (gdf_hit.nr_observed_conflicts >= nr_confl_median)] = 'LH'
-        gdf_hit['category'].loc[(gdf_hit.fraction_correct_predictions < average_hit_median) & 
-                            (gdf_hit.nr_observed_conflicts < nr_confl_median)] = 'LL'
-
-    return gdf_hit
 
 def get_feature_importance(clf, config, out_dir):
     """Determines relative importance of each feature (i.e. variable) used. Must be used after model/classifier is fit.
@@ -272,26 +221,37 @@ def get_feature_importance(clf, config, out_dir):
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         out_dir (str): path to output folder. If 'None', no output is stored.
 
+    Raises:
+        Warning: raised if the chosen ML model has not built-in feature importances.
+
     Returns:
         dataframe: dataframe containing feature importance.
     """ 
 
     if config.get('machine_learning', 'model') == 'RFClassifier':
+
+        # get feature importances
         arr = clf.feature_importances_
+
+        # initialize dictionary and add importance value per indicator
+        dict_out = dict()
+        for key, x in zip(config.items('data'), range(len(arr))):
+            dict_out[key[0]] = arr[x]
+        dict_out['conflict_t_min_1'] = arr[-2]
+        dict_out['conflict_t_min_1_nb'] = arr[-1]
+
+        # convert to dataframe
+        df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
+
+        # save to file if specified
+        if (out_dir != None) and isinstance(out_dir, str):
+            df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
+
     else:
-        arr = np.zeros(len(config.items('data')))
-        raise Warning('WARNING: feature importance not supported for this kind of ML model')
 
-    dict_out = dict()
-    for key, x in zip(config.items('data'), range(len(arr))):
-        dict_out[key[0]] = arr[x]
-    dict_out['conflict_t_min_1'] = arr[-2]
-    dict_out['conflict_t_min_1_nb'] = arr[-1]
+        raise Warning('WARNING: feature importance not supported for {}'.format(config.get('machine_learning', 'model')))
 
-    df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
-
-    if (out_dir != None) and isinstance(out_dir, str):
-        df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
+        df = pd.DataFrame()
 
     return df
 
