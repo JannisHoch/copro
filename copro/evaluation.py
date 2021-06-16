@@ -139,7 +139,7 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
 
     #- per polygon ID, compute average probability that conflict occurs
     df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
-    df_count['avg_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
+    df_count['probability_of_conflict'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
     df_count['max_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
 
     #- merge the two dataframes with ID as key
@@ -262,50 +262,6 @@ def categorize_polys(gdf_hit, category='sub', mode='median'):
                             (gdf_hit.nr_observed_conflicts < nr_confl_median)] = 'LL'
 
     return gdf_hit
-
-def calc_kFold_polygon_analysis(y_df, global_df, out_dir, k=10):
-    """
-    Determines the mean, median, and standard deviation of correct chance of prediction (CCP) for k parts of the overall output dataframe.
-    Instead of evaluating the overall output dataframe at once, this can give a better feeling of the variation in CCP between model repetitions.
-
-    Args:
-        y_df (dataframe): output dataframe containing results of all simulations.
-        global_df (dataframe): global look-up dataframe to associate unique identifier with geometry.
-        out_dir (str): path to output folder. If 'None', no output is stored.
-        k (int, optional): number of chunks in which y_df will be split. Defaults to 10.
-
-    Returns:
-        geodataframe: geodataframe containing mean, median, and standard deviation per polygon.
-    """    
-
-    ks = np.array_split(y_df, k)
-
-    df = pd.DataFrame()
-
-    for i in range(len(ks)):
-
-        ks_i = ks[i]
-
-        df_hit, gdf_hit = polygon_model_accuracy(ks_i, global_df, out_dir=None)
-
-        temp_df = pd.DataFrame(data=pd.concat([df_hit.fraction_correct_predictions], axis=1))
-
-        df = pd.concat([df, temp_df], axis=1)
-
-    df['mean_CCP'] = round(df.mean(axis=1),2)
-    df['median_CCP'] = round(df.median(axis=1),2)
-    df['std_CCP'] = round(df.std(axis=1), 2)
-
-    df = pd.merge(df, global_df, on='ID')
-
-    df = df.drop(columns=['fraction_correct_predictions'])
-
-    gdf = gpd.GeoDataFrame(df, geometry=df.geometry)
-
-    if (out_dir != None) and isinstance(out_dir, str):
-        gdf.to_file(os.path.join(out_dir, 'output_kFoldAnalysis_per_polygon.shp'), crs='EPSG:4326')
-
-    return gdf
 
 def get_feature_importance(clf, config, out_dir):
     """Determines relative importance of each feature (i.e. variable) used. Must be used after model/classifier is fit.
