@@ -1,9 +1,6 @@
 ===============
-Overview
-===============
-
 CoPro
-----------------
+===============
 
 Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
@@ -29,12 +26,12 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
     :target: https://joss.theoj.org/papers/1f03334e56413ff71f65092ecc609aa4
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/JannisHoch/copro/to_binder?filepath=%2Fpresentations%2FvEGU21.ipynb
+    :target: https://mybinder.org/v2/gh/JannisHoch/copro/update_docs?filepath=%2Fexample%2Fnb_binder.ipynb
 
-    Model purpose
+Model purpose
 --------------
 
-As primary model output, CoPro provides maps of conflict risk (defined as the fraction conflict predictions of all predictions).
+As primary model output, CoPro provides maps of conflict risk.
 
 To that end, it employs observed conflicts as target data together with (user-provided) socio-economic and environmental sample data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
 While the samples have the units of the data, the target value is converted to Boolean, where a 0 indicates no conflict occurrence and 1 indicates occurrence.
@@ -89,18 +86,19 @@ To run the model from command line, a command line script is provided. The usage
 
     Usage: copro_runner [OPTIONS] CFG
 
-    Main command line script to execute the model.  All settings are read from
-    cfg-file. One cfg-file is required argument to train, test, and evaluate
-    the model. Additional cfg-files can be provided as optional arguments,
-    whereby each file corresponds to one projection to be made.
+    Main command line script to execute the model. 
+    All settings are read from cfg-file.
+    One cfg-file is required argument to train, test, and evaluate the model.
+    Multiple classifiers are trained based on different train-test data combinations.
+    Additional cfg-files for multiple projections can be provided as optional arguments, whereby each file corresponds to one projection to be made.
+    Per projection, each classifiers is used to create separate projection outcomes per time step (year).
+    All outcomes are combined after each time step to obtain the common projection outcome.
 
     Args:     CFG (str): (relative) path to cfg-file
 
     Options:
-    -proj, --projection-settings PATH   path to cfg-file with settings for a projection run
-
-    -v, --verbose                       command line switch to turn on verbose mode
-    --help                              Show this message and exit.
+    -plt, --make_plots        add additional output plots
+    -v, --verbose             command line switch to turn on verbose mode
 
 This help information can be also accessed with
 
@@ -120,23 +118,18 @@ Example data
 ----------------
 
 Example data for demonstration purposes can be downloaded from `Zenodo <https://zenodo.org/record/4297295>`_.
-To facilitate this process, the bash-script ``download_example_data.sh`` can be called in the example folder.
+To facilitate this process, the bash-script ``download_example_data.sh`` can be called in the example folder under `/_scripts`.
 
 With this (or other) data, the provided configuration-files (cfg-files) can be used to perform a reference run or a projection run. 
 All output is stored in the output directory specified in the cfg-files. 
+In the output directory, two folders are created: one name `_REF` for output from the reference run, and `_PROJ` for output for projections.
 
 Jupyter notebooks
 ^^^^^^^^^^^^^^^^^^
 
 There are multiple jupyter notebooks available to guide you through the model application process step-by-step.
-They can all be run and converted to html-files by executing the provided shell-script.
 
-.. code-block:: console
-
-    $ cd path/to/copro/example
-    $ sh run_notebooks.sh
-
-It is of course also possible to execute the notebook cell-by-cell and explore the full range of possibilities.
+It is possible to execute the notebooks cell-by-cell and explore the full range of possibilities.
 Note that in this case the notebooks need to be run in the right order as some temporary files will be saved to file in one notebook and loaded in another!
 This is due to the re-initalization of the model at the beginning of each notebook and resulting deletion of all files in existing output folders.
 
@@ -147,24 +140,20 @@ Command-line
 
 While the notebooks are great for exploring, the command line script is the envisaged way to use CoPro.
 
-To only test the model for the reference situation, the cfg-file is the required argument.
-
-To make a projection, both cfg-files need to be specified with the latter requiring the -proj flag.
-If more projections are ought to be made, multiple cfg-files can be provided with the -proj flag.
+To only test the model for the reference situation and one projection, the cfg-file for the reference run is the required argument.
+This cfg-file needs to point to the cfg-file of the projection in turn.
 
 .. code-block:: console
 
     $ cd path/to/copro/example
     $ copro_runner example_settings.cfg
-    $ copro_runner example_settings.cfg -proj example_settings_proj.cfg
 
 Alternatively, the same commands can be executed using a bash-file.
 
 .. code-block:: console
 
-    $ cd path/to/copro/example
-    $ sh run_script_reference.sh
-    $ sh run_script_projections.sh
+    $ cd path/to/copro/example/_scripts
+    $ sh run_command_line_script.sh
 
 Validation
 ^^^^^^^^^^^^^^^^^^
@@ -175,7 +164,7 @@ The selected classifier is trained and validated against this data.
 Main validation metrics are the ROC-AUC score as well as accuracy, precision, and recall. 
 All metrics are reported and written to file per model evaluation.
 
-With the example data downloadable from `Zenodo <https://zenodo.org/record/4297295>`_, a ROC-AUC score of 0.82 can be obtained. 
+With the example data downloadable from `Zenodo <https://zenodo.org/record/4297295>`_, a ROC-AUC score of above 0.8 can be obtained. 
 Note that with additional and more explanatory sample data, the score will most likely increase.
 
 .. figure:: docs/_static/roc_curve.png

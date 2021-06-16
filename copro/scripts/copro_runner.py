@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 
 @click.command()
 @click.argument('cfg', type=click.Path())
-@click.option('--make_plots', '-plt', help='add additional output plots')
+@click.option('--make_plots', '-plt', help='add additional output plots', type=bool)
 @click.option('--verbose', '-v', help='command line switch to turn on verbose mode', is_flag=True)
 
 def cli(cfg, make_plots=True, verbose=False):   
@@ -44,7 +44,7 @@ def cli(cfg, make_plots=True, verbose=False):
     click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting conflicts and getting area-of-interest and aggregation level
-    conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
+    conflict_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
 
     #- plot selected polygons and conflicts
     if make_plots:
@@ -124,16 +124,6 @@ def cli(cfg, make_plots=True, verbose=False):
 
     df_feat_imp = copro.evaluation.get_feature_importance(clf, config_REF, out_dir_REF) 
     df_perm_imp = copro.evaluation.get_permutation_importance(clf, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
-
-    from sklearn.linear_model import LinearRegression
-    reg = LinearRegression().fit(scaler.fit_transform(X[:,2:]), Y)
-    pd.DataFrame(reg.coef_, columns=['linReg_coefs'], index=df_feat_imp.index.values).to_csv(os.path.join(out_dir_REF, 'linReg_coefs.csv'))
-
-    #- plot relative importance of each feature based on ALL data points
-    if make_plots:
-        fig, ax = plt.subplots(1, 1)
-        copro.plots.factor_importance(clf, config_REF, out_dir=out_dir_REF, ax=ax, figsize=(20, 10))
-        plt.savefig(os.path.join(out_dir_REF, 'feature_importances.png'), dpi=300, bbox_inches='tight')
 
     click.echo(click.style('\nINFO: reference run succesfully finished\n', fg='cyan'))
 

@@ -1,7 +1,6 @@
 import pandas as pd
 import geopandas as gpd
-import numpy as np
-import os, sys
+import os
 from copro import utils
 
 def filter_conflict_properties(gdf, config):
@@ -15,7 +14,7 @@ def filter_conflict_properties(gdf, config):
         geo-dataframe: geo-dataframe containing filtered entries.
     """    
     
-    # create dictinoary with all selection criteria
+    # create dictionary with all selection criteria
     selection_criteria = {'best': config.getint('conflict', 'min_nr_casualties'),
                           'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(',')}
     
@@ -107,7 +106,6 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
     Returns:
         geo-dataframe: conflict data clipped to climate zones.
         geo-dataframe: polygons of study area clipped to climate zones.
-        dataframe: global look-up dataframe linking polygon ID with geometry information.
     """
 
     # load file with extents of climate zones
@@ -144,15 +142,12 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
         if config.getboolean('general', 'verbose'): print('DEBUG: clipping polygons to climate zones {}'.format(look_up_classes))
         polygon_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
 
-    # if not, nothing needs to be done besides aligning variable names
+    # if not, nothing needs to be done besides aligning names
     else:
 
         polygon_gdf = extent_gdf.copy()
 
-    # get a dataframe containing the ID and geometry of all polygons after selecting for climate zones
-    global_df = utils.global_ID_geom_info(polygon_gdf)
-
-    return gdf, polygon_gdf, global_df
+    return gdf, polygon_gdf
 
 def select(config, out_dir, root_dir):
     """Main function performing the selection procedure.
@@ -183,11 +178,14 @@ def select(config, out_dir, root_dir):
     gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
 
     # clip conflicts and polygons to specified climate zones
-    gdf, polygon_gdf, global_df = climate_zoning(gdf, extent_gdf, config, root_dir)
+    gdf, polygon_gdf = climate_zoning(gdf, extent_gdf, config, root_dir)
+
+    # get a dataframe containing the ID and geometry of all polygons after selecting for climate zones
+    global_df = utils.global_ID_geom_info(polygon_gdf)
 
     # save conflict data and polygon to shp-file
-    # TODO: save as csv rather than shp
+    # TODO: save as geoJSON rather than shp
     gdf.to_file(os.path.join(out_dir, 'selected_conflicts.shp'), crs='EPSG:4326')
     polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.shp'), crs='EPSG:4326')
 
-    return gdf, extent_gdf, polygon_gdf, global_df
+    return gdf, polygon_gdf, global_df

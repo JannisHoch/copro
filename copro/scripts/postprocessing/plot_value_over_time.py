@@ -8,14 +8,26 @@ import os
 
 @click.command()
 @click.option('-id', '--polygon-id', multiple=True, type=str)
+@click.option('-s', '--statistics', help='which statistical method to use (mean, max, min, std). note: has only effect if with "-id all"!', default='mean', type=str)
 @click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
 @click.option('-t', '--title', help='title for plot and file_object name', type=str)
 @click.option('--verbose/--no-verbose', help='verbose on/off', default=False)
 @click.argument('input-dir', type=click.Path())
 @click.argument('output-dir', type=click.Path())
 
-def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=None, verbose=None):
+def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=None, output_dir=None, verbose=None):
     """Quick and dirty function to plot the develoment of a column in the outputted geojson-files over time.
+    The script uses all geoJSON-files located in input-dir and retrieves values from them.
+    Possible to plot obtain development for multiple polygons (indicated via their ID) or entire study area.
+    If the latter, then different statistics can be chosen (mean, max, min, std).
+
+    Args:
+        input-dir (str): path to input directory with geoJSON-files located per projection year.
+        output-dir (str): path to directory where output will be stored.
+
+    Output:
+        a csv-file containing values per time step.
+        a png-file showing development over time.
     """
 
     click.echo('\nPLOTTING VARIABLE DEVELOPMENT OVER TIME')
@@ -30,6 +42,9 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
     if polygon_id[0] == 'all':
         click.echo('INFO: selected entire study area')
         polygon_id = 'all'
+        click.echo('INFO: selected statistcal method is {}'.format(statistics))
+        # create a suffix to be used for output files
+        suffix = '_all_{}'.format(statistics)
 
     # absolute path to input_dir
     input_dir = os.path.abspath(input_dir)
@@ -87,11 +102,13 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
 
         else:
             # compute mean value over column
-            vals = df[column].mean()
+            if statistics == 'mean': vals = df[column].mean()
+            if statistics == 'max': vals = df[column].max()
+            if statistics == 'min': vals = df[column].min()
+            if statistics == 'std': vals = df[column].std()
             # append this value to list in dict
             idx_list = out_dict[polygon_id]
             idx_list.append(vals)
-
 
     # create a dataframe from dict and assign year-values as index
     df = pd.DataFrame().from_dict(out_dict)
@@ -108,8 +125,8 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
         click.echo('INFO: saving to file {}'.format(os.path.abspath(os.path.join(output_dir, '{}_dev_IDs.csv'.format(column)))))
         df.to_csv(os.path.abspath(os.path.join(output_dir, '{}_dev_IDs.csv'.format(column))))
     else:
-        click.echo('INFO: saving to file {}'.format(os.path.abspath(os.path.join(output_dir, '{}_dev_all.csv'.format(column)))))
-        df.to_csv(os.path.abspath(os.path.join(output_dir, '{}_dev_all.csv'.format(column))))
+        click.echo('INFO: saving to file {}'.format(os.path.abspath(os.path.join(output_dir, '{}_dev_{}.csv'.format(column, suffix)))))
+        df.to_csv(os.path.abspath(os.path.join(output_dir, '{}_dev_{}.csv'.format(column, suffix))))
 
     # create a simple plot and save to file
     # if IDs are specified, with one subplot per ID
@@ -130,7 +147,7 @@ def main(input_dir=None, polygon_id=None, column=None, title=None, output_dir=No
         ax.set_yticks(np.arange(0, 1.1, 1))
         if title != None:
             ax.set_title(str(title))
-        plt.savefig(os.path.abspath(os.path.join(output_dir, '{}_dev_all.png'.format(column))), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.abspath(os.path.join(output_dir, '{}_dev_{}.png'.format(column, suffix))), dpi=300, bbox_inches='tight')
 
 if __name__ == '__main__':
 

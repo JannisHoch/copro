@@ -19,7 +19,17 @@ import os, sys
 @click.argument('selected_polygons', type=click.Path())
 
 def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=None, end_year=None, geojson=None, png=None, column=None, verbose=None):
-    """Post-processing script to calculate average model output over a user-specifeid period or all output geojson-files.
+    """Post-processing script to calculate average model output over a user-specifeid period or all output geoJSON-files stored in input-dir.
+    Computed average values can be outputted as geoJSON-file or png-file or both.
+
+    Args:
+        input_dir: path to input directory with geoJSON-files located per projection year.
+        output_dir (str): path to directory where output will be stored.
+        selected_polygons (str): path to a shp-file with all polygons used in a CoPro run.
+
+    Output:
+        geoJSON-file with average column value per polygon (if geojson is set).
+        png-file with plot of average column value per polygon (if png is set)
     """    
 
     # check if start/end time settings are consistent

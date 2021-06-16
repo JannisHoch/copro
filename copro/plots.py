@@ -85,37 +85,6 @@ def correlation_matrix(df, **kwargs):
     
     return ax
 
-def polygon_categorization(gdf, category='sub', method='median', **kwargs):
-    """Plots the categorization of polygons based on chance of correct prediction and number of conflicts.
-
-    Main categories are:
-        * H: chance of correct prediction higher than treshold;
-        * L: chance of correct prediction lower than treshold.
-
-    Sub-categories are:
-        * HH: high chance of correct prediction with high number of conflicts;
-        * HL: high chance of correct prediction with low number of conflicts;
-        * LH: low chance of correct prediction with high number of conflicts;
-        * LL: low chance of correct prediction with low number of conflicts.
-
-    Args:
-        gdf (geo-dataframe): containing model evaluation per unique polygon.
-        out_dir (str): path to output folder
-        method (str, optional): Statistical method used to determine categorization threshold. Defaults to 'median'.
-
-    Kwargs:
-        Matplotlib-supported keyword arguments.
-
-    Returns:
-        ax: Matplotlib axis object.        
-    """    
-
-    gdf = evaluation.categorize_polys(gdf, category, method)
-
-    ax = gdf.plot(column='category', **kwargs)
-
-    return ax
-
 def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwargs):
     """Plots the ROC-curve per model simulation to a pre-initiated matplotlib-instance.
 
@@ -168,22 +137,4 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
     ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05], **kwargs)
 
     ax.legend(loc="lower right")
-
-def factor_importance(df, out_dir=None, **kwargs):
-    """Plots the relative importance of each factor as bar plot. Note, this works only for RFClassifier as ML-model!
-
-    Args:
-        df (dataframe): dataframe containing feature importances determined with evaluation.get_feature_importance(). 
-        out_dir (str, optional): path to output folder. If None, output is not saved. Defaults to None.
-
-    Kwargs:
-        Matplotlib-supported keyword arguments.
-
-    Returns:
-        ax: Matplotlib axis object.
-    """    
-
-    ax = df.plot.bar(**kwargs)
-
-    return ax
     

@@ -10,6 +10,8 @@ As model input data, the data set downloadable from `Zenodo <https://zenodo.org/
 
 Even though the model can be perfectly executed using notebooks, the main (and more convenient) way of model execution is the command line script (see :ref:`script`).
 
+An interactive version of the content shown here can be accessed via `Binder <https://mybinder.org/v2/gh/JannisHoch/copro/update_docs?filepath=%2Fexample%2Fnb_binder.ipynb>`_.
+
 .. toctree::
     :maxdepth: 1
     :numbered:
