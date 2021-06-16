@@ -7,12 +7,13 @@ from setuptools import setup, find_packages
 requirements = ['Click>=7.0', 
                 'xarray==0.15.1',
                 'pandas==1.0.3',
-                'rasterio==1.1.0',
+                'rasterio>=1.1.0',
                 'rioxarray>=0.0.26',
-                'rasterstats==0.14',
-                'geopandas==0.8.0',
+                'rasterstats>=0.14',
+                'geopandas>=0.8.0',
                 'numpy==1.18.1',
-                'scikit-learn>=0.22.1',]
+                'scikit-learn>=0.22.1',
+                'seaborn>=0.11']
 
 setup_requirements = ['pytest-runner', ]
 
@@ -25,7 +26,7 @@ setup(
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: MIT',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
@@ -33,18 +34,22 @@ setup(
         'Programming Language :: Python :: 3.8',
     ],
     description="modelling interplay between conflict and climate",
-    entry_points={},
+    entry_points={
+        'console_scripts': [
+            'copro_runner=copro.scripts.copro_runner:cli',
+        ],
+    },
     install_requires=requirements,
     license="MIT",
-    long_description='blablabla',
+    long_description='Python-model build on scikit-learn functions, designed to facilitate the set-up, execution, and evaluation of machine-learning models for the study of the climate-conflict nexus',
     include_package_data=True,
     keywords='conflict, climate, machine learning, projections',
     name='copro',
-    packages=find_packages(include=['copro', 'copro.*']),
+    packages=find_packages(exclude=['docs', 'tests', 'joss']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/JannisHoch/copro',
-    version='0.0.6',
+    version='0.0.8',
     zip_safe=False,
 )

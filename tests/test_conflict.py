@@ -42,11 +42,3 @@ def test_get_poly_geometry():
 
     assert len(gdf) == len(list_geometry)
 
-def test_get_poly_ID():
-
-    gdf = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-
-    list_ID = conflict.get_poly_ID(gdf)
-
-    assert len(gdf) == len(list_ID)
-

@@ -15,5 +15,5 @@ The various models
 
 .. note::
 
-    The 'leave_one_out' and 'single_variables' models are only tested in beta-state. 
+    The 'leave_one_out', 'single_variables', and 'dubbelsteen' models are only tested in beta-state. 
     They will most likely be deprecated in near future.

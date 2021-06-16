@@ -7,62 +7,55 @@ To be able to run the model, the conda environment has to be activated first.
 
     $ conda activate copro
 
-Example notebook
------------------
-
-There are jupyter notebooks available to guide you through the model application process (also see :ref:`workflow`).
-They can all be run and converted to htmls by executing the provided shell-script.
-
-.. code-block:: console
-
-    $ cd path/to/copro/example
-    $ sh run.sh
-
-It is of course also possible to execute the notebook cell by cell using jupyter notebook. 
-The notebooks should give a fairly good impression how the model can be executed function-by-function and what functionality these functions have.
-
 .. _script:
 
 Runner script
 ----------------
 
-To run the model from command line, a command line script is provided. 
-The number of inline arguments differs whether only a reference run or also one or more projections runs are executed.
-
-By default, output is stored to the output directory specified in the individual configurations-file (cfg-file). 
-
-Reference run
-^^^^^^^^^^^^^^^^
-All data and settings are retrieved from the cfg-file (see :ref:`settings`).
-Based on these settings, data is sampled and the model is trained, tested, and evaluted.
-The output is then stored to the output directory.
+To run the model, a command line script is provided. The usage of the script is as follows:
 
 .. code-block:: console
 
-    $ cd path/to/copro/scripts
-    $ python runner.py ../example/example_settings.cfg
+    Usage: copro_runner [OPTIONS] CFG
 
-Projection runs
-^^^^^^^^^^^^^^^^
-If also projections are computed, multiple additional cfg-files can be provided.
-For each projection, one individual cfg-file is required.
+    Main command line script to execute the model. 
+    All settings are read from cfg-file.
+    One cfg-file is required argument to train, test, and evaluate the model.
+    Multiple classifiers are trained based on different train-test data combinations.
+    Additional cfg-files for multiple projections can be provided as optional arguments, whereby each file corresponds to one projection to be made.
+    Per projection, each classifiers is used to create separate projection outcomes per time step (year).
+    All outcomes are combined after each time step to obtain the common projection outcome.
 
-Since the projections are based on the reference run, at least two cfg-file are needed.
-The command would then look like this:
+    Args:     CFG (str): (relative) path to cfg-file
 
-.. code-block:: console
+    Options:
+    -plt, --make_plots        add additional output plots
+    -v, --verbose             command line switch to turn on verbose mode
 
-    $ cd path/to/copro/scripts
-    $ python runner.py ../example/example_settings.cfg -proj ../example/example_settings_proj.cfg
-
-.. info::
-
-    Multiple projections can be made by specifing various cfg-files with the -proj flag.
-
-Help
-^^^^^^^^^^^^^^^^
-For further help how to use the script, try this:
+Help information can be accessed with
 
 .. code-block:: console
 
-    $ python runner.py --help
+    $ copro_runner --help
+
+All data and settings are retrieved from the configuration-file (``cfg-file``, see :ref:`Settings` ) which needs to be provided as command line argument.
+In the cfg-file, the various settings of the simulation are defined.
+
+A typical command would thus look like this:
+
+.. code-block:: console
+
+    $ copro_runner settings.cfg
+
+In case issues occur, updating ``setuptools`` may be required.
+
+.. code-block:: console
+
+    $ pip3 install --upgrade pip setuptools
+
+Binder
+--------
+
+There is also a notebook running on `Binder <https://mybinder.org/v2/gh/JannisHoch/copro/dev?filepath=%2Fexample%2Fnb_binder.ipynb>`_. 
+
+Please check it out to go through the model execution step-by-step and interactively explore the functionalities of CoPro.

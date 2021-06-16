@@ -1,101 +1,100 @@
 Output
 =========================
 
-The model can produce a range of output files. Output is stored in the output folder as specified in the configurations-file (cfg-file).
+Output folder structure
+---------------------------
 
-.. note:: 
+All output is stored in the output folder as specified in the configurations-file (cfg-file) under [general].
 
-    In addition to these output files, the model settings file (cfg-file) is automatically copied to the output folder.
+.. code-block:: console
+
+    [general]
+    output_dir=./path/to/store/output
+
+By default, CoPro creates two sub-folders: ``_REF`` and ``_PROJ``. In the latter, another sub-folder will be created per projection defined in the cfg-file.
+In the example below, this would be the folders ``/_PROJ/SSP1`` and ``/_PROJ/SSP2``.
+
+.. code-block:: console
+
+    [PROJ_files]    
+    SSP1=/path/to/ssp1.cfg
+    SSP2=/path/to/ssp2.cfg
+
+List of output files
+---------------------------
 
 .. important:: 
 
     Not all model types provide the output mentioned below. If the 'leave-one-out' or 'single variable' model are selected, only the metrics are stored to a csv-file.
 
-.. important::
+_REF
+^^^^^^
 
-    Most of the output can only be produced when running a reference model, i.e. when comparing the predictions against observations. 
-    If running a prediction model, only the chance of conflict per polygon is stored to file.
+In addition to the output files listed below, the cfg-file is automatically copied to the _REF folder.
 
-Selected polygons
-------------------
-A shp-file named ``selected_polygons.shp`` contains all polygons after performing the selection procedure.
+``selected_polygons.shp``: Shapefile containing all remaining polygons after selection procedure.
 
-Selected conflicts
--------------------
-The shp-file ``selected_conflicts.shp`` contains all conflict data points after performing the selection procedure.
+``selected_conflicts.shp``: Shapefile containing all remaining conflict points after selection procedure,
 
-Sampled variable and conflict data
------------------------------------
-During model execution, data is sampled per polygon and time step. 
-This data contains the geometry and ID of each polygon as well as unscaled variable values (X) and a boolean identifier whether conflict took place or not (Y).
-If the model is re-run without making changes to the data and how it is sampled, the resulting XY-array is stored to ``XY.npy``. This file can be loaded again with ``np.load()``.
+``XY.npy``: NumPy-array containing geometry, ID, and scaled data of sample (X) and target data (Y). 
+Can be provided in cfg-file to safe time in next run; file can be loaded with numpy.load().
 
-If making projections, the Y-part is not available. The remaining X-data is still written to a file ``X.npy``.
+``raw_output_data.npy``: NumPy-array containing each single prediction made in the reference run.
+Will contain multiple predictions per polygon. File can be loaded with numpy.load().
 
-.. note:: 
+``evaluation_metrics.csv``: Various evaluation metrics determined per repetition of the split-sample tests.
+File can e.g. be loaded with pandas.read_csv().
 
-    Note that ``np.load()`` returns an array. This can be further processed with e.g. pandas.
+``feature_importance.csv``: Importance of each model variable in making projections.
+This is a property of RF Classifiers and thus only obtainable if RF Classifier is used.
 
-ML classifier
---------------
-At the end of a reference run, the chosen classifier is fitted with all available XY-data.
-To be able to re-use the classifier (e.g. to make predictions), it is pickled to ``clf.pkl``.
+``permutation_importance.csv``: Mean permutation importance per model variable.
+Computed with sklearn.inspection.permutation_importance_.
 
-All predictions
-------------------
-Per model run, a fraction of the total XY-data is used to make a prediction. 
-To be able to analyse model output, all predictions (stored as pandas dataframes) made per run are appended to a main output-dataframe.
-This dataframe is, actually, the basis of all futher analyes.
-When storing to file, this can become a rather large file. 
-Therefore, the dataframe is converted to npy-file (``raw_output_data.npy``). This file can be loaded again with ``np.load()``.
+``ROC_data_tprs.csv`` and ``ROC_data_aucs.csv``: False-positive rates respectively Area-under-curve values per repetition of the split-sample test.
+Files can e.g. be loaded with pandas.read_csv() and can be used to later plot ROC-curve.
 
-.. note:: 
+``output_for_REF.geojson``: GeoJSON-file containing resulting conflict risk estimates per polygon based on out-of-sample projections of _REF run.
 
-    Note that ``np.load()`` returns an array. This can be further processed with e.g. pandas.
+.. _sklearn.inspection.permutation_importance: https://scikit-learn.org/stable/modules/generated/sklearn.inspection.permutation_importance.html
 
-Evaluation metrics
------------------------
-Per model run, a range of metrics are computed to evalute the predictions made. 
-They are all appended to a dictionary and saved to the file ``evaluation_metrics.csv``.
+Conflict risk per polygon
+""""""""""""""""""""""""""
 
-ROC-AUC
---------
-To be able to determine the mean of the ROC-AUC score plus its standard deviation, the required data is stored to csv-files.
-``ROC_data_tprs.csv`` contains the false positive rates per evaluation, and ``ROC_data_aucs.csv`` the area-under-curve values per run. 
+At the end of all model repetitions, the resulting ``raw_output_data.npy`` file contains multiple out-of-sample predictions per polygon.
+By aggregating results per polygon, it is possible to assess model output spatially as stored in ``output_for_REF.geojson``. 
 
-Model prediction per polygon
----------------------------
-At the end of all model repetitions, the resulting output dataframe contains multiple predictions for each polygon.
-By aggregating results per polygon, it is possible to assess model output spatially. 
+The main output metrics are calculated per polygon and saved to ``output_per_polygon.shp``:
 
-Three main output metrics are calculated per polygon:
+1. nr_predictions: the number of predictions made;
+2. nr_correct_predictions: the number of correct predictions made;
+3. nr_observed_conflicts: the number of observed conflict events;
+4. nr_predicted_conflicts: the number of predicted conflicts;
+5. min_prob_1: minimum probability of conflict in all repetitions;
+6. probability_of_conflict (POC): probability of conflict averaged over all repetitions;
+7. max_prob_1: maximum probability of conflict in all repetitions;
+8. fraction_correct_predictions (FOP): ratio of the number of correct predictions over the total number of predictions made;
+9. chance_of_conflict: ratio of the number of conflict predictions over the total number of predictions made.
 
-1. The chance of a correct (*CCP*), defined as the ratio of number of correct predictions made to overall number of predictions made;
-2. The total number of conflicts in the test  (*NOC*);
-3. The chance of conflict (*COC*), defined as the ration of number of conflict predictions to overall number of predictions made.
+_PROJ
+^^^^^^
 
-all data
-^^^^^^^^^
+Per projection, CoPro creates one output file per projection year.
 
-All output metrics (CCP, NOC, COC) are determined based on the entire data set at the end of the run, i.e. without splitting it in chunks.
+``output_in_<YEAR>``: GeoJSON-file containing model output per polygon averaged over all classifier instances per YEAR of the projection.
+The number of instances is set with ``n_runs`` in ``[machine_learning]`` section.
 
-The data is stored to ``output_per_polygon.shp``.
+Conflict risk per polygon
+""""""""""""""""""""""""""
 
-k-fold analysis
-^^^^^^^^^^^^^^^^
-The model is repeated several times to eliminate the influence of how the data is split into training and test samples.
-As such, the accuracy per run and polygon will differ.
+During the projection run, each classifier instances produces its own output per YEAR.
+CoPro merges these outputs into one ``output_in_<YEAR>.geojson`` file. 
 
-To account for that, the resulting data set containing all predictions at the end of the run is split in k chunks. 
-Subsequently, the mean, median, and standard deviation of CCP is determined from the k chunks.
+As there are no observations available for the projection period, the output metrics differ from the reference run:
 
-The resulting shp-file is named ``output_kFoldAnalysis_per_polygon.shp``.
-
-.. note::
-
-    In addition to these shp-file, various plots can be stored by using the provided plots-functions. The plots aer stored in the output directory too.
-    Note that the plot settings cannot yet be fully controlled via those functions, i.e. it is more anticipated for debugging.
-    To create custom-made plots, rather use the shp-files and csv-file.
-
-
-
+1. nr_predictions: the number of predictions made, ie. number of classifier instances;
+2. nr_predicted_conflicts: the number of predicted conflicts.
+3. min_prob_1: minimum probability of conflict in all outputs of classifier instances.
+4. probability_of_conflict (POC): probability of conflict averaged over all outputs of classifier instances.
+5. max_prob_1: maximum probability of conflict in all outputs of classifier instances;
+6. chance_of_conflict: ratio of the number of conflict predictions over the total number of predictions made.

@@ -2,7 +2,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import geopandas as gpd
-import seaborn as sbs
+import seaborn as sns
+sns.set_palette('colorblind')
 import numpy as np
 import os, sys
 from sklearn import metrics
@@ -42,7 +43,7 @@ def selected_conflicts(conflict_gdf, **kwargs):
 
     return ax
 
-def metrics_distribution(out_dict, **kwargs):
+def metrics_distribution(out_dict, metrics, **kwargs):
     """Plots the value distribution of a range of evaluation metrics based on all model simulations.
 
     Args:
@@ -57,9 +58,10 @@ def metrics_distribution(out_dict, **kwargs):
 
     fig, ax = plt.subplots(1, 1, **kwargs)
 
-    sbs.histplot(out_dict['Accuracy'], ax=ax, color="k", label='Accuracy')
-    sbs.histplot(out_dict['Precision'], ax=ax, color="r", label='Precision')
-    sbs.histplot(out_dict['Recall'], ax=ax, color="b", label='Recall')
+    for metric, color in zip(metrics, sns.color_palette('colorblind')):
+
+        sns.histplot(out_dict[str(metric)], ax=ax, kde=True, stat='density', color=color, label=str(metric))
+
     plt.legend()
 
     return ax
@@ -79,39 +81,8 @@ def correlation_matrix(df, **kwargs):
 
     df_corr = evaluation.calc_correlation_matrix(df)
 
-    ax = sbs.heatmap(df_corr, **kwargs)
+    ax = sns.heatmap(df_corr, **kwargs)
     
-    return ax
-
-def polygon_categorization(gdf, category='sub', method='median', **kwargs):
-    """Plots the categorization of polygons based on chance of correct prediction and number of conflicts.
-
-    Main categories are:
-        * H: chance of correct prediction higher than treshold;
-        * L: chance of correct prediction lower than treshold.
-
-    Sub-categories are:
-        * HH: high chance of correct prediction with high number of conflicts;
-        * HL: high chance of correct prediction with low number of conflicts;
-        * LH: low chance of correct prediction with high number of conflicts;
-        * LL: low chance of correct prediction with low number of conflicts.
-
-    Args:
-        gdf (geo-dataframe): containing model evaluation per unique polygon.
-        out_dir (str): path to output folder
-        method (str, optional): Statistical method used to determine categorization threshold. Defaults to 'median'.
-
-    Kwargs:
-        Matplotlib-supported keyword arguments.
-
-    Returns:
-        ax: Matplotlib axis object.        
-    """    
-
-    gdf = evaluation.categorize_polys(gdf, category, method)
-
-    ax = gdf.plot(column='category', **kwargs)
-
     return ax
 
 def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwargs):
@@ -166,25 +137,4 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
     ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05], **kwargs)
 
     ax.legend(loc="lower right")
-
-def factor_importance(clf, config, out_dir=None, **kwargs):
-    """Plots the relative importance of each factor as bar plot. Note, this works only for RFClassifier as ML-model!
-
-    Args:
-        clf (classifier): sklearn-classifier used in the simulation.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        out_dir (str): path to output folder. If None, output is not saved.
-
-    Kwargs:
-        Matplotlib-supported keyword arguments.
-
-    Returns:
-        ax: Matplotlib axis object.
-    """    
-
-    df = evaluation.get_feature_importance(clf, config, out_dir)
-
-    ax = df.plot.bar(**kwargs)
-
-    return ax
     
