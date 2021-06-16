@@ -20,6 +20,8 @@ import os, sys
 
 def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=None, end_year=None, geojson=None, png=None, column=None, verbose=None):
     """Post-processing script to calculate average model output over a user-specifeid period or all output geojson-files.
+    
+    
     """    
 
     # check if start/end time settings are consistent
