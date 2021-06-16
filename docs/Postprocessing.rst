@@ -42,7 +42,7 @@ avg_over_time.py
 
 .. code-block:: console
 
-    Usage: avg_over_time.py [OPTIONS] INPUT_DIR OUTPUT_DIR SELECTED_POLYGONS
+    Usage: python avg_over_time.py [OPTIONS] INPUT_DIR OUTPUT_DIR SELECTED_POLYGONS
 
         Post-processing script to calculate average model output over a user-
         specifeid period or all output geoJSON-files stored in input-dir.
@@ -64,3 +64,11 @@ avg_over_time.py
             --geojson / --no-geojson   save output to geojson or not
             --png / --no-png           save output to png or not
             --verbose / --no-verbose   verbose on/off
+
+:command:`whaat is tisss` 
+
+plot_polygon_vals.py
+-----------------------
+
+geojson2gif.py
+---------------
