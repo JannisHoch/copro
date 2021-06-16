@@ -162,26 +162,6 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def determine_projection_period(config_REF, config_PROJ):
-    """Determines the period for which projections need to be made. 
-    This is defined as the period between the end year of the reference run and the specified projection year for each projection.
-
-    Args:
-        config_REF (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
-        config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run..
-
-    Returns:
-        list: list containing all years of the projection period.
-    """    
-
-    # get all years of projection period
-    projection_period = np.arange(config_REF.getint('settings', 'y_end')+1, config_PROJ.getint('settings', 'y_proj')+1, 1)
-    # convert to list
-    projection_period = projection_period.tolist()
-    print('INFO: the projection period is {} to {}'.format(projection_period[0], projection_period[-1]))
-
-    return projection_period
-
 def predictive(X, clf, scaler, config):
     """Predictive model to use the already fitted classifier to make annual projections for the projection period.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.

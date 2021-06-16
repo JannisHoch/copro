@@ -12,6 +12,7 @@ Auxiliary functions
    utils.show_versions
    utils.parse_settings
    utils.parse_projection_settings
+   utils.determine_projection_period
    utils.make_output_dir
    utils.download_UCDP
    utils.initiate_setup
