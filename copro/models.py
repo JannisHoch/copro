@@ -5,10 +5,11 @@ import pickle
 import os, sys
 
 def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
-    """Main model workflow when all data is used. The model workflow is executed for each model simulation.
+    """Main model workflow when all XY-data is used. 
+    The model workflow is executed for each classifier.
 
     Args:
-        X (array): array containing the variable values plus unique identifer and geometry information.
+        X (array): array containing the variable values plus IDs and geometry information.
         Y (array): array containing merely the binary conflict classifier data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaling method instance.
@@ -22,22 +23,28 @@ def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
     """    
     if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
 
+    # split X into training-set and test-set, scale training-set data
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
     
+    # convert to dataframe
+    X_df = pd.DataFrame(X_test)
+
+    # fit classifier and make prediction with test-set
     y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr)
     y_prob_0 = y_prob[:, 0] # probability to predict 0
     y_prob_1 = y_prob[:, 1] # probability to predict 1
 
+    # evaluate prediction and save to dict
     eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
 
+    # aggregate predictions per polygon
     y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
-
-    X_df = pd.DataFrame(X_test)
 
     return X_df, y_df, eval_dict
 
 def leave_one_out(X, Y, config, scaler, clf, out_dir):
-    """Model workflow when each variable is left out from analysis once. Output is limited to the metric scores. 
+    """Model workflow when each variable is left out from analysis once. 
+    Output is limited to the metric scores. 
     Output is stored to sub-folders of the output directory, with each sub-folder containing output for a n-1 variable combination.
     After computing metric scores per prediction (i.e. n-1 variables combinations), model exit is forced.
     Not tested yet for more than one simulation!
@@ -78,7 +85,8 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
     sys.exit('INFO: leave-one-out model execution stops here.')
 
 def single_variables(X, Y, config, scaler, clf, out_dir):
-    """Model workflow when the model is based on only one single variable. Output is limited to the metric scores. 
+    """Model workflow when the model is based on only one single variable. 
+    Output is limited to the metric scores. 
     Output is stored to sub-folders of the output directory, with each sub-folder containing output for a 1 variable combination.
     After computing metric scores per prediction (i.e. per variable), model exit is forced.
     Not tested yet for more than one simulation!
@@ -154,14 +162,13 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     return X_df, y_df, eval_dict
 
-def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
+def determine_projection_period(config_REF, config_PROJ):
     """Determines the period for which projections need to be made. 
     This is defined as the period between the end year of the reference run and the specified projection year for each projection.
 
     Args:
         config_REF (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
         config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run..
-        out_dir_PROJ (str): path to output folder of a projection run.
 
     Returns:
         list: list containing all years of the projection period.
@@ -176,7 +183,7 @@ def determine_projection_period(config_REF, config_PROJ, out_dir_PROJ):
     return projection_period
 
 def predictive(X, clf, scaler, config):
-    """Predictive model to use the already fitted classifier to make projections.
+    """Predictive model to use the already fitted classifier to make annual projections for the projection period.
     As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
 
     Args:

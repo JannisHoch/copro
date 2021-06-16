@@ -44,7 +44,7 @@ def cli(cfg, make_plots=True, verbose=False):
     click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting conflicts and getting area-of-interest and aggregation level
-    conflict_gdf, extent_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
+    conflict_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
 
     #- plot selected polygons and conflicts
     if make_plots:

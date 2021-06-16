@@ -1,6 +1,5 @@
 import os
 import pickle
-import glob
 import pandas as pd
 import numpy as np
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
@@ -61,7 +60,7 @@ def define_model(config):
     return clf
 
 def split_scale_train_test_split(X, Y, config, scaler):
-    """Splits and transforms the X-array and Y-array in test-data and training-data.
+    """Splits and transforms the X-array (or sample data) and Y-array (or target data) in test-data and training-data.
     The fraction of data used to split the data is specified in the configuration file.
     Additionally, the unique identifier and geometry of each data point in both test-data and training-data is retrieved in separate arrays.
 
@@ -72,39 +71,35 @@ def split_scale_train_test_split(X, Y, config, scaler):
         scaler (scaler): the specified scaling method instance.
 
     Returns:
-        arrays: arrays containing training-data and test-data as well as IDs and geometry for training-data and test-data.
+        arrays: arrays containing training-set and test-set for X-data and Y-data as well as IDs and geometry.
     """ 
 
-    ##- separate arrays for ID, geometry, and sample values per polygon
+    ##- separate arrays for ID, geometry, and variable values
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     ##- scaling only the variable values
+    if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     X_ft = scaler.fit_transform(X_data)
 
     ##- combining ID, geometry and scaled sample values per polygon
     X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
+    ##- splitting in train and test samples based on user-specified fraction
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
-    ##- splitting in train and test samples
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
                                                                         Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
 
+    # for training-set and test-set, split in ID, geometry, and values
     X_train_ID, X_train_geom, X_train = conflict.split_conflict_geom_data(X_train)
     X_test_ID, X_test_geom, X_test = conflict.split_conflict_geom_data(X_test)
-
-    assert (len(X_test_ID) == len(X_test)), AssertionError('ERROR: lenght X_test_ID does not match lenght X_test - {} vs {}'.format(len(X_test_ID), len(X_test)))
-
-    assert (len(X_test_geom) == len(X_test)), AssertionError('ERROR: lenght X_test_geom does not match lenght X_test - {} vs {}'.format(len(X_test_geom), len(X_test)))
 
     return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
 def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
     """Fits classifier based on training-data and makes predictions.
-    Per run_nr, different X_train and y_train data is employed.
-    The fitted classifier is dumped to file with pickle.
-    Additionally, the prediction probability is determined.
+    The fitted classifier is dumped to file with pickle to be used again during projections.
+    Makes prediction with test-data including probabilities of those predictions.
 
     Args:
         X_train (array): training-data of variable values.
@@ -127,7 +122,7 @@ def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
     if not os.path.isdir(clf_pickle_rep):
         os.makedirs(clf_pickle_rep)
 
-    # dump all classifiers
+    # save the fitted classifier to file via pickle.dump()
     if config.getboolean('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
     with open(os.path.join(clf_pickle_rep, 'clf_{}.pkl'.format(run_nr)), 'wb') as f:
         pickle.dump(clf, f)
@@ -142,7 +137,6 @@ def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
 
 def pickle_clf(scaler, clf, config, root_dir):
     """(Re)fits a classifier with all available data and pickles it.
-    Can then be used to make projections in conjuction with projected values.
 
     Args:
         scaler (scaler): the specified scaling method instance.
@@ -156,23 +150,31 @@ def pickle_clf(scaler, clf, config, root_dir):
 
     print('INFO: fitting the classifier with all data from reference period')
 
+    # reading XY-data
+    # if nothing specified in cfg-file, load from output directory
     if config.get('pre_calc', 'XY') is '':
         if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy')))
         XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy'), allow_pickle=True)
+    # if a path is specified, load from there
     else:
         if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY_fit = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
 
+    # split in X and Y data
     X_fit, Y_fit = data.split_XY_data(XY_fit, config)
+    # split X in ID, geometry, and values
     X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)
+    # scale values
     X_ft_fit = scaler.fit_transform(X_data_fit)
-
+    # fit classifier with values
     clf.fit(X_ft_fit, Y_fit)
 
     return clf
 
 def load_clfs(config, out_dir):
-    """Loads the file names of all previously classifiers to a list.
+    """Loads the paths to all previously fitted classifiers to a list.
+    Classifiers were saved to file in fit_predict().
+    With this list, the classifiers can be loaded again during projections.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
