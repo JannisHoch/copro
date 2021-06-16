@@ -27,7 +27,7 @@ A software description paper was published in `JOSS <https://doi.org/10.21105/jo
     :target: https://doi.org/10.21105/joss.02855
 
 .. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/JannisHoch/copro/update_docs?filepath=%2Fexample%2Fnb_binder.ipynb
+    :target: https://mybinder.org/v2/gh/JannisHoch/copro/dev?filepath=%2Fexample%2Fnb_binder.ipynb
 
 Main goal
 ---------------
