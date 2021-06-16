@@ -71,8 +71,6 @@ avg_over_time.py
             --png / --no-png           save output to png or not
             --verbose / --no-verbose   verbose on/off
 
-:command:`whaat is tisss` 
-
 plot_polygon_vals.py
 -----------------------
 
@@ -91,12 +89,37 @@ plot_polygon_vals.py
         Output:     
             a png-file of values per polygon.
 
-    Options:
-        -c, --column TEXT           column name
-        -t, --title TEXT            title for plot and file_object name
-        -v0, --minimum-value FLOAT
-        -v1, --maximum-value FLOAT
-        -cmap, --color-map TEXT
+        Options:
+            -c, --column TEXT           column name
+            -t, --title TEXT            title for plot and file_object name
+            -v0, --minimum-value FLOAT
+            -v1, --maximum-value FLOAT
+            -cmap, --color-map TEXT
 
 geojson2gif.py
 ---------------
+
+.. code-block:: console
+
+    Usage: python geojson2gif.py [OPTIONS] INPUT_DIR OUTPUT_DIR
+
+        Function to convert column values of all geoJSON-files in a directory into
+        one GIF-file. The function provides several options to modify the design
+        of the GIF-file. The GIF-file is based on png-files of column value per
+        geoJSON-file.  It is possible to keep these png-file as simple plots of
+        values per time step.
+
+    Args:     
+        input-dir (str): path to directory where geoJSON-files are stored.     
+        output_dir (str): path to directory where GIF-file will be stored.
+
+    Output:     
+        GIF-file with animated column values per input geoJSON-file.
+
+    Options:
+        -c, --column TEXT           column name
+        -cmap, --color-map TEXT
+        -v0, --minimum-value FLOAT
+        -v1, --maximum-value FLOAT
+        --delete / --no-delete      whether or not to delete png-files
+
