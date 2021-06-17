@@ -19,7 +19,7 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
     """Quick and dirty function to plot the develoment of a column in the outputted geojson-files over time.
     The script uses all geoJSON-files located in input-dir and retrieves values from them.
     Possible to plot obtain development for multiple polygons (indicated via their ID) or entire study area.
-    If the latter, then different statistics can be chosen (mean, max, min, std).
+    If the latter, then different statistics can be chosen (mean, max, min, std, median, 'q05', 'q10', 'q90', 'q95').
 
     Args:
         input-dir (str): path to input directory with geoJSON-files located per projection year.
@@ -35,6 +35,9 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
     # converting polygon IDs to list
     polygon_id = list(polygon_id)
 
+    if statistics not in ['mean', 'max', 'min', 'std', 'median', 'q05', 'q10', 'q90', 'q95']:
+        raise ValueError('ERROR: {} is not a supported statistical method'.format(statistics))
+
     # check that there is at least one ID or 'all' specified
     assert(len(polygon_id) > 0), AssertionError('ERROR: please specify at least one polygon ID to be sampled or select ''all'' for sampling the entire study area')
 
@@ -44,7 +47,7 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
         polygon_id = 'all'
         click.echo('INFO: selected statistcal method is {}'.format(statistics))
         # create a suffix to be used for output files
-        suffix = '_all_{}'.format(statistics)
+        suffix = 'all_{}'.format(statistics)
 
     # absolute path to input_dir
     input_dir = os.path.abspath(input_dir)
@@ -103,9 +106,14 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
         else:
             # compute mean value over column
             if statistics == 'mean': vals = df[column].mean()
+            if statistics == 'median': vals = df[column].median()
             if statistics == 'max': vals = df[column].max()
             if statistics == 'min': vals = df[column].min()
             if statistics == 'std': vals = df[column].std()
+            if statistics == 'q05': vals = df[column].quantile(.05)
+            if statistics == 'q10': vals = df[column].quantile(.1)
+            if statistics == 'q90': vals = df[column].quantile(.9)
+            if statistics == 'q95': vals = df[column].quantile(.95)
             # append this value to list in dict
             idx_list = out_dict[polygon_id]
             idx_list.append(vals)
