@@ -32,9 +32,11 @@ To install CoPro in editable mode in this environment, run this command next in 
 From PyPI
 ------------
 
-.. todo::
+To install CoPro directly from PyPI, use the following command.
 
-    This is not yet supported. Feel invited to provide a pull request enabling installation via PyPI.
+.. code-block:: console
+
+    pip install copro
 
 From conda
 ------------
