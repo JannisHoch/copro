@@ -10,7 +10,6 @@ with open('README.rst') as readme_file:
 requirements = ['Click>=7.0', 
                 'xarray==0.15.1',
                 'pandas==1.0.3',
-                'GDAL==3.0.4',
                 'rasterio>=1.1.0',
                 'rioxarray>=0.0.26',
                 'rasterstats>=0.14',
