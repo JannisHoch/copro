@@ -35,9 +35,6 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
     # converting polygon IDs to list
     polygon_id = list(polygon_id)
 
-    if statistics not in ['mean', 'max', 'min', 'std', 'median', 'q05', 'q10', 'q90', 'q95']:
-        raise ValueError('ERROR: {} is not a supported statistical method'.format(statistics))
-
     # check that there is at least one ID or 'all' specified
     assert(len(polygon_id) > 0), AssertionError('ERROR: please specify at least one polygon ID to be sampled or select ''all'' for sampling the entire study area')
 
@@ -48,17 +45,22 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
         click.echo('INFO: selected statistcal method is {}'.format(statistics))
         # create a suffix to be used for output files
         suffix = 'all_{}'.format(statistics)
+        # check if supported statistical function is selected
+        if statistics not in ['mean', 'max', 'min', 'std', 'median', 'q05', 'q10', 'q90', 'q95']:
+            raise ValueError('ERROR: {} is not a supported statistical method'.format(statistics))
+
+    else:
+        click.echo('INFO: sampling from IDs'.format(polygon_id))
+        # for IDs, no statistical function can be applied as it's only one value...
+        if statistics != None:
+            raise Warning('WARNING: if one or more IDs are provided, the statistical function is neglected.')
 
     # absolute path to input_dir
     input_dir = os.path.abspath(input_dir)
     click.echo('INFO: getting geojson-files from {}'.format(input_dir))
 
     # collect all files in input_dir
-    all_files = glob.glob(os.path.join(input_dir, '*.geojson'))
-    
-    if verbose: 
-        if polygon_id != 'all': 
-            click.echo('DEBUG: sampling from IDs'.format(polygon_id))
+    all_files = glob.glob(os.path.join(input_dir, '*.geojson'))            
 
     # create dictionary with list for areas (either IDs or entire study area) to be sampled from
     out_dict = dict()
