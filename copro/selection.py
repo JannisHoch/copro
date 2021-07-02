@@ -184,8 +184,7 @@ def select(config, out_dir, root_dir):
     global_df = utils.global_ID_geom_info(polygon_gdf)
 
     # save conflict data and polygon to shp-file
-    # TODO: save as geoJSON rather than shp
-    gdf.to_file(os.path.join(out_dir, 'selected_conflicts.shp'), crs='EPSG:4326')
-    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.shp'), crs='EPSG:4326')
+    gdf.to_file(os.path.join(out_dir, 'selected_conflicts.geojson'), driver='GeoJSON', crs='EPSG:4326')
+    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='EPSG:4326')
 
     return gdf, polygon_gdf, global_df
