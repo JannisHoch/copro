@@ -105,7 +105,7 @@ def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_
     
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-
+    
     conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame().rename(columns={"id": 'conflict_count'})
 
     # loop through all polygons and check if exists in sub-set
