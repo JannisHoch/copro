@@ -14,10 +14,10 @@ requirements = ['Click>=7.0',
                 'rioxarray>=0.0.26',
                 'rasterstats>=0.14',
                 'geopandas>=0.8.0',
-                'numpy==1.21.0',
+                'numpy==1.22.0',
                 'scikit-learn>=0.22.1',
                 'seaborn>=0.11',
-                'numpy==1.21.0']
+                'numpy==1.22.0']
 
 setup_requirements = ['pytest-runner', ]
 
