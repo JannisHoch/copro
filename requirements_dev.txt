@@ -23,4 +23,4 @@ tox==3.14.0
 coverage==4.5.4
 rasterstats==0.14
 seaborn==0.10.1
-setuptools==49.6
+setuptools==65.5.1
