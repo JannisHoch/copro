@@ -19,6 +19,7 @@ requirements = ['Click>=7.0',
                 'seaborn>=0.11',
                 'numpy>=1.21.0']
 
+
 setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest>=3', ]
