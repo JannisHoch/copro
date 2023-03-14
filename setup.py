@@ -8,16 +8,16 @@ with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 requirements = ['Click>=7.0', 
-                'xarray==0.15.1',
-                'pandas==1.0.3',
+                'xarray>=0.15.1',
+                'pandas>=1.0.3',
                 'rasterio>=1.1.0',
                 'rioxarray>=0.0.26',
                 'rasterstats>=0.14',
                 'geopandas>=0.8.0',
-                'numpy==1.21.0',
+                'numpy>=1.21.0',
                 'scikit-learn>=0.22.1',
                 'seaborn>=0.11',
-                'numpy==1.21.0']
+                'numpy>=1.21.0']
 
 setup_requirements = ['pytest-runner', ]
 
