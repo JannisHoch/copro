@@ -4,11 +4,11 @@ channels:
   - conda-forge
 
 dependencies:
-  - python>=3.6
-  - xarray==0.15.1
-  - pandas==1.0.3
-  - numpy==1.18.1
-  - matplotlib==3.2.1
+  - python>=3.9
+  - xarray>=0.15.1
+  - pandas>=1.0.3
+  - numpy>=1.18.1
+  - matplotlib>=3.2.1
   - rtree>=0.9.4
   - pytest>=5.4.2
   - pytest-runner
@@ -17,7 +17,7 @@ dependencies:
   - ipython
   - notebook
   - nbconvert
-  - ipykernel==5.3.2
+  - ipykernel>=5.3.2
   - scikit-learn>=0.23.2
   - netcdf4
   - ConfigParser
@@ -27,9 +27,8 @@ dependencies:
   - colorama
   - setuptools>=49.6
   - pillow==8.1.0
-  - pip:
-    - geopandas==0.8.0
-    - rasterio==1.1.0
-    - fiona
-    - rasterstats==0.14.0
+  - geopandas>=0.8.0
+  - rasterio>=1.1.0
+  - fiona
+  - rasterstats>=0.14.0
     
