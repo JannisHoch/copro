@@ -17,8 +17,7 @@ requirements = ['Click>=7.0',
                 'numpy>=1.21.0',
                 'scikit-learn>=0.22.1',
                 'seaborn>=0.11',
-                'numpy>=1.21.0']
-
+                ]
 
 setup_requirements = ['pytest-runner', ]
 
@@ -27,16 +26,15 @@ test_requirements = ['pytest>=3', ]
 setup(
     author="Jannis M. Hoch",
     author_email='j.m.hoch@uu.nl',
-    python_requires='>=3.6',
+    python_requires='>=3.9',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
     ],
     description="Python-model build on scikit-learn functions, designed to facilitate the set-up, execution, and evaluation of machine-learning models for the study of the climate-conflict nexus.",
     entry_points={
@@ -55,6 +53,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://copro.readthedocs.io/',
-    version='0.1.1',
+    version='0.1.2',
     zip_safe=False,
 )
