@@ -101,8 +101,13 @@ def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwar
         list: lists with true positive rates and area-under-curve values per plot.
     """    
 
+    raise DeprecationWarning('Plotting API in sklearn is changed, function needs updating.')
+    
     viz = metrics.plot_roc_curve(clf, X_test, y_test, ax=ax,
                             	 alpha=0.15, color='b', lw=1, label=None, **kwargs)
+    
+    # rfc_disp = metrics.RocCurveDisplay.from_estimator(clf, X_test, y_test, ax=ax,
+    #                                                   alpha=0.15, color='b', lw=1, label=None, **kwargs)
 
     interp_tpr = np.interp(mean_fpr, viz.fpr, viz.tpr)
     interp_tpr[0] = 0.0
@@ -121,6 +126,8 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
         mean_fpr (array): array with mean false positive rate.
     """    
 
+    raise DeprecationWarning('Plotting API in sklearn is changed, function needs updating.')
+    
     mean_tpr = np.mean(tprs, axis=0)
     mean_tpr[-1] = 1.0
     mean_auc = metrics.auc(mean_fpr, mean_tpr)

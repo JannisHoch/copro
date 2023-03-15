@@ -37,6 +37,7 @@ def filter_conflict_properties(gdf, config):
                 pass
             else:
                 if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
+                selection_criteria[key] = [eval(i) for i in selection_criteria[key]]
                 gdf = gdf[gdf[key].isin(selection_criteria[key])]
 
     return gdf
