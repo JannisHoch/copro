@@ -90,16 +90,18 @@ def cli(cfg, make_plots=True, verbose=False):
         out_y_df = copro.evaluation.fill_out_df(out_y_df, y_df)
         out_dict = copro.evaluation.fill_out_dict(out_dict, eval_dict)
 
+        ## NOTE 15-Mar-2023: ROC plotting has been changed in sklearn, needs updating
         #- plot ROC curve per model execution
-        tprs, aucs = copro.plots.plot_ROC_curve_n_times(ax1, clf, X_df.to_numpy(), y_df.y_test.to_list(),
-                                                                    trps, aucs, mean_fpr)
+        # tprs, aucs = copro.plots.plot_ROC_curve_n_times(ax1, clf, X_df.to_numpy(), y_df.y_test.to_list(),
+        #                                                             trps, aucs, mean_fpr)
 
-    #- plot mean ROC curve
-    copro.plots.plot_ROC_curve_n_mean(ax1, tprs, aucs, mean_fpr)
-    #- save plot
-    plt.savefig(os.path.join(out_dir_REF, 'ROC_curve_per_run.png'), dpi=300, bbox_inches='tight')
-    #- save data for plot
-    copro.evaluation.save_out_ROC_curve(tprs, aucs, out_dir_REF)
+    ## NOTE 15-Mar-2023: ROC plotting has been changed in sklearn, needs updating
+    # #- plot mean ROC curve
+    # copro.plots.plot_ROC_curve_n_mean(ax1, tprs, aucs, mean_fpr)
+    # #- save plot
+    # plt.savefig(os.path.join(out_dir_REF, 'ROC_curve_per_run.png'), dpi=300, bbox_inches='tight')
+    # #- save data for plot
+    # copro.evaluation.save_out_ROC_curve(tprs, aucs, out_dir_REF)
 
     #- save output dictionary to csv-file
     copro.utils.save_to_csv(out_dict, out_dir_REF, 'evaluation_metrics')
