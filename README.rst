@@ -31,18 +31,18 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 Model purpose
 --------------
 
-As primary model output, CoPro provides maps of conflict risk.
+As primary model output, CoPro-m provides maps of conflict risk or out-migration.
 
-To that end, it employs observed conflicts as target data together with (user-provided) socio-economic and environmental sample data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
-While the samples have the units of the data, the target value is converted to Boolean, where a 0 indicates no conflict occurrence and 1 indicates occurrence.
-To capture the geographical variability of conflict and socio-environmental drivers, the model is spatially explicit and calculates conflict risk at a (user-specified) aggregation level.
+To that end, it employs observed conflicts or out-migration as target data together with (user-provided) socio-economic and environmental sample data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
+While the samples have the units of the data, the conflict target value is converted to Boolean, where a 0 indicates no conflict occurrence and 1 indicates occurrence. The migration target value his a integer, expressing the net number of people that has migrated out of cell.
+To capture the geographical variability of conflict or migration and socio-environmental drivers, the model is spatially explicit and calculates conflict risk at a (user-specified) aggregation level.
 This way, the model can also capture the relevant sub-national variability of conflict and conflict drivers.
 Model robustness is determined using a split-sample test where a part of the data is used to train the model, while the other part is used to evaluate the outcome. 
 Throughout this process, the geographical unit is tracked to be able to map the resulting conflict risk to the correct areas.
 
-In addition to the calculation of conflict risk, can the model, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
+In addition to the calculation of conflict risk or out-migration, can the model, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
 
-All in all, CoPro supports the mapping of current and future areas at risk of conflict, while also facilitating obtaining a better understanding of the underlying processes.
+All in all, CoPro supports the mapping of current and future areas at risk of conflict or out-migration, while also facilitating obtaining a better understanding of the underlying processes.
 
 Installation
 ----------------
