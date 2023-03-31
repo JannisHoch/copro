@@ -46,7 +46,7 @@ setup(
     license="MIT",
     long_description=readme,
     include_package_data=True,
-    keywords='conflict, climate, machine learning, projections',
+    keywords='conflict, climate, migration,machine learning, projections',
     name='copro',
     packages=find_packages(include=['copro', 'copro.*'], exclude=['docs', 'tests', 'joss']),
     setup_requires=setup_requirements,
