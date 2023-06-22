@@ -10,7 +10,6 @@ def initiate_XY_data(config):
     """Initiates an empty dictionary to contain the XY-data for each polygon, ie. both sample data and target data. 
     This is needed for the reference run.
     By default, the first column is for the polygon ID, the second for polygon geometry.
-    # to be deleted: The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
     The last column is for binary conflict data at t (i.e. the target data).
     
     Every column in between corresponds to the variables provided in the cfg-file.
