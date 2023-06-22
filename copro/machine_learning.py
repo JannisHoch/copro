@@ -98,7 +98,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
 
     return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
-def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
+def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     """Fits classifier based on training-data and makes predictions.
     The fitted classifier is dumped to file with pickle to be used again during projections.
     Makes prediction with test-data including probabilities of those predictions.
@@ -107,42 +107,42 @@ def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
         X_train (array): training-data of variable values.
         y_train (array): training-data of conflict data.
         X_test (array): test-data of variable values.
-        clf (classifier): the specified model instance.
+        mdl: the specified model instance.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         out_dir (path): path to output folder.
-        run_nr (int): number of fit/predict repetition and created classifier.
+        run_nr (int): number of fit/predict repetition and created model.
 
     Returns:
         arrays: arrays including the predictions made and their probabilities
     """    
 
-    # fit the classifier with training data
-    clf.fit(X_train, y_train)
+    # fit the modl with training data
+    mdl.fit(X_train, y_train)
 
-    # create folder to store all classifiers with pickle
-    clf_pickle_rep = os.path.join(out_dir, 'clfs')
-    if not os.path.isdir(clf_pickle_rep):
-        os.makedirs(clf_pickle_rep)
+    # create folder to store all model with pickle
+    mdl_pickle_rep = os.path.join(out_dir, 'mdls')
+    if not os.path.isdir(mdl_pickle_rep):
+        os.makedirs(mdl_pickle_rep)
 
     # save the fitted classifier to file via pickle.dump()
-    if config.getinteger('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
-    with open(os.path.join(clf_pickle_rep, 'clf_{}.pkl'.format(run_nr)), 'wb') as f:
-        pickle.dump(clf, f)
+    if config.getinteger('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(mdl_pickle_rep))
+    with open(os.path.join(mdl_pickle_rep, 'mdl_{}.pkl'.format(run_nr)), 'wb') as f:
+        pickle.dump(mdl, f)
 
     # make prediction
-    y_pred = clf.predict(X_test)
+    y_pred = mdl.predict(X_test)
 
     # make prediction of probability
-    y_prob = clf.predict_proba(X_test)
+    y_prob = mdl.predict_proba(X_test)
 
     return y_pred, y_prob
 
-def pickle_clf(scaler, clf, config, root_dir):
+def pickle_mdl(scaler, mdl, config, root_dir):
     """(Re)fits a classifier with all available data and pickles it.
 
     Args:
         scaler (scaler): the specified scaling method instance.
-        clf (classifier): the specified model instance.
+        mdl: the specified model instance.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file.
 
@@ -169,14 +169,14 @@ def pickle_clf(scaler, clf, config, root_dir):
     # scale values
     X_ft_fit = scaler.fit_transform(X_data_fit)
     # fit classifier with values
-    clf.fit(X_ft_fit, Y_fit)
+    mdl.fit(X_ft_fit, Y_fit)
 
-    return clf
+    return mdl
 
-def load_clfs(config, out_dir):
-    """Loads the paths to all previously fitted classifiers to a list.
-    Classifiers were saved to file in fit_predict().
-    With this list, the classifiers can be loaded again during projections.
+def load_mdls(config, out_dir):
+    """Loads the paths to all previously fitted models to a list.
+    Models were saved to file in fit_predict().
+    With this list, the models can be loaded again during projections.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -186,8 +186,8 @@ def load_clfs(config, out_dir):
         list: list with file names of classifiers.
     """ 
 
-    clfs = os.listdir(os.path.join(out_dir, 'clfs'))
+    mdls = os.listdir(os.path.join(out_dir, 'mdls'))
 
-    assert (len(clfs), config.getint('machine_learning', 'n_runs')), AssertionError('ERROR: number of loaded classifiers does not match the specified number of runs in cfg-file!')
+    assert (len(mdls), config.getint('machine_learning', 'n_runs')), AssertionError('ERROR: number of loaded classifiers does not match the specified number of runs in cfg-file!')
 
-    return clfs
+    return mdls
