@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
-from copro import conflict, data
+from copro import conflict, data # need to make a new script 'migration' 
 
 def define_scaling(config):
     """Defines scaling method based on model configurations.
@@ -29,7 +29,7 @@ def define_scaling(config):
     else:
         raise ValueError('no supported scaling-algorithm selected - choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer')
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: chosen scaling method is {}'.format(scaler))
+    if config.getinteger('general', 'verbose'): print('DEBUG: chosen scaling method is {}'.format(scaler))
 
     return scaler
 
@@ -47,17 +47,19 @@ def define_model(config):
     """    
     
     if config.get('machine_learning', 'model') == 'NuSVC':
-        clf = svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, probability=True, degree=10, gamma=10, random_state=42)
+        mdl = svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, probability=True, degree=10, gamma=10, random_state=42)
     elif config.get('machine_learning', 'model') == 'KNeighborsClassifier':
-        clf = neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance')
+        mdl = neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance')
     elif config.get('machine_learning', 'model') == 'RFClassifier':
-        clf = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)
+        mdl = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)
+    elif config.get('machine_learning', 'model')== 'RFRegression':
+        mdl = ensemble.RandomForestRegressor()
     else:
         raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: chosen ML model is {}'.format(clf))
+    if config.getinteger('general', 'verbose'): print('DEBUG: chosen ML model is {}'.format(mdl))
 
-    return clf
+    return mdl
 
 def split_scale_train_test_split(X, Y, config, scaler):
     """Splits and transforms the X-array (or sample data) and Y-array (or target data) in test-data and training-data.
@@ -78,14 +80,14 @@ def split_scale_train_test_split(X, Y, config, scaler):
     X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
 
     ##- scaling only the variable values
-    if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
+    if config.getinteger('general', 'verbose'): print('DEBUG: fitting and transforming X')
     X_ft = scaler.fit_transform(X_data)
 
     ##- combining ID, geometry and scaled sample values per polygon
     X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
     ##- splitting in train and test samples based on user-specified fraction
-    if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
+    if config.getinteger('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
                                                                         Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
@@ -123,7 +125,7 @@ def fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr):
         os.makedirs(clf_pickle_rep)
 
     # save the fitted classifier to file via pickle.dump()
-    if config.getboolean('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
+    if config.getinteger('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(clf_pickle_rep))
     with open(os.path.join(clf_pickle_rep, 'clf_{}.pkl'.format(run_nr)), 'wb') as f:
         pickle.dump(clf, f)
 
@@ -153,11 +155,11 @@ def pickle_clf(scaler, clf, config, root_dir):
     # reading XY-data
     # if nothing specified in cfg-file, load from output directory
     if config.get('pre_calc', 'XY') is '':
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy')))
+        if config.getinteger('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy')))
         XY_fit = np.load(os.path.join(root_dir, config.get('general', 'output_dir'), '_REF', 'XY.npy'), allow_pickle=True)
     # if a path is specified, load from there
     else:
-        if config.getboolean('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
+        if config.getinteger('general', 'verbose'): print('DEBUG: loading XY data from {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY_fit = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
 
     # split in X and Y data
