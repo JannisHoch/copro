@@ -99,7 +99,7 @@ def fill_out_df(out_df, y_df):
         dataframe: main output dataframe containing results of all simulations.
     """    
 
-    out_df = out_df.append(y_df, ignore_index=True)
+    out_df = pd.concat([out_df, y_df], axis=0, ignore_index=True)
 
     return out_df
 
@@ -118,7 +118,7 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     """    
 
     #- create a dataframe containing the number of occurence per ID
-    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'nr_predictions'})
+    ID_count = df.ID.value_counts().to_frame().reset_index().rename(columns={'ID':'nr_predictions'})
     #- add column containing the IDs
     ID_count['ID'] = ID_count.index.values
     #- set index with index named ID now
@@ -144,6 +144,8 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
 
     #- merge the two dataframes with ID as key
     df_temp = pd.merge(ID_count, df_count, on='ID')
+
+    # import pdb; pdb.set_trace()
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
     if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.nr_correct_predictions / df_temp.nr_predictions
