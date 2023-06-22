@@ -1,4 +1,4 @@
-from copro import conflict, variables, evaluation
+from copro import  migration, variables, evaluation
 import click
 import numpy as np
 import xarray as xr
@@ -31,9 +31,9 @@ def initiate_XY_data(config):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['conflict_t_min_1'] = pd.Series(dtype=bool)
     XY['conflict_t_min_1_nb'] = pd.Series(dtype=float)
-    XY['conflict'] = pd.Series(dtype=bool)
+    XY['conflict'] = pd.Series(dtype=int)
 
-    if config.getboolean('general', 'verbose'): 
+    if config.getinteger('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in XY:
             click.echo('...{}'.format(key))
@@ -61,10 +61,10 @@ def initiate_X_data(config):
     X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
-    X['conflict_t_min_1'] = pd.Series(dtype=bool)
+    X['conflict_t_min_1'] = pd.Series(dtype=int)
     X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
 
-    if config.getboolean('general', 'verbose'): 
+    if config.getinteger('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in X:
             click.echo('...{}'.format(key))
@@ -113,7 +113,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
                 if key == 'conflict':
                 
                     data_series = value
-                    data_list = conflict.conflict_in_year_bool(config, conflict_data, polygon_gdf, sim_year, out_dir)
+                    data_list = conflict.conflict_in_year_int  (config, conflict_data, polygon_gdf, sim_year, out_dir)
                     data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
@@ -164,7 +164,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
                     else:
                         raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
-            if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
+            if config.getinteger('general', 'verbose'): click.echo('DEBUG: all data read')
 
     df_out = pd.DataFrame.from_dict(XY)
     
@@ -188,7 +188,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         dict: dictionary containing sample values.
     """    
 
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: reading sample data from files')
+    if config.getinteger('general', 'verbose'): click.echo('DEBUG: reading sample data from files')
 
     # go through all keys in dictionary
     for key, value in X.items(): 
@@ -268,7 +268,7 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
 
             pass
 
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
+    if config.getinteger('general', 'verbose'): click.echo('DEBUG: all data read')
 
     return X
 
@@ -286,7 +286,7 @@ def split_XY_data(XY, config):
 
     # convert array to dataframe for easier handling
     XY = pd.DataFrame(XY)
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
+    if config.getinteger('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
 
     # fill all missing values with 0
     XY = XY.fillna(0)
@@ -301,7 +301,7 @@ def split_XY_data(XY, config):
     Y = XY[:, -1]
     Y = Y.astype(int)
 
-    if config.getboolean('general', 'verbose'): 
+    if config.getinteger('general', 'verbose'): 
         fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
         click.echo('DEBUG: a fraction of {} percent in the data corresponds to conflicts.'.format(round(fraction_Y_1, 2)))
 
@@ -320,7 +320,7 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
         dataframe: look-up dataframe containing True/False statement per polygon for all other polygons.
     """    
 
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: determining matrix with neighboring polygons')
+    if config.getinteger('general', 'verbose'): click.echo('DEBUG: determining matrix with neighboring polygons')
 
     # initialise empty dataframe
     df = pd.DataFrame()
@@ -330,7 +330,7 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
         # get geometry of current polygon
         wp = extent_gdf.geometry.iloc[i]
         # check which polygons in geodataframe (i.e. all water provinces) touch the current polygon
-        # also create a dataframe from result (boolean)
+        # also create a dataframe from result (integer)
         # the transpose is needed to easier append
         df_temp = pd.DataFrame(extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]).T
         # append the dataframe
