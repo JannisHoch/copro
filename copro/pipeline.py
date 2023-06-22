@@ -212,7 +212,8 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                     os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)))
 
                 # append to all classifiers dataframe
-                y_df = y_df.append(y_df_clf, ignore_index=True)
+                # y_df = y_df.append(y_df_clf, ignore_index=True)
+                y_df = pd.concat([y_df, y_df_clf], axis=0, ignore_index=True)
 
             # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
@@ -223,6 +224,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
 
         # create one major output dataframe containing all output for all projections with all classifiers
-        all_y_df = all_y_df.append(y_df, ignore_index=True)
+        # all_y_df = all_y_df.append(y_df, ignore_index=True)
+        all_y_df = pd.concat([all_y_df, y_df], axis=0, ignore_index=True)
 
     return all_y_df

@@ -92,7 +92,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
     """    
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, config.getint('settings', 'y_step'))
     click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
 
     neighboring_matrix = neighboring_polys(config, polygon_gdf)
@@ -114,35 +114,40 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
                 
                     data_series = value
                     data_list = conflict.conflict_in_year_bool(config, conflict_data, polygon_gdf, sim_year, out_dir)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'conflict_t_min_1':
 
                     data_series = value
                     data_list = conflict.conflict_in_previous_year(config, conflict_data, polygon_gdf, sim_year)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'conflict_t_min_1_nb':
 
                     data_series = value
                     data_list = conflict.conflict_in_previous_year(config, conflict_data, polygon_gdf, sim_year, check_neighbors=True, neighboring_matrix=neighboring_matrix)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'poly_ID':
                 
                     data_series = value
                     data_list = conflict.get_poly_ID(polygon_gdf)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'poly_geometry':
                 
                     data_series = value
                     data_list = conflict.get_poly_geometry(polygon_gdf, config)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
                 else:
@@ -152,13 +157,15 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
                     if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                         data_series = value
                         data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                        # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                         XY[key] = data_series
                         
                     elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                         data_series = value
                         data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                        # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                         XY[key] = data_series
                         
                     else:
@@ -197,14 +204,16 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         
             data_series = value
             data_list = conflict.get_poly_ID(polygon_gdf)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
         elif key == 'poly_geometry':
         
             data_series = value
             data_list = conflict.get_poly_geometry(polygon_gdf, config)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
         else:
@@ -216,17 +225,19 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                 if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                     data_series = value
                     data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     X[key] = data_series
                     
                 elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                     data_series = value
                     data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
-                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                     X[key] = data_series
                     
                 else:
-                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]))
 
     return X
 
@@ -254,14 +265,16 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
 
             data_series = value
             data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
         elif key == 'conflict_t_min_1_nb':
 
             data_series = value
             data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data, check_neighbors=True, neighboring_matrix=neighboring_matrix)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            # data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
         else:
@@ -334,7 +347,8 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
         # the transpose is needed to easier append
         df_temp = pd.DataFrame(extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]).T
         # append the dataframe
-        df = df.append(df_temp)
+        #df = df.append(df_temp)
+        df = pd.concat([df, df_temp], axis=0, ignore_index=True)
 
     # replace generic indices with actual water province IDs
     df.set_index(extent_gdf[identifier], inplace=True)

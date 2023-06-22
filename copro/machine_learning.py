@@ -35,7 +35,7 @@ def define_scaling(config):
 
 def define_model(config):
     """Defines model based on model configurations. Model parameter were optimized beforehand using GridSearchCV.
-
+ 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
@@ -46,18 +46,20 @@ def define_model(config):
         classifier: the specified model instance.
     """    
     
-    if config.get('machine_learning', 'model') == 'NuSVC':
-        clf = svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, probability=True, degree=10, gamma=10, random_state=42)
+    if config.get('machine_learning', 'model') == 'NuSVC': # change completely, add new regression model 
+        mdl = svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, probability=True, degree=10, gamma=10, random_state=42)
     elif config.get('machine_learning', 'model') == 'KNeighborsClassifier':
-        clf = neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance')
+        mdl = neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance') 
     elif config.get('machine_learning', 'model') == 'RFClassifier':
-        clf = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)
+        mdl = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)
+    elif config.get('machine_learning', 'model')== 'RFRegression':
+        mdl = ensemble.RandomForestRegressor()
     else:
         raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: chosen ML model is {}'.format(clf))
+    if config.getboolean('general', 'verbose'): print(f'DEBUG: chosen ML model is {mdl}')
 
-    return clf
+    return mdl
 
 def split_scale_train_test_split(X, Y, config, scaler):
     """Splits and transforms the X-array (or sample data) and Y-array (or target data) in test-data and training-data.
