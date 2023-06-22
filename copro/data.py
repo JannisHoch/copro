@@ -1,3 +1,5 @@
+# change all conflict indicator into migration
+
 from copro import  migration, variables, evaluation
 import click
 import numpy as np
@@ -10,7 +12,8 @@ def initiate_XY_data(config):
     """Initiates an empty dictionary to contain the XY-data for each polygon, ie. both sample data and target data. 
     This is needed for the reference run.
     By default, the first column is for the polygon ID, the second for polygon geometry.
-    The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
+    # DELETE ALL FUNTIONS ON: 
+        The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
     The last column is for binary conflict data at t (i.e. the target data).
     
     Every column in between corresponds to the variables provided in the cfg-file.
@@ -19,7 +22,7 @@ def initiate_XY_data(config):
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
-        dict: emtpy dictionary to be filled, containing keys for each variable (X), binary conflict data (Y) plus meta-data.
+        dict: emtpy dictionary to be filled, containing keys for each variable (X), migration data (Y) plus meta-data.
     """
 
     # Initialize dictionary
@@ -29,9 +32,9 @@ def initiate_XY_data(config):
     XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
-    XY['conflict_t_min_1'] = pd.Series(dtype=bool)
-    XY['conflict_t_min_1_nb'] = pd.Series(dtype=float)
-    XY['conflict'] = pd.Series(dtype=int)
+    # DELETE XY['conflict_t_min_1'] = pd.Series(dtype=bool)
+    # DELETE XY['conflict_t_min_1_nb'] = pd.Series(dtype=float)
+    XY['migration'] = pd.Series(dtype=int)
 
     if config.getinteger('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
@@ -44,7 +47,7 @@ def initiate_X_data(config):
     """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data. 
     This is needed for each time step of each projection run.
     By default, the first column is for the polygon ID and the second for polygon geometry.
-    The penultimate column is for boolean information about conflict at t-1 while the last column is for boolean information about conflict at t-1 in neighboring polygons.
+    # DELETE CODE CONSIDERING: The penultimate column is for boolean information about conflict at t-1 while the last column is for boolean information about conflict at t-1 in neighboring polygons.
     All remaining columns correspond to the variables provided in the cfg-file.
 
     Args:
@@ -61,8 +64,8 @@ def initiate_X_data(config):
     X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
-    X['conflict_t_min_1'] = pd.Series(dtype=int)
-    X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
+    # DELETE X['conflict_t_min_1'] = pd.Series(dtype=int)
+    # DELETE X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
 
     if config.getinteger('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
@@ -71,8 +74,8 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
-    """Fills the (XY-)dictionary with data for each variable and conflict for each polygon for each simulation year. 
+def fill_XY (XY, config, root_dir migration_data, polygon_gdf, out_dir):
+    """Fills the (XY-)dictionary with data for each variable and migration for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
 
@@ -80,7 +83,7 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
         XY (dict): initiated, i.e. empty, XY-dictionary
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file.
-        conflict_data (geo-dataframe): geo-dataframe containing the selected conflicts.
+        migration (geo-dataframe): geo-dataframe containing the migration data.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
         out_dir (path): path to output folder.
 
@@ -88,14 +91,14 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
         Warning: raised if the datetime-format of the netCDF-file does not match conventions and/or supported formats.
 
     Returns:
-        array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
+        array: filled array containing the variable values (X) and migration data (Y) plus meta-data.
     """    
 
     # go through all simulation years as specified in config-file
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
     click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
 
-    neighboring_matrix = neighboring_polys(config, polygon_gdf)
+    # DELETE neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
@@ -110,24 +113,24 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
             # go through all keys in dictionary
             for key, value in XY.items(): 
 
-                if key == 'conflict':
+                if key == 'migration':
                 
                     data_series = value
-                    data_list = conflict.conflict_in_year_int  (config, conflict_data, polygon_gdf, sim_year, out_dir)
+                    data_list = migration.migration_in_year_int  (config, migration_data, polygon_gdf, sim_year, out_dir)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'poly_ID':
                 
                     data_series = value
-                    data_list = conflict.get_poly_ID(polygon_gdf)
+                    data_list = migration.get_poly_ID(polygon_gdf)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
                 elif key == 'poly_geometry':
                 
                     data_series = value
-                    data_list = conflict.get_poly_geometry(polygon_gdf, config)
+                    data_list = migration.get_poly_geometry(polygon_gdf, config)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -157,8 +160,8 @@ def fill_XY(XY, config, root_dir, conflict_data, polygon_gdf, out_dir):
     return df_out.to_numpy()
 
 def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
-    """Fills the X-dictionary with the data sample data besides any conflict-related data for each polygon and each year.
-    Used during the projection runs as the sample and conflict data need to be treated separately there.
+    """Fills the X-dictionary with the data sample data besides the migration data for each polygon and each year.
+    Used during the projection runs as the sample and migration data need to be treated separately there.
 
     Args:
         X (dict): dictionary containing keys to be sampled.
@@ -182,20 +185,20 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         if key == 'poly_ID':
         
             data_series = value
-            data_list = conflict.get_poly_ID(polygon_gdf)
+            data_list = migration.get_poly_ID(polygon_gdf)
             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
         elif key == 'poly_geometry':
         
             data_series = value
-            data_list = conflict.get_poly_geometry(polygon_gdf, config)
+            data_list = migration.get_poly_geometry(polygon_gdf, config)
             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
         else:
 
-            if (key != 'conflict_t_min_1') and (key != 'conflict_t_min_1_nb'):
+        # DELETE if (key != 'conflict_t_min_1') and (key != 'conflict_t_min_1_nb'):
 
                 nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
                 
@@ -208,7 +211,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                 elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                     data_series = value
                     data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
-                   data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     X[key] = data_series
                     
                 else:
@@ -216,54 +219,54 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
 
     return X
 
-def fill_X_conflict(X, config, conflict_data, polygon_gdf):
-    """Fills the X-dictionary with the conflict data for each polygon and each year.
-    Used during the projection runs as the sample and conflict data need to be treated separately there.
+def fill_X_migration(X, config, migration_data, polygon_gdf):
+    """Fills the X-dictionary with the migration data for each polygon and each year.
+    Used during the projection runs as the sample and migration data need to be treated separately there.
 
     Args:
         X (dict): dictionary containing keys to be sampled.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        conflict_data (dataframe): dataframe containing all polygons with conflict.
+        migration_data (dataframe): dataframe containing all polygons with migration.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
 
     Returns:
-        dict: dictionary containing sample and conflict values.
+        dict: dictionary containing sample and migration values.
     """    
 
     # determine all neighbours for each polygon
-    neighboring_matrix = neighboring_polys(config, polygon_gdf)
+    # DELETE: neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
     # go through all keys in dictionary
-    for key, value in X.items(): 
+    # DELETE for key, value in X.items(): 
 
-        if key == 'conflict_t_min_1':
+      #  if key == 'conflict_t_min_1':
 
-            data_series = value
-            data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
-             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-            X[key] = data_series
+         #   data_series = value
+         #   data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
+         #   data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+         #  X[key] = data_series
 
-        elif key == 'conflict_t_min_1_nb':
+     #   elif key == 'conflict_t_min_1_nb':
 
-            data_series = value
-            data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data, check_neighbors=True, neighboring_matrix=neighboring_matrix)
-           data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-            X[key] = data_series
+        #   data_series = value
+        #  data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data, check_neighbors=True, neighboring_matrix=neighboring_matrix)
+        #    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+        #    X[key] = data_series
 
-        else:
+        # else:
 
-            pass
+         #   pass
 
     if config.getinteger('general', 'verbose'): click.echo('DEBUG: all data read')
 
     return X
 
 def split_XY_data(XY, config):
-    """Separates the XY-array into array containing information about variable values (X-array or sample data) and conflict data (Y-array or target data).
+    """Separates the XY-array into array containing information about variable values (X-array or sample data) and migration data (Y-array or target data).
     Thereby, the X-array also contains the information about unique identifier and polygon geometry.
 
     Args:
-        XY (array): array containing variable values and conflict data.
+        XY (array): array containing variable values and migration data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
@@ -281,7 +284,7 @@ def split_XY_data(XY, config):
     XY = XY.to_numpy()
     
     # get X data
-    # since conflict is the last column, we know that all previous columns must be variable values
+    # since migration is the last column, we know that all previous columns must be variable values
     X = XY[:, :-1] 
     # get Y data and convert to integer values
     Y = XY[:, -1]
@@ -289,7 +292,7 @@ def split_XY_data(XY, config):
 
     if config.getinteger('general', 'verbose'): 
         fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
-        click.echo('DEBUG: a fraction of {} percent in the data corresponds to conflicts.'.format(round(fraction_Y_1, 2)))
+        click.echo('DEBUG: a fraction of {} percent in the data corresponds to migration.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
 
@@ -330,7 +333,8 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
 
     return df
 
-def find_neighbors(ID, neighboring_matrix):
+# DELETE ALL LINE 336-354
+# def find_neighbors(ID, neighboring_matrix):
     """Filters all polygons which are actually neighbors to given polygon.
 
     Args:
@@ -342,9 +346,9 @@ def find_neighbors(ID, neighboring_matrix):
     """    
 
     # locaties entry for polygon under consideration
-    neighbours = neighboring_matrix.loc[neighboring_matrix.index == ID].T
+    # neighbours = neighboring_matrix.loc[neighboring_matrix.index == ID].T
     
     # filters all actual neighbors defined as neighboring polygons with True statement
-    actual_neighbours = neighbours.loc[neighbours[ID] == True].index.values
+   # actual_neighbours = neighbours.loc[neighbours[ID] == True].index.values
 
-    return actual_neighbours
+    # return actual_neighbours
