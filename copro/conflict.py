@@ -33,10 +33,6 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
 
-    # determine the aggregated amount of fatalities in one region (e.g. water province)
-
-    fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
-
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
@@ -45,7 +41,7 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
         # get a 1 for each polygon where there was conflict
         bool_per_poly = fatalities_per_poly / fatalities_per_poly
         # change column name and dtype
-        bool_per_poly = bool_per_poly.rename(columns={"total_fatalities": 'bool_conflict'}).astype(int)
+        bool_per_poly = bool_per_poly.rename(columns={'bool_conflict'}).astype(int)
         # change index name to fit global_df
         bool_per_poly.index = bool_per_poly.index.rename('ID')
         # get list of all polygon IDs with their geometry information
@@ -74,69 +70,8 @@ def conflict_in_year_bool(config, conflict_gdf, extent_gdf, sim_year, out_dir):
 
     return list_out
 
-def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None):
-    """Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
-    If the current time step is the first (t=0), then this year is skipped and the model continues at the next time step.
 
-    Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data).
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
-        sim_year (int): year for which data is extracted.
-        check_neighbors (bool): whether to check conflict events in neighboring polygons. Defaults to False.
-        neighboring_matrix (dataframe): lookup-dataframe indicating which polygons are mutual neighbors. Defaults to None.
-
-    Raises:
-        ValueError: raised if check_neighbors is True, but no matrix is provided.
-        AssertionError: raised if the length of output list does not match length of input geo-dataframe.
-
-    Returns:
-        list: list containing 0/1 per polygon depending on conflict occurence if checkinf for conflict at t-1, and containing log-transformed number of conflict events in neighboring polygons if specified.
-    """    
-
-    if config.getboolean('general', 'verbose'): 
-        if check_neighbors: print('DEBUG: checking for conflicts in neighboring polygons at t-1')
-        else: print('DEBUG: checking for conflict event in polygon at t-1')
-
-    # get conflicts at t-1
-    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year-1]  
-
-    assert (len(temp_sel_year) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year-1))
-    
-    # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
-    data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-    
-    conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame().rename(columns={"id": 'conflict_count'})
-
-    # loop through all polygons and check if exists in sub-set
-    list_out = []
-    for i in range(len(extent_gdf)):
-
-        i_poly = extent_gdf.watprovID.iloc[i]
-
-        if i_poly in conflicts_per_poly.index.values:
-
-            if check_neighbors:
-
-                # determine log-scaled number of conflict events in neighboring polygons
-                val = calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly)
-                # append resulting value
-                list_out.append(val)
-
-            else:
-
-                list_out.append(1)
-
-        else:
-
-            # if polygon not in list with conflict polygons, assign 0
-            list_out.append(0)
-            
-    assert (len(extent_gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
-
-    return list_out
-
-def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, neighboring_matrix=None):
+def read_projected_conflict(extent_gdf, bool_conflict):
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
     Input conflict data (bool_conflict) must contain an index with IDs corresponding with the 'watprovID' values of extent_gdf.
     Optionally, the algorithm can be extended to the neighboring polygons.
@@ -162,12 +97,6 @@ def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, ne
 
         if i_poly in bool_conflict.index.values:
 
-            if check_neighbors:
-
-                # determine log-scaled number of conflict events in neighboring polygons
-                val = calc_conflicts_nb(i_poly, neighboring_matrix, bool_conflict)
-                # append resulting value
-                list_out.append(val)
 
             else:
 
@@ -180,7 +109,7 @@ def read_projected_conflict(extent_gdf, bool_conflict, check_neighbors=False, ne
 
     return list_out
 
-def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
+def calc_conflicts_nb(i_poly, conflicts_per_poly):
     """Determines whether in the neighbouring polygons of a polygon i_poly conflict took place.
     If so, a value 1 is returned, otherwise 0.
 
@@ -192,29 +121,6 @@ def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
     Returns:
         int: 1 is conflict took place in neighboring polygon, 0 if not.
     """ 
-
-    # find neighbors of this polygon
-    nb = data.find_neighbors(i_poly, neighboring_matrix)
-
-    # initiate list
-    nb_count = []
-
-    # loop through neighbors
-    for k in nb:
-
-        # check if there was conflict at t-1
-        if k in conflicts_per_poly.index.values:
-
-            nb_count.append(1)
-
-    # if more than one neighboring polygon has conflict, return 0
-    if np.sum(nb_count) > 0: 
-        val = 1
-    # otherwise, return 0
-    else: 
-        val = 0
-
-    return val
 
 def get_poly_ID(extent_gdf): 
     """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'watprovID'.
