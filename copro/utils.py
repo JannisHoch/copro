@@ -11,34 +11,13 @@ from datetime import date
 import click
 import copro
 
-def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
-    """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe.
+gdf = gpd.read_file(r'C:\Users\Sophie\Documents\VU\Proefschrift\Environmental_migration\Data\Data_copro\Worlds_human_migration_patterns\ADM2_SA_yearly_net_migration.shp')
 
-    Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        root_dir (str): path to location of cfg-file.
-        longitude (str, optional): column name with longitude coordinates. Defaults to 'longitude'.
-        latitude (str, optional): column name with latitude coordinates. Defaults to 'latitude'.
-        crs (str, optional): coordinate system to be used for georeferencing. Defaults to 'EPSG:4326'.
+gdf = gdf.melt(id_vars=['GID_2'], value_vars=['M2001', 'M2002', 'M2003', 'M2004', 'M2005', 'M2006', 'M2007', 'M2008', 'M2009', 'M2010', 'M2011', 'M2012', 'M2013', 'M2014', 'M2015'], var_name='Year', value_name='net_migration')
 
-    Returns:
-        geo-dataframe: geo-referenced conflict data.
-    """     
-    
-    # get path to file containing data
-    conflict_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('conflict', 'conflict_file'))
 
-    # read file to pandas dataframe
-    click.echo('INFO: reading csv file to dataframe {}'.format(conflict_fo))
-    df = pd.read_csv(conflict_fo)
+# TESTED print(gdf) --> works
 
-    # convert dataframe to geo-dataframe
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: translating to geopandas dataframe')
-    gdf = gpd.GeoDataFrame(df,
-                          geometry=gpd.points_from_xy(df[longitude], df[latitude]),
-                          crs=crs)
-
-    return gdf
 
 def show_versions():
     """click.echos the version numbers by the main python-packages used.
@@ -113,7 +92,7 @@ def parse_projection_settings(config, root_dir):
         each_val = os.path.abspath(os.path.join(root_dir, each_val))
 
         # parse each config-file specified
-        if config.getboolean('general', 'verbose'): click.echo('DEBUG: parsing settings from file {}'.format(each_val))
+        if config.getinteger('general', 'verbose'): click.echo('DEBUG: parsing settings from file {}'.format(each_val))
         each_config = parse_settings(each_val)
 
         # update the output dictionary with key and config-object
@@ -176,18 +155,19 @@ def make_output_dir(config, root_dir, config_dict):
         # else, remove all files with a few exceptions
         else:
             for root, dirs, files in os.walk(d):
-                if (config.getboolean('general', 'verbose')) and (len(files) > 0): 
+                if (config.getinteger('general', 'verbose')) and (len(files) > 0): 
                     click.echo('DEBUG: remove files in {}'.format(os.path.abspath(root)))
                 for fo in files:
                     if (fo =='XY.npy') or (fo == 'X.npy'):
-                        if config.getboolean('general', 'verbose'): click.echo('DEBUG: sparing {}'.format(fo))
+                        if config.getinteger('general', 'verbose'): click.echo('DEBUG: sparing {}'.format(fo))
                         pass
                     else:
                         os.remove(os.path.join(root, fo))
                             
     return main_dict
     
-def download_UCDP(config, root_dir):
+# DELETE line 166-202: no option to download data right into the model
+# def download_UCDP(config, root_dir):
     """If specfied in cfg-file, the PRIO/UCDP data is directly downloaded and used as model input.
 
     Args:
@@ -196,33 +176,33 @@ def download_UCDP(config, root_dir):
     """    
 
     # define path where downloaded data will be stored
-    path = os.path.join(os.path.join(root_dir, config.get('general', 'input_dir')), 'UCDP')
+    # path = os.path.join(os.path.join(root_dir, config.get('general', 'input_dir')), 'UCDP')
     # create folder if not there yer
-    if not os.path.isdir(path):
-        os.mkdir(path)
+    # if not os.path.isdir(path):
+      #  os.mkdir(path)
     
     # URL to be downloaded
-    url = 'http://ucdp.uu.se/downloads/ged/ged201-csv.zip'
+    # url = 'http://ucdp.uu.se/downloads/ged/ged201-csv.zip'
 
     # define filename of downloaded object
-    filename = os.path.join(path, 'ged201-csv.zip')
+    # filename = os.path.join(path, 'ged201-csv.zip')
 
-    click.echo('INFO: no conflict file was specified, hence downloading data from {} to {}'.format(url, filename))
+    # click.echo('INFO: no conflict file was specified, hence downloading data from {} to {}'.format(url, filename))
 
     # save URL to filename
-    urllib.request.urlretrieve(url, filename)
+    # urllib.request.urlretrieve(url, filename)
 
     # path to csv-file
-    csv_fo = zipfile.ZipFile(filename, 'r').namelist()[0]
+    # csv_fo = zipfile.ZipFile(filename, 'r').namelist()[0]
     
     # extract all data
-    zipfile.ZipFile(filename, 'r').extractall(path=path)
+    # zipfile.ZipFile(filename, 'r').extractall(path=path)
     
     # set path to csv-file in config-object
-    path_set = os.path.join(path, csv_fo)
-    config['conflict']['conflict_file'] = path_set
+    # path_set = os.path.join(path, csv_fo)
+    # config['migration']['migration_file'] = path_set
 
-    return
+    # return
 
 def print_model_info():
     """click.echos a header with main model information.
@@ -239,11 +219,11 @@ def print_model_info():
 
 def initiate_setup(settings_file, verbose=None):
     """Initiates the model set-up. 
-    It parses the cfg-file, creates an output folder, copies the cfg-file to the output folder, and, if specified, downloads conflict data.
+    It parses the cfg-file, creates an output folder, copies the cfg-file to the output folder, and, if specified, downloads migration data.
 
     Args:
         settings_file (str): path to settings-file (cfg-file).
-        verbose (bool, optional): whether model is verbose or not, e.g. click.echos DEBUG output or not. If None, then the setting in cfg-file counts. Otherwise verbose can be set directly to function which superseded the cfg-file. Defaults to None.
+        verbose (int, optional): whether model is verbose or not, e.g. click.echos DEBUG output or not. If None, then the setting in cfg-file counts. Otherwise verbose can be set directly to function which superseded the cfg-file. Defaults to None.
 
     Returns:
         ConfigParser-object: parsed model configuration.
@@ -264,7 +244,7 @@ def initiate_setup(settings_file, verbose=None):
     if verbose != None:
         config.set('general', 'verbose', str(verbose))
 
-    click.echo('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
+    click.echo('INFO: verbose mode on: {}'.format(config.getinteger('general', 'verbose')))
 
     # get dictionary with all config-objects, also for projection runs
     config_dict = parse_projection_settings(config, root_dir)
@@ -273,12 +253,12 @@ def initiate_setup(settings_file, verbose=None):
     main_dict = make_output_dir(config, root_dir, config_dict)
 
     # copy cfg-file of reference run to out-dir of reference run
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
+    if config.getinteger('general', 'verbose'): click.echo('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
     copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
     # if specfied, download UCDP/PRIO data directly
-    if config['conflict']['conflict_file'] == 'download':
-        download_UCDP(config)
+    # no option in copro-m config['conflict']['conflict_file'] == 'download':
+        # download_UCDP(config)
 
     # if any other model than all_data is specified, set number of runs to 1
     if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
@@ -288,7 +268,7 @@ def initiate_setup(settings_file, verbose=None):
     return main_dict, root_dir
 
 def create_artificial_Y(Y):
-    """Creates an array with identical percentage of conflict points as input array.
+    """Creates an array with identical net migration input array.
 
     Args:
         Y (array): original array containing binary conflict classifier data.
@@ -329,7 +309,7 @@ def global_ID_geom_info(gdf):
 
     return df
 
-def get_conflict_datapoints_only(X_df, y_df):
+#CHANGE TO READING MIGRATION DATA def get_conflict_datapoints_only(X_df, y_df):
     """Filters out only those polygons where conflict was actually observed in the test-sample.
 
     Args:
