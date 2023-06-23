@@ -44,21 +44,21 @@ def cli(cfg, make_plots=True, verbose=False):
     click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting conflicts and getting area-of-interest and aggregation level
-    conflict_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
+    migration_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
 
-    #- plot selected polygons and conflicts
+    #- plot polygons:
     if make_plots:
         fig, ax = plt.subplots(1, 1)
         copro.plots.selected_polygons(extent_active_polys_gdf, figsize=(20, 10), ax=ax)
-        copro.plots.selected_conflicts(conflict_gdf, ax=ax)
+        copro.plots.selected_migration(migration_gdf, ax=ax)
         plt.savefig(os.path.join(out_dir_REF, 'selected_polygons_and_conflicts.png'), dpi=300, bbox_inches='tight')
 
-    #- create X and Y arrays by reading conflict and variable files for reference run
+    #- create X and Y arrays by reading net migration and variable files for reference run
     #- or by loading a pre-computed array (npy-file) if specified in cfg-file
-    X, Y = copro.pipeline.create_XY(config_REF, out_dir_REF, root_dir, extent_active_polys_gdf, conflict_gdf)
+    X, Y = copro.pipeline.create_XY(config_REF, out_dir_REF, root_dir, extent_active_polys_gdf, migration_gdf)
 
     #- defining scaling and model algorithms
-    scaler, clf = copro.pipeline.prepare_ML(config_REF)
+    scaler, mdl = copro.pipeline.prepare_ML(config_REF)
 
     #- fit-transform on scaler to be used later during projections
     click.echo('INFO: fitting scaler to sample data')
@@ -82,7 +82,7 @@ def cli(cfg, make_plots=True, verbose=False):
         click.echo('INFO: run {} of {}'.format(n+1, config_REF.getint('machine_learning', 'n_runs')))
 
         #- run machine learning model and return outputs
-        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config_REF, scaler, clf, out_dir_REF, run_nr=n+1)
+        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config_REF, scaler, mdl , out_dir_REF, run_nr=n+1)
         
         #- append per model execution
         #TODO: put all this into one function
@@ -92,7 +92,7 @@ def cli(cfg, make_plots=True, verbose=False):
 
         ## NOTE 15-Mar-2023: ROC plotting has been changed in sklearn, needs updating
         #- plot ROC curve per model execution
-        # tprs, aucs = copro.plots.plot_ROC_curve_n_times(ax1, clf, X_df.to_numpy(), y_df.y_test.to_list(),
+        # tprs, aucs = copro.plots.plot_ROC_curve_n_times(ax1, mdl, X_df.to_numpy(), y_df.y_test.to_list(),
         #                                                             trps, aucs, mean_fpr)
 
     ## NOTE 15-Mar-2023: ROC plotting has been changed in sklearn, needs updating
@@ -124,8 +124,8 @@ def cli(cfg, make_plots=True, verbose=False):
         copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
         plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-    df_feat_imp = copro.evaluation.get_feature_importance(clf, config_REF, out_dir_REF) 
-    df_perm_imp = copro.evaluation.get_permutation_importance(clf, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
+    df_feat_imp = copro.evaluation.get_feature_importance(mdl, config_REF, out_dir_REF) 
+    df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
 
     click.echo(click.style('\nINFO: reference run succesfully finished\n', fg='cyan'))
 
