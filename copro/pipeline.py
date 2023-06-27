@@ -6,10 +6,10 @@ import click
 import os
 
 
-def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
+def create_XY(config, out_dir, root_dir, polygon_gdf, migration_gdf):
     """Top-level function to create the X-array and Y-array.
     If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
-    If not, variable values and conflict data are read from file and stored in array. 
+    If not, variable values and migration data are read from file and stored in array. 
     The resulting array is by default saved as npy-format to file.
 
     Args:
@@ -17,11 +17,11 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
         out_dir (str): path to output folder.
         root_dir (str): path to location of cfg-file.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
+        migration (geo-dataframe): geo-dataframe containing selected migration data.
 
     Returns:
         array: X-array containing variable values.
-        array: Y-array containing conflict data.
+        array: Y-array containing migration data.
     """    
 
     # if nothing is specified in cfg-file, then initiate and fill XY data from scratch
@@ -31,10 +31,10 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, conflict_gdf):
         XY = data.initiate_XY_data(config)
 
         # fill the dictionary and get array
-        XY = data.fill_XY(XY, config, root_dir, conflict_gdf, polygon_gdf, out_dir)
+        XY = data.fill_XY(XY, config, root_dir, migration_gdf, polygon_gdf, out_dir)
 
         # save array to XY.npy out_dir
-        if config.getboolean('general', 'verbose'): click.echo('DEBUG: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
+        if config.getinteger('general', 'verbose'): click.echo('DEBUG: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
         np.save(os.path.join(out_dir,'XY'), XY)
 
     # if path to XY.npy is specified, read the data intead
@@ -61,19 +61,19 @@ def prepare_ML(config):
 
     scaler = machine_learning.define_scaling(config)
 
-    clf = machine_learning.define_model(config)
+    mdl = machine_learning.define_model(config)
 
-    return scaler, clf
+    return scaler, mdl
 
-def run_reference(X, Y, config, scaler, clf, out_dir, run_nr):
+def run_reference(X, Y, config, scaler, mdl, out_dir, run_nr):
     """Top-level function to run one of the four supported models.
 
     Args:
         X (array): X-array containing variable values.
-        Y (array): Y-array containing conflict data.
+        Y (array): Y-array containing migration data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaler instance.
-        clf (classifier): the specified model instance.
+        mdl (model): the specified model instance.
         out_dir (str): path to output folder.
 
     Raises:
@@ -87,13 +87,13 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr):
 
     # depending on selection, run corresponding model with data
     if config.getint('general', 'model') == 1:
-        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, clf, out_dir, run_nr)
+        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, mdl, out_dir, run_nr)
     elif config.getint('general', 'model') == 2:
-        X_df, y_df, eval_dict = models.leave_one_out(X, Y, config, scaler, clf, out_dir)
+        X_df, y_df, eval_dict = models.leave_one_out(X, Y, config, scaler, mdl, out_dir)
     elif config.getint('general', 'model') == 3:
-        X_df, y_df, eval_dict = models.single_variables(X, Y, config, scaler, clf, out_dir)
+        X_df, y_df, eval_dict = models.single_variables(X, Y, config, scaler, mdl, out_dir)
     elif config.getint('general', 'model') == 4:
-        X_df, y_df, eval_dict = models.dubbelsteen(X, Y, config, scaler, clf, out_dir)
+        X_df, y_df, eval_dict = models.dubbelsteen(X, Y, config, scaler, mdl, out_dir)
     else:
         raise ValueError('the specified model type in the cfg-file is invalid - specify either 1, 2, 3 or 4.')
 
@@ -101,8 +101,8 @@ def run_reference(X, Y, config, scaler, clf, out_dir, run_nr):
 
 def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
     """Top-level function to execute the projections.
-    Per specified projection, conflict is projected forwards in time per time step until the projection year is reached.
-    Pear time step, the sample data and conflict data are read individually since different conflict projections are made per classifier used.
+    Per specified projection, migration is projected forwards in time per time step until the projection year is reached.
+    Pear time step, the sample data and migration data are read individually since different migration projections are made per mdl used.
     At the end of each time step, the projections of all classifiers are combined and output metrics determined.
 
     Args:
@@ -121,7 +121,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
     config_REF = main_dict['_REF'][0]
     out_dir_REF = main_dict['_REF'][1]
 
-    clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
+    mdls = machine_learning.load_mdls(config_REF, out_dir_REF)
 
     if config_REF.getint('general', 'model') != 1:
         raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
@@ -138,14 +138,14 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
         out_dir_PROJ = main_dict[str(each_key)][1]
 
         # aligning verbosity settings across config-objects
-        config_PROJ.set('general', 'verbose', str(config_REF.getboolean('general', 'verbose')))
+        config_PROJ.set('general', 'verbose', str(config_REF.getinteger('general', 'verbose')))
 
-        if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
+        if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
         # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
         #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
-        if not os.path.isdir(os.path.join(out_dir_PROJ, 'clfs')):
-            os.makedirs(os.path.join(out_dir_PROJ, 'clfs'))
+        if not os.path.isdir(os.path.join(out_dir_PROJ, 'mdls')):
+            os.makedirs(os.path.join(out_dir_PROJ, 'mdls'))
 
         # get projection period for this projection
         # defined as all years starting from end of reference run until specified end of projections
@@ -160,64 +160,64 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             X = data.initiate_X_data(config_PROJ)
             X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year)
 
-            # for the first projection year, we need to fall back on the observed conflict at the last time step of the reference run
+            # for the first projection year, we need to fall back on the observed migration at the last time step of the reference run
             if i == 0:
-                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous conflicts from file {}'.format(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
-                conflict_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'conflicts_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
+                if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_REF, 'files', 'migration_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
+                migration_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'migration_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
 
-                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with conflict data from previous year')
-                X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
+                if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data from previous year')
+                X = data.fill_X_migration(X, config_PROJ, migration_data, selected_polygons_gdf)
                 X = pd.DataFrame.from_dict(X).to_numpy()
 
-            # initiating dataframe containing all projections from all classifiers for this timestep
+            # initiating dataframe containing all projections from all models for this timestep
             y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
 
-            # now load all classifiers created in the reference run
-            for clf in clfs:
+            # now load all models created in the reference run
+            for mdl in mdls:
 
                 # creating an individual output folder per classifier
-                if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0]))):
-                    os.makedirs(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0]))
+                if not os.path.isdir(os.path.join(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0]))):
+                    os.makedirs(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0]))
                 
                 # load the pickled objects
-                # TODO: keep them in memory, i.e. after reading the clfs-folder above
-                with open(os.path.join(out_dir_REF, 'clfs', clf), 'rb') as f:
-                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: loading classifier {} from {}'.format(clf, os.path.join(out_dir_REF, 'clfs')))
-                    clf_obj = pickle.load(f)
+                # TODO: keep them in memory, i.e. after reading the mdls-folder above
+                with open(os.path.join(out_dir_REF, 'mdls', mdl), 'rb') as f:
+                    if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: loading classifier {} from {}'.format(mdl, os.path.join(out_dir_REF, 'mdls')))
+                    mdl_obj = pickle.load(f)
 
-                # for all other projection years than the first one, we need to read projected conflict from the previous projection year
+                # for all other projection years than the first one, we need to read projected migration from the previous projection year
                 if i > 0:
-                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous conflicts from file {}'.format(os.path.join(out_dir_PROJ, 'clfs', str(clf), 'projection_for_{}.csv'.format(proj_year-1))))
-                    conflict_data = pd.read_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
+                    if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_PROJ, 'mdls', str(mdl), 'projection_for_{}.csv'.format(proj_year-1))))
+                    migration_data = pd.read_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
 
-                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with conflict data for {}'.format(clf.rsplit('.')[0]))
-                    X = data.fill_X_conflict(X, config_PROJ, conflict_data, selected_polygons_gdf)
+                    if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data for {}'.format(mdl.rsplit('.')[0]))
+                    X = data.fill_X_migration(X, config_PROJ, migration_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
                 X = pd.DataFrame(X)
-                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
+                if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
 
                 X = X.fillna(0)
                 
                 # put all the data into the machine learning algo
-                # here the data will be used to make projections with various classifiers
-                # returns the prediction based on one individual classifier
-                y_df_clf = models.predictive(X, clf_obj, scaler, config_PROJ)
+                # here the data will be used to make projections with various models
+                # returns the prediction based on one individual model
+                y_df_mdl = models.predictive(X, mdl_obj, scaler, config_PROJ)
 
-                # storing the projection per clf to be used in the following timestep
-                y_df_clf.to_csv(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
+                # storing the projection per mdl to be used in the following timestep
+                y_df_mdl.to_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
 
                 # removing projection of previous time step as not needed anymore
                 if i > 0:
-                    os.remove(os.path.join(out_dir_PROJ, 'clfs', str(clf).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)))
+                    os.remove(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)))
 
                 # append to all classifiers dataframe
-                y_df = y_df.append(y_df_clf, ignore_index=True)
+                y_df = y_df.append(mdl, ignore_index=True)
 
             # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
-            if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
+            if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
             df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
             # df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
             gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')

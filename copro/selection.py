@@ -3,11 +3,12 @@ import geopandas as gpd
 import os
 from copro import utils
 
-def filter_conflict_properties(gdf, config):
-    """Filters conflict database according to certain conflict properties such as number of casualties, type of violence or country.
+# Line 6-
+# def filter_migration_properties(gdf, config):
+"""Filters migration database according to certain migration properties such as country.
 
     Args:
-        gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
+        gdf (geo-dataframe): geo-dataframe containing entries with migration.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
@@ -15,38 +16,37 @@ def filter_conflict_properties(gdf, config):
     """    
     
     # create dictionary with all selection criteria
-    selection_criteria = {'best': config.getint('conflict', 'min_nr_casualties'),
-                          'type_of_violence': (config.get('conflict', 'type_of_violence')).rsplit(',')}
+    # selection_criteria = {'best': config.getint('migration', 'country'), .rsplit(',')}
     
-    print('INFO: filtering based on conflict properties.')
+    # print('INFO: filtering based on migration properties.')
     
     # go through all criteria
-    for key in selection_criteria:
+    # for key in selection_criteria:
 
         # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
-        if key == 'best':
-            if selection_criteria[key] == '':
-                pass
-            else:
-                if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
-                gdf = gdf[gdf['best'] >= selection_criteria['best']]
+        # if key == 'best':
+            # if selection_criteria[key] == '':
+               # pass
+           # else:
+               # if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
+               # gdf = gdf[gdf['best'] >= selection_criteria['best']]
 
         # for other criteria, select all entries matching the specified value(s) per criterion
-        if key == 'type_of_violence':
-            if selection_criteria[key] == '':
-                pass
-            else:
-                if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
-                selection_criteria[key] = [eval(i) for i in selection_criteria[key]]
-                gdf = gdf[gdf[key].isin(selection_criteria[key])]
+        # if key == 'type_of_violence':
+           # if selection_criteria[key] == '':
+              #  pass
+           # else:
+               # if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
+               # selection_criteria[key] = [eval(i) for i in selection_criteria[key]]
+               # gdf = gdf[gdf[key].isin(selection_criteria[key])]
 
-    return gdf
+    # return gdf
 
 def select_period(gdf, config):
     """Reducing the geo-dataframe to those entries falling into a specified time period.
 
     Args:
-        gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
+        gdf (geo-dataframe): geo-dataframe containing entries with migration.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Returns:
@@ -64,10 +64,10 @@ def select_period(gdf, config):
     return gdf
 
 def clip_to_extent(gdf, config, root_dir):
-    """As the original conflict data has global extent, this function clips the database to those entries which have occured on a specified continent.
+    """As the original copro worked with a global extent, this function clips the database to those entries which have occured on a specified continent. 
 
     Args:
-        gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
+        gdf (geo-dataframe): geo-dataframe containing entries with migration.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file.
 
@@ -87,25 +87,25 @@ def clip_to_extent(gdf, config, root_dir):
     if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')
     extent_gdf.geometry = extent_gdf.buffer(0)
 
-    # clip the conflict dataframe to the specified polygons
-    if config.getboolean('general', 'verbose'): print('DEBUG: clipping clipping conflict dataset to extent')    
+    # clip the migration dataframe to the specified polygons
+    if config.getboolean('general', 'verbose'): print('DEBUG: clipping migration dataset to extent')    
     gdf = gpd.clip(gdf, extent_gdf)
     
     return gdf, extent_gdf
 
 def climate_zoning(gdf, extent_gdf, config, root_dir):
-    """This function allows for selecting only those conflicts and polygons falling in specified climate zones.
+    """This function allows for selecting only those migration data and polygons falling in specified climate zones.
     Also, a global dataframe is returned containing the IDs and geometry of all polygons after selection procedure.
     This can be used to add geometry information to model output based on common ID.
 
     Args:
-        gdf (geo-dataframe): geo-dataframe containing conflict data.
+        gdf (geo-dataframe): geo-dataframe containing migration data.
         extent_gdf (geo-dataframe): all polygons of study area.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file.
 
     Returns:
-        geo-dataframe: conflict data clipped to climate zones.
+        geo-dataframe: migration data clipped to climate zones.
         geo-dataframe: polygons of study area clipped to climate zones.
     """
 
@@ -135,8 +135,8 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
         if KG_gdf.crs != 'EPSG:4326':
             KG_gdf = KG_gdf.to_crs('EPSG:4326')
 
-        # clip the conflict dataframe to the specified climate zones
-        if config.getboolean('general', 'verbose'): print('DEBUG: clipping conflicts to climate zones {}'.format(look_up_classes))
+        # clip the migration dataframe to the specified climate zones
+        if config.getboolean('general', 'verbose'): print('DEBUG: clipping migration to climate zones {}'.format(look_up_classes))
         gdf = gpd.clip(gdf, KG_gdf.buffer(0))
 
         # clip the studied polygons to the specified climate zones
@@ -152,7 +152,7 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
 
 def select(config, out_dir, root_dir):
     """Main function performing the selection procedure.
-    Also stores the selected conflicts and polygons to output directory.
+    Also stores the selected migration data and polygons to output directory.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -160,32 +160,32 @@ def select(config, out_dir, root_dir):
         root_dir (str): path to location of cfg-file.
 
     Returns:
-        geo-dataframe: remaining conflict data after selection process.
+        geo-dataframe: remaining migration data after selection process.
         geo-dataframe: all polygons of the study area.
         geo-dataframe: remaining polygons after selection process.
         dataframe: global look-up dataframe linking polygon ID with geometry information.
     """  
 
-    # get the conflict data
+    # get the migration data
     gdf = utils.get_geodataframe(config, root_dir)
 
-    # filter based on conflict properties
-    gdf = filter_conflict_properties(gdf, config)
+    # filter based on migration properties --> THIS CAN MOST LIKELY BE DELETED
+    # gdf = filter_migration_properties(gdf, config)
 
-    # selected conflicts falling in a specified time period
+    # selected migration falling in a specified time period
     gdf = select_period(gdf, config)
 
-    # clip conflicts to a spatial extent defined as polygons
+    # clip migration to a spatial extent defined as polygons
     gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
 
-    # clip conflicts and polygons to specified climate zones
+    # clip migration and polygons to specified climate zones
     gdf, polygon_gdf = climate_zoning(gdf, extent_gdf, config, root_dir)
 
     # get a dataframe containing the ID and geometry of all polygons after selecting for climate zones
     global_df = utils.global_ID_geom_info(polygon_gdf)
 
-    # save conflict data and polygon to shp-file
-    gdf.to_file(os.path.join(out_dir, 'selected_conflicts.geojson'), driver='GeoJSON', crs='EPSG:4326')
-    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='EPSG:4326')
+    # save migration data and polygon to shp-file
+    gdf.to_file(os.path.join(out_dir, 'selected_migration.geojson'), driver='GeoJSON', crs='EPSG:4326') #change projection
+    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='EPSG:4326') #change projection
 
     return gdf, polygon_gdf, global_df
