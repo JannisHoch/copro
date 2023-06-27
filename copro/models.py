@@ -1,19 +1,19 @@
-from copro import machine_learning, conflict, utils, evaluation, data
+from copro import machine_learning, migration, utils, evaluation, data
 import pandas as pd
 import numpy as np
 import pickle
 import os, sys
 
-def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
+def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
     """Main model workflow when all XY-data is used. 
-    The model workflow is executed for each classifier.
+    The model workflow is executed for each model.
 
     Args:
         X (array): array containing the variable values plus IDs and geometry information.
-        Y (array): array containing merely the binary conflict classifier data.
+        Y (array): array containing the migration data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaling method instance.
-        clf (classifier): the specified model instance.
+        mdl (model): the specified model instance.
         out_dir (str): path to output folder.
 
     Returns:
@@ -21,7 +21,7 @@ def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
         datatrame: containing model output on polygon-basis.
         dict: dictionary containing evaluation metrics per simulation.
     """    
-    if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
+    if config.integer('general', 'verbose'): print('DEBUG: using all data')
 
     # split X into training-set and test-set, scale training-set data
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
@@ -29,20 +29,20 @@ def all_data(X, Y, config, scaler, clf, out_dir, run_nr):
     # convert to dataframe
     X_df = pd.DataFrame(X_test)
 
-    # fit classifier and make prediction with test-set
-    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config, out_dir, run_nr)
+    # fit model and make prediction with test-set
+    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr)
     y_prob_0 = y_prob[:, 0] # probability to predict 0
     y_prob_1 = y_prob[:, 1] # probability to predict 1
 
     # evaluate prediction and save to dict
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config)
 
     # aggregate predictions per polygon
-    y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
+    y_df = migration.get_pred_migration_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
 
     return X_df, y_df, eval_dict
 
-def leave_one_out(X, Y, config, scaler, clf, out_dir):
+def leave_one_out(X, Y, config, scaler, mdl, out_dir):
     """Model workflow when each variable is left out from analysis once. 
     Output is limited to the metric scores. 
     Output is stored to sub-folders of the output directory, with each sub-folder containing output for a n-1 variable combination.
@@ -51,10 +51,10 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
 
     Args:
         X (array): array containing the variable values plus unique identifer and geometry information.
-        Y (array): array containing merely the binary conflict classifier data.
+        Y (array): array containing the migration data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaling method instance.
-        clf (classifier): the specified model instance.
+        mdl (model): the specified model instance.
         out_dir (str): path to output folder.
 
     Raises:
@@ -76,15 +76,15 @@ def leave_one_out(X, Y, config, scaler, clf, out_dir):
         if not os.path.isdir(sub_out_dir):
             os.makedirs(sub_out_dir)
 
-        y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, clf, config)
+        y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, mdl, config)
 
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, clf, config)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, mdl, config)
 
         utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
     
     sys.exit('INFO: leave-one-out model execution stops here.')
 
-def single_variables(X, Y, config, scaler, clf, out_dir):
+def single_variables(X, Y, config, scaler, mdl, out_dir):
     """Model workflow when the model is based on only one single variable. 
     Output is limited to the metric scores. 
     Output is stored to sub-folders of the output directory, with each sub-folder containing output for a 1 variable combination.
@@ -93,10 +93,10 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
 
     Args:
         X (array): array containing the variable values plus unique identifer and geometry information.
-        Y (array): array containing merely the binary conflict classifier data.
+        Y (array): array containing the migration data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaling method instance.
-        clf (classifier): the specified model instance.
+        mdl (mdl): the specified model instance.
         out_dir (str): path to output folder.
 
     Raises:
@@ -118,25 +118,25 @@ def single_variables(X, Y, config, scaler, clf, out_dir):
         if not os.path.isdir(sub_out_dir):
             os.makedirs(sub_out_dir)
 
-        y_pred, y_prob = machine_learning.fit_predict(X_train_svmod, y_train, X_test_svmod, clf, config)
+        y_pred, y_prob = machine_learning.fit_predict(X_train_svmod, y_train, X_test_svmod, mdl, config)
 
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, clf, config)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, mdl, config)
 
         utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
 
     sys.exit('INFO: single-variable model execution stops here.')
 
-def dubbelsteen(X, Y, config, scaler, clf, out_dir):
-    """Model workflow when the relation between variables and conflict is based on randomness.
-    Thereby, the fraction of actual conflict is equal to observations, but the location in array is randomized by shuffling.
+def dubbelsteen(X, Y, config, scaler, mdl, out_dir):
+    """Model workflow when the relation between variables and migration is based on randomness.
+    Thereby, the fraction of actual migration is equal to observations, but the location in array is randomized by shuffling.
     The model workflow is executed for each model simulation.
 
     Args:
         X (array): array containing the variable values plus unique identifer and geometry information.
-        Y (array): array containing merely the binary conflict classifier data.
+        Y (array): array containing the migration data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaling method instance.
-        clf (classifier): the specified model instance.
+        mdl (model): the specified model instance.
         out_dir (str): path to output folder.
 
     Returns:
@@ -152,23 +152,23 @@ def dubbelsteen(X, Y, config, scaler, clf, out_dir):
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
-    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, clf, config)
+    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config)
 
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config)
+    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config)
 
-    y_df = conflict.get_pred_conflict_geometry(X_test_ID, X_test_geom, y_test, y_pred)
+    y_df = migration.get_pred_migration_geometry(X_test_ID, X_test_geom, y_test, y_pred)
 
     X_df = pd.DataFrame(X_test)
 
     return X_df, y_df, eval_dict
 
-def predictive(X, clf, scaler, config):
-    """Predictive model to use the already fitted classifier to make annual projections for the projection period.
-    As other models, it reads data which are then scaled and used in conjuction with the classifier to project conflict risk.
+def predictive(X, mdl, scaler, config):
+    """Predictive model to use the already fitted model to make annual projections for the projection period.
+    As other models, it reads data which are then scaled and used in conjuction with the model to project net migration.
 
     Args:
         X (array): array containing the variable values plus unique identifer and geometry information.
-        clf (classifier): the fitted specified classifier instance.
+        mdl (model): the fitted specified model instance.
         scaler (scaler): the fitted specified scaling method instance.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run.
 
@@ -177,24 +177,26 @@ def predictive(X, clf, scaler, config):
     """    
 
     # splitting the data from the ID and geometry part of X
-    X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X.to_numpy())
+    X_ID, X_geom, X_data = migration.split_migration_geom_data(X.to_numpy())
 
     # transforming the data
     # fitting is not needed as already happend before
-    if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
+    if config.getinteger('general', 'verbose'): print('DEBUG: transforming the data from projection period')
     X_ft = scaler.transform(X_data)
 
     # make projection with transformed data
-    if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
-    y_pred = clf.predict(X_ft)
+    if config.getinteger('general', 'verbose'): print('DEBUG: making the projections')    
+    y_pred = mdl.predict(X_ft)
 
+    # LINES BELOW NEED TO BE ADAPTED
     # predict probabilites of outcomes
-    y_prob = clf.predict_proba(X_ft)
-    y_prob_0 = y_prob[:, 0] # probability to predict 0
-    y_prob_1 = y_prob[:, 1] # probability to predict 1
+    y_prob = mdl.predict_proba(X_ft)
+    # y_prob_0 = y_prob[:, 0] # probability to predict 0
+    # y_prob_1 = y_prob[:, 1] # probability to predict 1
 
     # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
-    arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1))
-    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred', 'y_prob_0', 'y_prob_1'])
+    # OLD: arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1)) (Deleted y_prob_0, y_prob_1)
+    arr = np.column_stack((X_ID, X_geom, y_pred))
+    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred']) # (Deleted y_prob_0, y_prob_1)
     
     return y_df

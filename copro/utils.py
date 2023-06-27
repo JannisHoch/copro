@@ -187,7 +187,7 @@ def make_output_dir(config, root_dir, config_dict):
     # define filename of downloaded object
     # filename = os.path.join(path, 'ged201-csv.zip')
 
-    # click.echo('INFO: no conflict file was specified, hence downloading data from {} to {}'.format(url, filename))
+    # click.echo('INFO: no migration file was specified, hence downloading data from {} to {}'.format(url, filename))
 
     # save URL to filename
     # urllib.request.urlretrieve(url, filename)
@@ -257,7 +257,7 @@ def initiate_setup(settings_file, verbose=None):
     copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
     # if specfied, download UCDP/PRIO data directly
-    # no option in copro-m config['conflict']['conflict_file'] == 'download':
+    # no option in copro-m config['migration']['migration_file'] == 'download':
         # download_UCDP(config)
 
     # if any other model than all_data is specified, set number of runs to 1
@@ -271,10 +271,10 @@ def create_artificial_Y(Y):
     """Creates an array with identical net migration input array.
 
     Args:
-        Y (array): original array containing binary conflict classifier data.
+        Y (array): original array containing integer migration data.
 
     Returns:
-        array: array with reshuffled conflict classifier data.
+        array: array with reshuffled migratiom classifier data.
     """    
 
     arr_1 = np.ones(len(np.where(Y != 0)[0]))

@@ -53,7 +53,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 1
+    lag_time = 0 # for now
     click.echo('INFO: applying {} year lag time'.format(lag_time))
     sim_year = sim_year - lag_time
 
