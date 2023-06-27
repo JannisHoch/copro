@@ -1,4 +1,3 @@
-# change all conflict indicator into migration
 
 from copro import  migration, variables, evaluation
 import click
@@ -95,7 +94,7 @@ def fill_XY (XY, config, root_dir migration_data, polygon_gdf, out_dir):
     """    
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1) # delete + 1? Does this refer to the 1 year time lag that was used to understand conflict?
     click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
 
     # DELETE neighboring_matrix = neighboring_polys(config, polygon_gdf)
