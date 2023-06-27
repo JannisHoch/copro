@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
-from copro import conflict, data # need to make a new script 'migration' 
+from copro import migration, data 
 
 def define_scaling(config):
     """Defines scaling method based on model configurations.
@@ -43,7 +43,7 @@ def define_model(config):
         ValueError: raised if a non-supported model is specified.
 
     Returns:
-        classifier: the specified model instance.
+        model: the specified model instance.
     """    
     
     if config.get('machine_learning', 'model') == 'NuSVC':
@@ -68,7 +68,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
 
     Args:
         X (array): array containing the variable values plus unique identifer and geometry information.
-        Y (array): array containing merely the binary conflict classifier data.
+        Y (array): array containing merely the integer migration data.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         scaler (scaler): the specified scaling method instance.
 
@@ -77,7 +77,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
     """ 
 
     ##- separate arrays for ID, geometry, and variable values
-    X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
+    X_ID, X_geom, X_data = migration.split_migration_geom_data(X)
 
     ##- scaling only the variable values
     if config.getinteger('general', 'verbose'): print('DEBUG: fitting and transforming X')
@@ -93,19 +93,19 @@ def split_scale_train_test_split(X, Y, config, scaler):
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
 
     # for training-set and test-set, split in ID, geometry, and values
-    X_train_ID, X_train_geom, X_train = conflict.split_conflict_geom_data(X_train)
-    X_test_ID, X_test_geom, X_test = conflict.split_conflict_geom_data(X_test)
+    X_train_ID, X_train_geom, X_train = migration.split_migration_geom_data(X_train)
+    X_test_ID, X_test_geom, X_test = migration.split_migration_geom_data(X_test)
 
     return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
 
 def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
-    """Fits classifier based on training-data and makes predictions.
-    The fitted classifier is dumped to file with pickle to be used again during projections.
+    """Fits model based on training-data and makes predictions.
+    The fitted model is dumped to file with pickle to be used again during projections.
     Makes prediction with test-data including probabilities of those predictions.
 
     Args:
         X_train (array): training-data of variable values.
-        y_train (array): training-data of conflict data.
+        y_train (array): training-data of migration data.
         X_test (array): test-data of variable values.
         mdl: the specified model instance.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -124,7 +124,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     if not os.path.isdir(mdl_pickle_rep):
         os.makedirs(mdl_pickle_rep)
 
-    # save the fitted classifier to file via pickle.dump()
+    # save the fitted model to file via pickle.dump()
     if config.getinteger('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(mdl_pickle_rep))
     with open(os.path.join(mdl_pickle_rep, 'mdl_{}.pkl'.format(run_nr)), 'wb') as f:
         pickle.dump(mdl, f)
@@ -138,7 +138,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     return y_pred, y_prob
 
 def pickle_mdl(scaler, mdl, config, root_dir):
-    """(Re)fits a classifier with all available data and pickles it.
+    """(Re)fits a model with all available data and pickles it.
 
     Args:
         scaler (scaler): the specified scaling method instance.
@@ -147,10 +147,10 @@ def pickle_mdl(scaler, mdl, config, root_dir):
         root_dir (str): path to location of cfg-file.
 
     Returns:
-        classifier: classifier fitted with all available data.
+        model: model fitted with all available data.
     """    
 
-    print('INFO: fitting the classifier with all data from reference period')
+    print('INFO: fitting the model with all data from reference period')
 
     # reading XY-data
     # if nothing specified in cfg-file, load from output directory
@@ -165,10 +165,10 @@ def pickle_mdl(scaler, mdl, config, root_dir):
     # split in X and Y data
     X_fit, Y_fit = data.split_XY_data(XY_fit, config)
     # split X in ID, geometry, and values
-    X_ID_fit, X_geom_fit, X_data_fit = conflict.split_conflict_geom_data(X_fit)
+    X_ID_fit, X_geom_fit, X_data_fit = migration.split_migration_geom_data(X_fit)
     # scale values
     X_ft_fit = scaler.fit_transform(X_data_fit)
-    # fit classifier with values
+    # fit model with values
     mdl.fit(X_ft_fit, Y_fit)
 
     return mdl
@@ -183,11 +183,11 @@ def load_mdls(config, out_dir):
         out_dir (path): path to output folder.
 
     Returns:
-        list: list with file names of classifiers.
+        list: list with file names of models.
     """ 
 
     mdls = os.listdir(os.path.join(out_dir, 'mdls'))
 
-    assert (len(mdls), config.getint('machine_learning', 'n_runs')), AssertionError('ERROR: number of loaded classifiers does not match the specified number of runs in cfg-file!')
+    assert (len(mdls), config.getint('machine_learning', 'n_runs')), AssertionError('ERROR: number of loaded models does not match the specified number of runs in cfg-file!')
 
     return mdls
