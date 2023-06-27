@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore")
 
 @click.command()
 @click.argument('cfg', type=click.Path())
-@click.option('--make_plots', '-plt', help='add additional output plots', type=bool)
+@click.option('--make_plots', '-plt', help='add additional output plots', type=bool) 
 @click.option('--verbose', '-v', help='command line switch to turn on verbose mode', is_flag=True)
 
 def cli(cfg, make_plots=True, verbose=False):   
@@ -43,7 +43,7 @@ def cli(cfg, make_plots=True, verbose=False):
 
     click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
-    #- selecting conflicts and getting area-of-interest and aggregation level
+    #- selecting migration and getting area-of-interest and aggregation level
     migration_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
 
     #- plot polygons:
@@ -51,7 +51,7 @@ def cli(cfg, make_plots=True, verbose=False):
         fig, ax = plt.subplots(1, 1)
         copro.plots.selected_polygons(extent_active_polys_gdf, figsize=(20, 10), ax=ax)
         copro.plots.selected_migration(migration_gdf, ax=ax)
-        plt.savefig(os.path.join(out_dir_REF, 'selected_polygons_and_conflicts.png'), dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(out_dir_REF, 'selected_polygons_and_migration.png'), dpi=300, bbox_inches='tight')
 
     #- create X and Y arrays by reading net migration and variable files for reference run
     #- or by loading a pre-computed array (npy-file) if specified in cfg-file
