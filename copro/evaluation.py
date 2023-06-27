@@ -4,6 +4,7 @@ from sklearn import metrics, inspection
 import pandas as pd
 import geopandas as gpd
 import numpy as np
+import machine_learning
 
 def init_out_dict():
     """Initiates the main model evaluatoin dictionary for a range of model metric scores. 
@@ -12,8 +13,9 @@ def init_out_dict():
     Returns:
         dict: empty dictionary with metrics as keys.
     """    
-
-    scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+# Maybe nice to include if/else statement regarding scores depending on model choice
+    # scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+    scores = ['mean_absolute_error', 'mean_squared_error', 'r2']
 
     # initialize empty dictionary with one emtpy list per score
     out_dict = {}
@@ -22,13 +24,13 @@ def init_out_dict():
 
     return out_dict
 
-def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
+def evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config):
     """Computes a range of model evaluation metrics and appends the resulting scores to a dictionary.
     This is done for each model execution separately.
     Output will be stored to stderr if possible.
 
     Args:
-        y_test (list): list containing test-sample conflict data.
+        y_test (list): list containing test-sample migration data.
         y_pred (list): list containing predictions.
         y_prob (array): array resulting probabilties of predictions.
         X_test (array): array containing test-sample variable values.
@@ -39,18 +41,18 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
         dict: dictionary with scores for each simulation
     """  
 
-    if config.getboolean('general', 'verbose'):
-        click.echo("... Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)), err=True)
-        click.echo("... Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)), err=True)
-        click.echo("... Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)), err=True)
-        click.echo('... F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)), err=True)
-        click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
-        click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
-        click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
-        click.echo('... AP score {0:0.3f}'.format(metrics.average_precision_score(y_test, y_prob[:, 1])), err=True)
+    # if config.getboolean('general', 'verbose'):
+       # click.echo("... Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)), err=True)
+       # click.echo("... Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)), err=True)
+       # click.echo("... Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)), err=True)
+       # click.echo('... F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)), err=True)
+       # click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
+       # click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
+       # click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
+       # click.echo('... AP score {0:0.3f}'.format(metrics.average_precision_score(y_test, y_prob[:, 1])), err=True)
 
     # compute value per evaluation metric and assign to list
-    eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
+    """ eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
                  'Recall': metrics.recall_score(y_test, y_pred),
                  'F1 score': metrics.f1_score(y_test, y_pred),
@@ -58,8 +60,14 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, clf, config):
                  'Brier loss score': metrics.brier_score_loss(y_test, y_prob[:, 1]),
                  'ROC AUC score': metrics.roc_auc_score(y_test, y_prob[:, 1]),
                  'AP score': metrics.average_precision_score(y_test, y_prob[:, 1]),
-                }
+                }"""
 
+    eval_dict = {'mean_absolute_error'(y_test, y_pred),
+                 'mean_squared_error'(y_test, y_pred),
+                 'r2'(y_test, y_pred),
+                 }
+
+   
     return eval_dict
 
 def fill_out_dict(out_dict, eval_dict):
@@ -106,7 +114,7 @@ def fill_out_df(out_df, y_df):
 def polygon_model_accuracy(df, global_df, make_proj=False):
     """Determines a range of model accuracy values for each polygon.
     Reduces dataframe with results from each simulation to values per unique polygon identifier.
-    Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and conflict-only data.
+    Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and migration-only data.
 
     Args:
         df (dataframe): output dataframe containing results of all simulations.
@@ -159,20 +167,20 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
 
     return df_hit, gdf_hit
 
-def init_out_ROC_curve():
+# def init_out_ROC_curve():
     """Initiates empty lists for range of variables needed to plot ROC-curve per simulation.
 
     Returns:
         lists: empty lists for variables.
     """    
 
-    tprs = []
-    aucs = []
-    mean_fpr = np.linspace(0, 1, 100)
+    #tprs = []
+    #aucs = []
+    #mean_fpr = np.linspace(0, 1, 100)
 
-    return tprs, aucs, mean_fpr
+    # return tprs, aucs, mean_fpr
 
-def save_out_ROC_curve(tprs, aucs, out_dir):
+# def save_out_ROC_curve(tprs, aucs, out_dir):
     """Saves data needed to plot mean ROC and standard deviation to csv-files. 
     They can be loaded again with pandas in a post-processing step.
 
@@ -182,15 +190,15 @@ def save_out_ROC_curve(tprs, aucs, out_dir):
         out_dir (str):  path to output folder. If 'None', no output is stored.
     """    
 
-    tprs = pd.DataFrame(tprs)
-    aucs = pd.DataFrame(aucs)
+    # tprs = pd.DataFrame(tprs)
+    # aucs = pd.DataFrame(aucs)
 
-    tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False, header=False)
-    aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False, header=False)
+    #tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False, header=False)
+    #aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False, header=False)
 
-    print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
+    #print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
 
-    return
+    #return
 
 def calc_correlation_matrix(df, out_dir=None):
     """Computes the correlation matrix for a dataframe. 
