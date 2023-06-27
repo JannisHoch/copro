@@ -26,11 +26,11 @@ def selected_polygons(polygon_gdf, **kwargs):
 
     return ax
 
-def selected_conflicts(conflict_gdf, **kwargs):
-    """Creates a plotting instance of the best casualties estimates of the selected conflicts.
+def selected_migration(migration_gdf, **kwargs):
+    """Creates a plotting instance of the best casualties estimates of the selected migration.
 
     Args:
-        conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
+        migration_gdf (geo-dataframe): geo-dataframe containing the selected net migration.
 
     Kwargs:
         Geopandas-supported keyword arguments.
@@ -39,7 +39,7 @@ def selected_conflicts(conflict_gdf, **kwargs):
         ax: Matplotlib axis object.   
     """       
 
-    ax = conflict_gdf.plot(column='best', **kwargs)
+    ax = migration_gdf.plot(column='best', **kwargs)
 
     return ax
 
@@ -92,7 +92,7 @@ def plot_ROC_curve_n_times(ax, clf, X_test, y_test, tprs, aucs, mean_fpr, **kwar
         ax (axis): axis of pre-initaited matplotlib-instance
         clf (classifier): sklearn-classifier used in the simulation.
         X_test (array): array containing test-sample variable values.
-        y_test (list): list containing test-sample conflict data.
+        y_test (list): list containing test-sample migration data.
         tprs (list): list with false positive rates.
         aucs (list): list with area-under-curve values.
         mean_fpr (array): array with mean false positive rate.
