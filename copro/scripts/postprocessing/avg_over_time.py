@@ -10,7 +10,7 @@ import os, sys
 @click.command()
 @click.option('-t0', '--start-year', type=int)
 @click.option('-t1', '--end-year', type=int)
-@click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
+@click.option('-c', '--column', help='column name', default='net_migration', type=str) 
 @click.option('--geojson/--no-geojson', help='save output to geojson or not', default=False)
 @click.option('--png/--no-png', help='save output to png or not', default=True)
 @click.option('--verbose/--no-verbose', help='verbose on/off', default=False)
@@ -88,13 +88,13 @@ def main(input_dir=None, output_dir=None, selected_polygons=None, start_year=Non
     # get all unique IDs of polygons
     y_out['ID'] = y_df.ID.unique()
     click.echo('reading from column {}'.format(column))
-    if column == 'chance_of_conflict':
-        # add number of predictiosn made over all selected years
+    if column == 'net_migration':
+        # add number of predictions made over all selected years
         y_out = pd.merge(y_out, y_df.nr_predictions.groupby(y_df.ID).sum().to_frame(), on='ID')
-        # add number of predicted conflicts over all selected years
-        y_out = pd.merge(y_out, y_df.nr_predicted_conflicts.groupby(y_df.ID).sum().to_frame(), on='ID')
-        # determine chance of conflict over all selected years
-        y_out[column] = y_out.nr_predicted_conflicts / y_out.nr_predictions
+        # add net migration over all selected years
+        y_out = pd.merge(y_out, y_df.nr_predicted_migration.groupby(y_df.ID).sum().to_frame(), on='ID')
+        # determine net_migration over all selected years
+        y_out[column] = y_out.nr_predicted_migration / y_out.nr_predictions
     elif column == 'avg_prob_1':
         y_out = pd.merge(y_out, pd.to_numeric(y_df[column]).groupby(y_df.ID).mean().to_frame(), on='ID')
     else:

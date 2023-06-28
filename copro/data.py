@@ -35,7 +35,7 @@ def initiate_XY_data(config):
     # DELETE XY['conflict_t_min_1_nb'] = pd.Series(dtype=float)
     XY['migration'] = pd.Series(dtype=int)
 
-    if config.getinteger('general', 'verbose'): 
+    if config.getboolean('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in XY:
             click.echo('...{}'.format(key))
@@ -66,14 +66,14 @@ def initiate_X_data(config):
     # DELETE X['conflict_t_min_1'] = pd.Series(dtype=int)
     # DELETE X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
 
-    if config.getinteger('general', 'verbose'): 
+    if config.getboolean('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in X:
             click.echo('...{}'.format(key))
 
     return X
 
-def fill_XY (XY, config, root_dir migration_data, polygon_gdf, out_dir):
+def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """Fills the (XY-)dictionary with data for each variable and migration for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -152,7 +152,7 @@ def fill_XY (XY, config, root_dir migration_data, polygon_gdf, out_dir):
                     else:
                         raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
-            if config.getinteger('general', 'verbose'): click.echo('DEBUG: all data read')
+            if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
     df_out = pd.DataFrame.from_dict(XY)
     
@@ -176,7 +176,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         dict: dictionary containing sample values.
     """    
 
-    if config.getinteger('general', 'verbose'): click.echo('DEBUG: reading sample data from files')
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: reading sample data from files')
 
     # go through all keys in dictionary
     for key, value in X.items(): 
@@ -256,7 +256,7 @@ def fill_X_migration(X, config, migration_data, polygon_gdf):
 
          #   pass
 
-    if config.getinteger('general', 'verbose'): click.echo('DEBUG: all data read')
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
     return X
 
@@ -274,7 +274,7 @@ def split_XY_data(XY, config):
 
     # convert array to dataframe for easier handling
     XY = pd.DataFrame(XY)
-    if config.getinteger('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
 
     # fill all missing values with 0
     XY = XY.fillna(0)
@@ -289,13 +289,14 @@ def split_XY_data(XY, config):
     Y = XY[:, -1]
     Y = Y.astype(int)
 
-    if config.getinteger('general', 'verbose'): 
+    if config.getboolean('general', 'verbose'): 
         fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
         click.echo('DEBUG: a fraction of {} percent in the data corresponds to migration.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
 
-def neighboring_polys(config, extent_gdf, identifier='watprovID'):
+# NOT needed in current run 
+# def neighboring_polys(config, extent_gdf, identifier='watprovID'):
     """For each polygon, determines its neighboring polygons.
     As result, a (n x n) look-up dataframe is obtained containing, where n is number of polygons in extent_gdf.
 
@@ -308,29 +309,29 @@ def neighboring_polys(config, extent_gdf, identifier='watprovID'):
         dataframe: look-up dataframe containing True/False statement per polygon for all other polygons.
     """    
 
-    if config.getinteger('general', 'verbose'): click.echo('DEBUG: determining matrix with neighboring polygons')
+    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: determining matrix with neighboring polygons')
 
     # initialise empty dataframe
-    df = pd.DataFrame()
+    # df = pd.DataFrame()
 
     # go through each polygon aka water province
-    for i in range(len(extent_gdf)):
+    # for i in range(len(extent_gdf)):
         # get geometry of current polygon
-        wp = extent_gdf.geometry.iloc[i]
+        # wp = extent_gdf.geometry.iloc[i]
         # check which polygons in geodataframe (i.e. all water provinces) touch the current polygon
         # also create a dataframe from result (integer)
         # the transpose is needed to easier concat
-        df_temp = pd.DataFrame(extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]).T
+        # df_temp = pd.DataFrame(extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]).T
         # concat the dataframe
-        df = pd.concat([df, df_temp], axis=0, ignore_index=True)
+        # df = pd.concat([df, df_temp], axis=0, ignore_index=True)
 
     # replace generic indices with actual water province IDs
-    df.set_index(extent_gdf[identifier], inplace=True)
+   # df.set_index(extent_gdf[identifier], inplace=True)
 
     # replace generic columns with actual water province IDs
-    df.columns = extent_gdf[identifier].values
+    # df.columns = extent_gdf[identifier].values
 
-    return df
+    # return df
 
 # DELETE ALL LINE 336-354
 # def find_neighbors(ID, neighboring_matrix):

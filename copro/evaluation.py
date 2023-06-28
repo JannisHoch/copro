@@ -4,7 +4,7 @@ from sklearn import metrics, inspection
 import pandas as pd
 import geopandas as gpd
 import numpy as np
-import machine_learning
+
 
 def init_out_dict():
     """Initiates the main model evaluatoin dictionary for a range of model metric scores. 

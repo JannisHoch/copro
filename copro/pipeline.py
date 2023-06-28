@@ -34,7 +34,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, migration_gdf):
         XY = data.fill_XY(XY, config, root_dir, migration_gdf, polygon_gdf, out_dir)
 
         # save array to XY.npy out_dir
-        if config.getinteger('general', 'verbose'): click.echo('DEBUG: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
+        if config.getboolean('general', 'verbose'): click.echo('DEBUG: saving XY data by default to file {}'.format(os.path.join(out_dir, 'XY.npy')))
         np.save(os.path.join(out_dir,'XY'), XY)
 
     # if path to XY.npy is specified, read the data intead
@@ -138,9 +138,9 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
         out_dir_PROJ = main_dict[str(each_key)][1]
 
         # aligning verbosity settings across config-objects
-        config_PROJ.set('general', 'verbose', str(config_REF.getinteger('general', 'verbose')))
+        config_PROJ.set('general', 'verbose', str(config_REF.getboolean('general', 'verbose')))
 
-        if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
+        if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
 
         # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
         #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
@@ -162,10 +162,10 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
             # for the first projection year, we need to fall back on the observed migration at the last time step of the reference run
             if i == 0:
-                if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_REF, 'files', 'migration_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
+                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_REF, 'files', 'migration_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
                 migration_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'migration_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
 
-                if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data from previous year')
+                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data from previous year')
                 X = data.fill_X_migration(X, config_PROJ, migration_data, selected_polygons_gdf)
                 X = pd.DataFrame.from_dict(X).to_numpy()
 
@@ -182,20 +182,20 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # load the pickled objects
                 # TODO: keep them in memory, i.e. after reading the mdls-folder above
                 with open(os.path.join(out_dir_REF, 'mdls', mdl), 'rb') as f:
-                    if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: loading classifier {} from {}'.format(mdl, os.path.join(out_dir_REF, 'mdls')))
+                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: loading classifier {} from {}'.format(mdl, os.path.join(out_dir_REF, 'mdls')))
                     mdl_obj = pickle.load(f)
 
                 # for all other projection years than the first one, we need to read projected migration from the previous projection year
                 if i > 0:
-                    if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_PROJ, 'mdls', str(mdl), 'projection_for_{}.csv'.format(proj_year-1))))
+                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_PROJ, 'mdls', str(mdl), 'projection_for_{}.csv'.format(proj_year-1))))
                     migration_data = pd.read_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
 
-                    if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data for {}'.format(mdl.rsplit('.')[0]))
+                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data for {}'.format(mdl.rsplit('.')[0]))
                     X = data.fill_X_migration(X, config_PROJ, migration_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
                 X = pd.DataFrame(X)
-                if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
+                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
 
                 X = X.fillna(0)
                 
@@ -217,7 +217,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
-            if config_REF.getinteger('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
+            if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
             df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
             # df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
             gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')

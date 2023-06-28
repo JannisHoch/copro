@@ -97,11 +97,11 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.watprovID))
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.GID_2))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.watprovID))
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.GID_2))
                 val = np.log(val+1)
             else:
                 val = val_ln
@@ -206,18 +206,18 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.watprovID))
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.GID_2))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.watprovID))
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.GID_2))
                 val = np.log(val+1)
             else:
                 val = val_ln
 
         # print a warning if result is None
         if (val == None) or (val == np.nan) and (config.getboolean('general', 'verbose')): 
-            click.echo('WARNING: {} computed for ID {}!'.format(val, prov.watprovID))
+            click.echo('WARNING: {} computed for ID {}!'.format(val, prov.GID_2))
         
         list_out.append(val)
 

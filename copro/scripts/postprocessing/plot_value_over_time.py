@@ -9,7 +9,7 @@ import os
 @click.command()
 @click.option('-id', '--polygon-id', multiple=True, type=str)
 @click.option('-s', '--statistics', help='which statistical method to use (mean, max, min, std). note: has only effect if with "-id all"!', default='mean', type=str)
-@click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
+@click.option('-c', '--column', help='column name', default='net_migration', type=str)
 @click.option('-t', '--title', help='title for plot and file_object name', type=str)
 @click.option('--verbose/--no-verbose', help='verbose on/off', default=False)
 @click.argument('input-dir', type=click.Path())
