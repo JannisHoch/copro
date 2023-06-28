@@ -92,7 +92,7 @@ def parse_projection_settings(config, root_dir):
         each_val = os.path.abspath(os.path.join(root_dir, each_val))
 
         # parse each config-file specified
-        if config.getinteger('general', 'verbose'): click.echo('DEBUG: parsing settings from file {}'.format(each_val))
+        if config.getboolean('general', 'verbose'): click.echo('DEBUG: parsing settings from file {}'.format(each_val))
         each_config = parse_settings(each_val)
 
         # update the output dictionary with key and config-object
@@ -155,11 +155,11 @@ def make_output_dir(config, root_dir, config_dict):
         # else, remove all files with a few exceptions
         else:
             for root, dirs, files in os.walk(d):
-                if (config.getinteger('general', 'verbose')) and (len(files) > 0): 
+                if (config.getboolean('general', 'verbose')) and (len(files) > 0): 
                     click.echo('DEBUG: remove files in {}'.format(os.path.abspath(root)))
                 for fo in files:
                     if (fo =='XY.npy') or (fo == 'X.npy'):
-                        if config.getinteger('general', 'verbose'): click.echo('DEBUG: sparing {}'.format(fo))
+                        if config.getboolean('general', 'verbose'): click.echo('DEBUG: sparing {}'.format(fo))
                         pass
                     else:
                         os.remove(os.path.join(root, fo))
@@ -244,7 +244,7 @@ def initiate_setup(settings_file, verbose=None):
     if verbose != None:
         config.set('general', 'verbose', str(verbose))
 
-    click.echo('INFO: verbose mode on: {}'.format(config.getinteger('general', 'verbose')))
+    click.echo('INFO: verbose mode on: {}'.format(config.getboolean('general', 'verbose')))
 
     # get dictionary with all config-objects, also for projection runs
     config_dict = parse_projection_settings(config, root_dir)
@@ -253,7 +253,7 @@ def initiate_setup(settings_file, verbose=None):
     main_dict = make_output_dir(config, root_dir, config_dict)
 
     # copy cfg-file of reference run to out-dir of reference run
-    if config.getinteger('general', 'verbose'): click.echo('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
     copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
     # if specfied, download UCDP/PRIO data directly
@@ -297,8 +297,8 @@ def global_ID_geom_info(gdf):
     """    
 
     # stack identifier and geometry of all polygons
-    # test if gdf has column 'name', otherwise use column 'watprovID'
-    arr = np.column_stack((gdf.watprovID.to_numpy(), gdf.geometry.to_numpy()))
+    # test if gdf has column 'name', otherwise use column 'GID_2'
+    arr = np.column_stack((gdf.GID_2.to_numpy(), gdf.geometry.to_numpy()))
 
     # convert to dataframe
     df = pd.DataFrame(data=arr, columns=['ID', 'geometry'])

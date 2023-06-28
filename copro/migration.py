@@ -1,6 +1,6 @@
 #Change all conflict references to migration. ALso, delete code refering to conflict T-1 and conflict in neighbouring countries
 
-from copro import data, utils
+from copro import utils, data
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -23,7 +23,7 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
         list: list containing int per polygon depending on net migration.
    """
     
-    if config.getinteger('general', 'verbose'): print('DEBUG: checking for migration in polygon at t')
+    if config.getboolean('general', 'verbose'): print('DEBUG: checking for migration in polygon at t')
 
     # select the entries which occured in this year
     temp_sel_year = migration_gdf.loc[migration_gdf.year == sim_year]  
@@ -44,7 +44,7 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     if sim_year == config.getint('settings', 'y_end'):
         # get the migration value for each polygon
-        int_per_poly = GID_2 # check with Jens
+        int_per_poly = 'GID_2' # check with Jens
         # change column name and dtype
         int_per_poly = int_per_poly.rename(columns={'int_migration'}).astype(int)
         # change index name to fit global_df
@@ -53,7 +53,7 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
         global_df = utils.global_ID_geom_info(extent_gdf)
         # merge the integer info with geometry
         # for all polygons without net migration, set a 0
-        if config.getinteger('general', 'verbose'): print('DEBUG: storing integer migration map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing integer migration map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
         # data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').fillna(0)
         data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').dropna()
         data_stored.index = data_stored.index.rename('GID_2')
@@ -158,7 +158,7 @@ def read_projected_migration(extent_gdf, int_migration): # DELETE check_neighbor
     list_out = []
     for i in range(len(extent_gdf)):
 
-        i_poly = extent_gdf.watprovID.iloc[i] # change in GID_2
+        i_poly = extent_gdf.GID_2.iloc[i] # change in GID_2
 
         if i_poly in int_migration.index.values:
 
@@ -234,7 +234,7 @@ def get_poly_ID(extent_gdf):
     # loop through all polygons
     for i in range(len(extent_gdf)):
         # append geometry of each polygon to list
-        list_ID.append(extent_gdf.iloc[i]['watprovID'])
+        list_ID.append(extent_gdf.iloc[i]['GID_2'])
 
     # in the end, the same number of polygons should be in geodataframe and list        
     assert (len(extent_gdf) == len(list_ID)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_ID)))

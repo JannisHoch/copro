@@ -36,7 +36,7 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
-    description="Python-model build on scikit-learn functions, designed to facilitate the set-up, execution, and evaluation of machine-learning models for the study of the climate-conflict nexus.",
+    description="Python-model build on scikit-learn functions, designed to facilitate the set-up, execution, and evaluation of machine-learning models for the study of the climate-conflict or climate, environment, migration nexus.",
     entry_points={
         'console_scripts': [
             'copro_runner=copro.scripts.copro_runner:cli',
@@ -46,7 +46,7 @@ setup(
     license="MIT",
     long_description=readme,
     include_package_data=True,
-    keywords='conflict, climate, machine learning, projections',
+    keywords='migration, climate, machine learning, projections',
     name='copro',
     packages=find_packages(include=['copro', 'copro.*'], exclude=['docs', 'tests', 'joss']),
     setup_requires=setup_requirements,

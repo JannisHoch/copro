@@ -7,7 +7,7 @@ from PIL import Image
 import os
 
 @click.command()
-@click.option('-c', '--column', help='column name', default='chance_of_conflict', type=str)
+@click.option('-c', '--column', help='column name', default='net_migration', type=str) # chance_of_conflict to net_migration
 @click.option('-cmap', '--color-map', default='brg', type=str)
 @click.option('-v0', '--minimum-value', default=0, type=float)
 @click.option('-v1', '--maximum-value', default=1, type=float)

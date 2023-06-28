@@ -181,11 +181,11 @@ def predictive(X, mdl, scaler, config):
 
     # transforming the data
     # fitting is not needed as already happend before
-    if config.getinteger('general', 'verbose'): print('DEBUG: transforming the data from projection period')
+    if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
     X_ft = scaler.transform(X_data)
 
     # make projection with transformed data
-    if config.getinteger('general', 'verbose'): print('DEBUG: making the projections')    
+    if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
     y_pred = mdl.predict(X_ft)
 
     # LINES BELOW NEED TO BE ADAPTED
