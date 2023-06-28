@@ -11,6 +11,11 @@ from datetime import date
 import click
 import copro
 
+def get_geodataframe(config, gdf, crs='WGS84'):
+
+# def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
+    """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe."""
+
 gdf = gpd.read_file(r'C:\Users\Sophie\Documents\VU\Proefschrift\Environmental_migration\Data\Data_copro\Worlds_human_migration_patterns\ADM2_SA_yearly_net_migration.shp')
 
 gdf = gdf.melt(id_vars=['GID_2'], value_vars=['M2001', 'M2002', 'M2003', 'M2004', 'M2005', 'M2006', 'M2007', 'M2008', 'M2009', 'M2010', 'M2011', 'M2012', 'M2013', 'M2014', 'M2015'], var_name='Year', value_name='net_migration')
