@@ -44,7 +44,7 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     if sim_year == config.getint('settings', 'y_end'):
         # get the migration value for each polygon
-        int_per_poly = 'GID_2' # check with Jens
+        int_per_poly = 'GID_2'
         # change column name and dtype
         int_per_poly = int_per_poly.rename(columns={'int_migration'}).astype(int)
         # change index name to fit global_df
