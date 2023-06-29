@@ -3,10 +3,10 @@ import geopandas as gpd
 import os
 from copro import utils
 
-# Line 6-
-# def filter_migration_properties(gdf, config):
-"""Filters migration database according to certain migration properties such as country.
 
+# def filter_migration_properties(gdf, config): THIS COULD BE changed into selecting + and - net migration
+    """Filters migration database according to certain migration properties.
+    
     Args:
         gdf (geo-dataframe): geo-dataframe containing entries with migration.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -16,15 +16,15 @@ from copro import utils
     """    
     
     # create dictionary with all selection criteria
-    # selection_criteria = {'best': config.getint('migration', 'country'), .rsplit(',')}
+    # selection_criteria ={'net_migration': config.getint('migration', 'country'), .rsplit(',')}
     
     # print('INFO: filtering based on migration properties.')
     
     # go through all criteria
     # for key in selection_criteria:
 
-        # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
-        # if key == 'best':
+    # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
+       # if key == 'best':
             # if selection_criteria[key] == '':
                # pass
            # else:
