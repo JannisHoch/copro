@@ -11,19 +11,32 @@ from datetime import date
 import click
 import copro
 
-def get_geodataframe(config, root_dir, gdf, crs='WGS84'):
+def get_geodataframe(config, root_dir, geometry='geometry', crs='WGS84'):
 
-# def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
-    """Georeferences a pandas dataframe using longitude and latitude columns of that dataframe."""
+# WAS: def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
 
-gdf = gpd.read_file(r'C:\Users\Sophie\Documents\VU\Proefschrift\Environmental_migration\Data\Data_copro\Worlds_human_migration_patterns\ADM2_SA_yearly_net_migration.shp')
+    migration_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'migration_file'))
 
-gdf.rename(columns = {'M2001':'2001', 'M2002':'2002', 'M2003':'2003', 'M2004':'2004', 'M2005':'2005', 'M2006':'2006', 'M2007':'2007', 'M2008':'2008', 'M2009':'2009', 'M2010':'2010', 'M2011':'2011', 'M2012':'2012', 'M2013':'2013', 'M2014':'2014', 'M2015':'2015'}, inplace = True)
+    # read file to geopandas dataframe
+    click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
+    gdf = gpd.read_file(migration_fo)
 
-gdf = gdf.melt(id_vars=['GID_2'], value_vars=['2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], var_name='year', value_name='net_migration')
+    # Rename year columns from M(yearX) to (yearX) 
+
+    gdf.rename(columns = {'M2001':'2001', 'M2002':'2002', 'M2003':'2003', 'M2004':'2004', 
+                          'M2005':'2005', 'M2006':'2006', 'M2007':'2007', 'M2008':'2008', 
+                          'M2009':'2009', 'M2010':'2010', 'M2011':'2011', 'M2012':'2012', 
+                          'M2013':'2013', 'M2014':'2014', 'M2015':'2015'}, inplace = True)
+
+    # Reorganise GDF so that years can be selected 
+
+    gdf = gdf.melt(id_vars=['GID_2', 'geometry'], value_vars=['2001', '2002', '2003', '2004', '2005', 
+                                                              '2006', '2007', '2008', '2009', '2010', 
+                                                              '2011', '2012', '2013', '2014', '2015'], 
+                                                              var_name='year', value_name='net_migration')
 
 # TESTED print(gdf) --> works
-
+    return gdf
 
 def show_versions():
     """click.echos the version numbers by the main python-packages used.
@@ -264,7 +277,7 @@ def initiate_setup(settings_file, verbose=None):
 
     # if specfied, download UCDP/PRIO data directly
     # no option in copro-m config['migration']['migration_file'] == 'download':
-        # download_UCDP(config)
+       # download_UCDP(config)
 
     # if any other model than all_data is specified, set number of runs to 1
     if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
@@ -273,27 +286,27 @@ def initiate_setup(settings_file, verbose=None):
 
     return main_dict, root_dir
 
-def create_artificial_Y(Y):
+# def create_artificial_Y(Y):
     """Creates an array with identical net migration input array.
 
     Args:
         Y (array): original array containing integer migration data.
 
     Returns:
-        array: array with reshuffled migratiom classifier data.
+        array: array with reshuffled migration data.
     """    
 
-    arr_1 = np.ones(len(np.where(Y != 0)[0]))
-    arr_0 = np.zeros(int(len(Y) - len(np.where(Y != 0)[0])))
-    Y_r_1 = np.append(arr_1, arr_0)
+    #arr_1 = np.ones(len(np.where(Y != 0)[0]))
+    #arr_0 = np.zeros(int(len(Y) - len(np.where(Y != 0)[0])))
+    #Y_r_1 = np.append(arr_1, arr_0)
 
-    Y_r = utils.shuffle(Y_r_1, random_state=42)
+    #Y_r = utils.shuffle(Y_r_1, random_state=42)
 
-    return Y_r
+    #return Y_r
 
 def global_ID_geom_info(gdf):
     """Retrieves unique ID and geometry information from geo-dataframe for a global look-up dataframe. 
-    The IDs currently supported are 'name' or 'watprovID'.
+    The IDs supported are 'name' or 'GID_2'.
 
     Args:
         gdf (geo-dataframe): containing all polygons used in the model.
@@ -328,12 +341,12 @@ def global_ID_geom_info(gdf):
     """    
 
     # concatenate dataframes of sample data and target values
-    df = pd.concat([X_df, y_df], axis=1)
+    # df = pd.concat([X_df, y_df], axis=1)
     # keep only those entries where conflict was observed
-    df = df.loc[df.y_test==1]
+    # df = df.loc[df.y_test==1]
 
     # split again into X and Y
-    X1_df = df[df.columns[:len(X_df.columns)]]
+    df = df[df.columns[:len(X_df.columns)]]
     y1_df = df[df.columns[len(X_df.columns):]]
 
     return X1_df, y1_df
