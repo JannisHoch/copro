@@ -44,7 +44,7 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     if sim_year == config.getint('settings', 'y_end'):
         # get the migration value for each polygon
-        int_per_poly = 'GID_2'
+        int_per_poly = 'net_migration'
         # change column name and dtype
         int_per_poly = int_per_poly.rename(columns={'int_migration'}).astype(int)
         # change index name to fit global_df
@@ -56,7 +56,7 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
         if config.getboolean('general', 'verbose'): print('DEBUG: storing integer migration map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
         # data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').fillna(0)
         data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').dropna()
-        data_stored.index = data_stored.index.rename('GID_2')
+        data_stored.index = data_stored.index.rename('net_migration')
         data_stored = data_stored.drop('geometry', axis=1)
         data_stored = data_stored.astype(int)
         data_stored.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))

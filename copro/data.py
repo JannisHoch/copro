@@ -188,33 +188,33 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
-        elif key == 'poly_geometry':
+        #elif key == 'poly_geometry':
         
-            data_series = value
-            data_list = migration.get_poly_geometry(polygon_gdf, config)
-            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-            X[key] = data_series
+            #data_series = value
+            #data_list = migration.get_poly_geometry(polygon_gdf, config)
+            #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+            #X[key] = data_series
 
-        else:
+       #else:
 
         # DELETE if (key != 'conflict_t_min_1') and (key != 'conflict_t_min_1_nb'):
 
-                nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
+                # nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
                 
-                if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
-                    data_series = value
-                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
-                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    X[key] = data_series
+                #if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                    #data_series = value
+                    #data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
+                    #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    #X[key] = data_series
                     
-                elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                    data_series = value
-                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
-                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    X[key] = data_series
+                #elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                    #data_series = value
+                    #data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
+                    #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    #X[key] = data_series
                     
-                else:
-                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                #else:
+                   #raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
     return X
 
