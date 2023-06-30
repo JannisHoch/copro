@@ -5,7 +5,7 @@ from copro import utils
 
 
 # def filter_migration_properties(gdf, config): THIS COULD BE changed into selecting + and - net migration
-    """Filters migration database according to certain migration properties.
+"""Filters migration database according to certain migration properties.
     
     Args:
         gdf (geo-dataframe): geo-dataframe containing entries with migration.
@@ -87,10 +87,14 @@ def clip_to_extent(gdf, config, root_dir):
     if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')
     extent_gdf.geometry = extent_gdf.buffer(0)
 
+    if (gdf.crs == extent_gdf.crs): print("DEBUG: Both layers are in the same crs")
+
     # clip the migration dataframe to the specified polygons
-    if config.getboolean('general', 'verbose'): print('DEBUG: clipping migration dataset to extent')    
-    gdf = gpd.clip(gdf, extent_gdf)
     
+    
+if config.getboolean('general', 'verbose'): print('DEBUG: clipping migration dataset to extent')    
+    gdf = gpd.intersect(gdf, extent_gdf)
+
     return gdf, extent_gdf
 
 def climate_zoning(gdf, extent_gdf, config, root_dir):
@@ -131,9 +135,9 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
         # get only those entries with retrieved codes
         KG_gdf = KG_gdf.loc[KG_gdf['GRIDCODE'].isin(code_nrs)]
         
-        # make sure EPSG:4236 is used
-        if KG_gdf.crs != 'EPSG:4326':
-            KG_gdf = KG_gdf.to_crs('EPSG:4326')
+        # make sure EPSG:4236 is used --> now changed into WGS84
+        if KG_gdf.crs != 'WGS84':
+            KG_gdf = KG_gdf.to_crs('WGS84')
 
         # clip the migration dataframe to the specified climate zones
         if config.getboolean('general', 'verbose'): print('DEBUG: clipping migration to climate zones {}'.format(look_up_classes))
@@ -185,7 +189,7 @@ def select(config, out_dir, root_dir):
     global_df = utils.global_ID_geom_info(polygon_gdf)
 
     # save migration data and polygon to shp-file
-    gdf.to_file(os.path.join(out_dir, 'selected_migration.geojson'), driver='GeoJSON', crs='EPSG:4326') #change projection
-    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='EPSG:4326') #change projection
+    gdf.to_file(os.path.join(out_dir, 'selected_migration.geojson'), driver='GeoJSON', crs='WGS84') #change projection
+    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='WGS84') #change projection
 
     return gdf, polygon_gdf, global_df
