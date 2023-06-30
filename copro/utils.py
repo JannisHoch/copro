@@ -11,7 +11,7 @@ from datetime import date
 import click
 import copro
 
-def get_geodataframe(config, root_dir, geometry='geometry', crs='WGS84'):
+def get_geodataframe(config, root_dir, geometry='geometry', crs = 'WGS84'):
 
 # WAS: def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
 
@@ -21,7 +21,7 @@ def get_geodataframe(config, root_dir, geometry='geometry', crs='WGS84'):
     click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
     gdf = gpd.read_file(migration_fo)
 
-    # Rename year columns from M(yearX) to (yearX) 
+    # Rename year columns from M(yearX) to (yearX) since columnnames have to start with a letter in arcgis
 
     gdf.rename(columns = {'M2001':'2001', 'M2002':'2002', 'M2003':'2003', 'M2004':'2004', 
                           'M2005':'2005', 'M2006':'2006', 'M2007':'2007', 'M2008':'2008', 
@@ -31,15 +31,13 @@ def get_geodataframe(config, root_dir, geometry='geometry', crs='WGS84'):
     # Reorganise GDF so that years can be selected 
 
     gdf = gdf.melt(id_vars=['GID_2', 'geometry'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
-                                                              '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], var_name='year', value_name='net_migration')
+                                                              '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], 
+                                                              var_name='year', value_name='net_migration')
 
-    
+
     gdf.year = gdf.year.astype(int)
-
-    # TESTED print(gdf) --> works
+   
     return gdf
-
-    
 
 def show_versions():
     """click.echos the version numbers by the main python-packages used.
