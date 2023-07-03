@@ -80,6 +80,7 @@ def parse_settings(settings_file):
     Returns:
         ConfigParser-object: parsed model configuration.
     """    
+    assert os.path.exists(settings_file), 'ERROR: settings file {} does not exist'.format(settings_file)
 
     config = RawConfigParser(allow_no_value=True, inline_comment_prefixes='#')
     config.optionxform = lambda option: option
