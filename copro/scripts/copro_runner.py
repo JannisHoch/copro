@@ -135,3 +135,6 @@ def cli(cfg, make_plots=True, verbose=False):
     copro.pipeline.run_prediction(scaler_fitted, main_dict, root_dir, extent_active_polys_gdf)
 
     click.echo(click.style('\nINFO: all projections succesfully finished\n', fg='cyan'))
+
+if __name__ == '__main__':
+    cli()
