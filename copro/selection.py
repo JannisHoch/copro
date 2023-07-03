@@ -5,15 +5,15 @@ from copro import utils
 
 
 # def filter_migration_properties(gdf, config): THIS COULD BE changed into selecting + and - net migration
-"""Filters migration database according to certain migration properties.
+    # """Filters migration database according to certain migration properties.
     
-    Args:
-        gdf (geo-dataframe): geo-dataframe containing entries with migration.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+    # Args:
+    #     gdf (geo-dataframe): geo-dataframe containing entries with migration.
+    #     config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
-    Returns:
-        geo-dataframe: geo-dataframe containing filtered entries.
-    """    
+    # Returns:
+    #     geo-dataframe: geo-dataframe containing filtered entries.
+    # """    
     
     # create dictionary with all selection criteria
     # selection_criteria ={'net_migration': config.getint('migration', 'country'), .rsplit(',')}
@@ -87,12 +87,13 @@ def clip_to_extent(gdf, config, root_dir):
     if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')
     extent_gdf.geometry = extent_gdf.buffer(0)
 
-    if (gdf.crs == extent_gdf.crs): print("DEBUG: Both layers are in the same crs")
+    if (gdf.crs == extent_gdf.crs):
+        print("DEBUG: Both layers are in the same crs")
 
     # clip the migration dataframe to the specified polygons
     
-    
-if config.getboolean('general', 'verbose'): print('DEBUG: clipping migration dataset to extent')    
+    if config.getboolean('general', 'verbose'):
+        print('DEBUG: clipping migration dataset to extent')
     gdf = gpd.intersect(gdf, extent_gdf)
 
     return gdf, extent_gdf
