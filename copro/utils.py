@@ -9,12 +9,10 @@ from shutil import copyfile
 from sklearn import utils
 from datetime import date
 import click
+from shapely.geometry import multipolygon, Polygon
 import copro
 
-def get_geodataframe(config, root_dir, geometry='geometry', crs = 'WGS84'):
-
-# WAS: def get_geodataframe(config, root_dir, longitude='longitude', latitude='latitude', crs='EPSG:4326'):
-
+def get_geodataframe(config, root_dir, crs = 'WGS84'):
     migration_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'migration_file'))
 
     # read file to geopandas dataframe
@@ -36,7 +34,10 @@ def get_geodataframe(config, root_dir, geometry='geometry', crs = 'WGS84'):
 
 
     gdf.year = gdf.year.astype(int)
-   
+
+    # gdf = gpd.GeoDataFrame(gdf, geometry=gdf.set_geometry('geometry'))
+
+
     return gdf
 
 def show_versions():
@@ -186,44 +187,6 @@ def make_output_dir(config, root_dir, config_dict):
                         os.remove(os.path.join(root, fo))
                             
     return main_dict
-    
-# DELETE line 166-202: no option to download data right into the model
-# def download_UCDP(config, root_dir):
-    """If specfied in cfg-file, the PRIO/UCDP data is directly downloaded and used as model input.
-
-    Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        root_dir (str): absolute path to location of configurations-file
-    """    
-
-    # define path where downloaded data will be stored
-    # path = os.path.join(os.path.join(root_dir, config.get('general', 'input_dir')), 'UCDP')
-    # create folder if not there yer
-    # if not os.path.isdir(path):
-      #  os.mkdir(path)
-    
-    # URL to be downloaded
-    # url = 'http://ucdp.uu.se/downloads/ged/ged201-csv.zip'
-
-    # define filename of downloaded object
-    # filename = os.path.join(path, 'ged201-csv.zip')
-
-    # click.echo('INFO: no migration file was specified, hence downloading data from {} to {}'.format(url, filename))
-
-    # save URL to filename
-    # urllib.request.urlretrieve(url, filename)
-
-    # path to csv-file
-    # csv_fo = zipfile.ZipFile(filename, 'r').namelist()[0]
-    
-    # extract all data
-    # zipfile.ZipFile(filename, 'r').extractall(path=path)
-    
-    # set path to csv-file in config-object
-    # path_set = os.path.join(path, csv_fo)
-    # config['migration']['migration_file'] = path_set
-
-    # return
 
 def print_model_info():
     """click.echos a header with main model information.
@@ -330,7 +293,7 @@ def global_ID_geom_info(gdf):
 
     return df
 
-#CHANGE TO READING MIGRATION DATA def get_conflict_datapoints_only(X_df, y_df):
+#DELETE? def get_conflict_datapoints_only(X_df, y_df):
     """Filters out only those polygons where conflict was actually observed in the test-sample.
 
     Args:
@@ -348,10 +311,10 @@ def global_ID_geom_info(gdf):
     # df = df.loc[df.y_test==1]
 
     # split again into X and Y
-    df = df[df.columns[:len(X_df.columns)]]
-    y1_df = df[df.columns[len(X_df.columns):]]
+    # df = df[df.columns[:len(X_df.columns)]]
+    # y1_df = df[df.columns[len(X_df.columns):]]
 
-    return X1_df, y1_df
+   # return X1_df, y1_df
 
 def save_to_csv(arg, out_dir, fname):
     """Saves an dictionary to csv-file.
