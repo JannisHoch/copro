@@ -94,18 +94,18 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """    
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1) # delete + 1? Does this refer to the 1 year time lag that was used to understand conflict?
-    click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1]))
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1) # deleted + 1: Does this refer to the 1 year time lag that was used to understand conflict?
+    click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) # delete -1 ?
 
     # DELETE neighboring_matrix = neighboring_polys(config, polygon_gdf)
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
-        if i == 0:
+        # if i == 0:
 
-            click.echo('INFO: skipping first year {} to start up model'.format(sim_year))
+           # click.echo('INFO: skipping first year {} to start up model'.format(sim_year))
 
-        else:
+        # else:
 
             click.echo('INFO: entering year {}'.format(sim_year))
 
