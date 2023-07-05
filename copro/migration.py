@@ -8,7 +8,7 @@ import os, sys
 import click
 
 
-def migration_in_year_int(config, migration_gdf, extent_gdf, sim_year, out_dir): 
+def migration_in_year_int(config, migration_gdf, gdf, sim_year, out_dir): 
     """Creates a list for each timestep with integer information on migration in a polygon."
 
     Args: config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -32,11 +32,7 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
         click.echo('WARNING: no migration occured in sampled migration data set for year {}'.format(sim_year))
     
     # merge the dataframes with polygons and migration information, creating a sub-set of polygons/regions
-    data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-
-    # DELETE determine the aggregated amount of fatalities in one region (e.g. water province)
-
-    # DELETE fatalities_per_poly = data_merged['best'].groupby(data_merged['watprovID']).sum().to_frame().rename(columns={"best": 'total_fatalities'})
+    data_merged = gpd.sjoin(temp_sel_year, gdf)
 
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
@@ -50,27 +46,27 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
         # change index name to fit global_df
         int_per_poly.index = int_per_poly.index.rename('ID')
         # get list of all polygon IDs with their geometry information
-        global_df = utils.global_ID_geom_info(extent_gdf)
+        global_df = utils.global_ID_geom_info(gdf)
         # merge the integer info with geometry
         # for all polygons without net migration, set a 0
         if config.getboolean('general', 'verbose'): print('DEBUG: storing integer migration map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
         # data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').fillna(0)
         data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').dropna()
-        data_stored.index = data_stored.index.rename('net_migration')
+        data_stored.index = data_stored.index.rename('GID_2')
         data_stored = data_stored.drop('geometry', axis=1)
         data_stored = data_stored.astype(int)
         data_stored.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
  
     # loop through all regions and check if exists in sub-set
     list_out = []
-    for i in range(len(extent_gdf)):
-        i_poly = extent_gdf.iloc[i]['GID_2']
-        # DELETE if i_poly in fatalities_per_poly.index.values:
-           # list_out.append(1)
-        # else:
-            # list_out.append(0)
+    for i in range(len(gdf)):
+        i_poly = gdf.iloc[i]['GID_2']
+        migration_value = data_merged.loc[gdf['GID_2'] == i_poly, 'net_migration'].values[0]
+        list_out.append(migration_value)
+    else:
+        print('no migration assigned')
             
-    assert (len(extent_gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
+    assert (len(gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(gdf), len(list_out)))
 
     return list_out
 
@@ -158,18 +154,10 @@ def read_projected_migration(extent_gdf, int_migration): # DELETE check_neighbor
     list_out = []
     for i in range(len(extent_gdf)):
 
-        i_poly = extent_gdf.GID_2.iloc[i] # change in GID_2
+        i_poly = extent_gdf.GID_2.iloc[i] 
 
         if i_poly in int_migration.index.values:
 
-            # DELETE if check_neighbors:
-
-                # determine log-scaled number of conflict events in neighboring polygons
-                # val = calc_conflicts_nb(i_poly, neighboring_matrix, bool_conflict)
-                # append resulting value
-                # list_out.append(val)
-
-            # else:
             list_out.append(1)
 
         else:

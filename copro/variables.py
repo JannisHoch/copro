@@ -12,7 +12,7 @@ from distutils import util
 import warnings
 warnings.filterwarnings("ignore")
 
-def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
+def Xfile_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
@@ -29,7 +29,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
-        var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
+        var_name (str): name of variable in nc or csv file, must also be the same under which path to file is specified in cfg-file.
         sim_year (int): year for which data is extracted.
 
     Raises:
@@ -53,7 +53,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 0 # for now
+    lag_time = 0 
     click.echo('INFO: applying {} year lag time'.format(lag_time))
     sim_year = sim_year - lag_time
 
@@ -63,15 +63,40 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         else:
             click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
 
+    # Check if the file is NetCDF or CSV
+    file_extension = os.path.splitext(nc_fo)[1]
+
+    if file_extension == '.nc':
+        # open nc-file 
+        nc_ds = xr.open_dataset(nc_fo)
+        # Extract the required variable from the nc-file data
+        nc_var = nc_ds[var_name]
+    elif file_extension == '.csv':
+        # Read CSV file 
+        csv_data = pd.read_csv(nc_fo)
+        # Extract the required variable from the CSV data
+        nc_var = csv_data[var_name].values
+    else:
+        raise ValueError('ERROR: Unsupported file format. Only NetCDF (.nc) and CSV (.csv) files are supported.')
+    
+    
     # open nc-file with xarray as dataset
-    nc_ds = xr.open_dataset(nc_fo)
+    # nc_ds = xr.open_dataset(nc_fo)
     # get xarray data-array for specified variable
-    nc_var = nc_ds[var_name]
+    #nc_var = nc_ds[var_name]
     if ln_flag:
         nc_var = np.log(nc_var)
         if config.getboolean('general', 'verbose'): click.echo('DEBUG: log-transform variable {}'.format(var_name))
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
+
+    # Check if the file is nc-file or CSV to align nc-file with the extent polygon boundaries
+    file_extension = os.path.splitext(nc_fo)[1]
+
+    if file_extension == '.nc':
+        affine = rio.open(nc_fo).transform
+    elif file_extension == '.csv':
+        affine = None
 
     # get values from data-array for specified year
     nc_arr = nc_var.sel(time=sim_year)
@@ -84,24 +109,24 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(extent_gdf)):
 
-        # province i
-        prov = extent_gdf.iloc[i]
+        # polygon (GID_2) i
+        polygon = extent_gdf.iloc[i]
 
-        # compute zonal stats for this province
+        # compute zonal stats for this polygon (GID_2)
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
         val = zonal_stats[0][stat_method]
 
-        # # if specified, log-transform value
+        # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.GID_2))
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), polygon.GID_2))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.GID_2))
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
                 val = np.log(val+1)
             else:
                 val = val_ln
@@ -193,31 +218,31 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(extent_gdf)):
 
-        # province i
-        prov = extent_gdf.iloc[i]
+        # polygon i
+        polygon = extent_gdf.iloc[i]
 
-        # compute zonal stats for this province
+        # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
         val = zonal_stats[0][stat_method]
 
         # # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.GID_2))
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), polygon.GID_2))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.GID_2))
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
                 val = np.log(val+1)
             else:
                 val = val_ln
 
         # print a warning if result is None
         if (val == None) or (val == np.nan) and (config.getboolean('general', 'verbose')): 
-            click.echo('WARNING: {} computed for ID {}!'.format(val, prov.GID_2))
+            click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
         
         list_out.append(val)
 
