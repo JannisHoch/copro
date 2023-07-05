@@ -1,5 +1,5 @@
 
-from copro import  migration, variables, evaluation
+from copro import migration, variables, evaluation
 import click
 import numpy as np
 import xarray as xr
@@ -97,8 +97,6 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1) # deleted + 1: Does this refer to the 1 year time lag that was used to understand conflict?
     click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) # delete -1 ?
 
-    # DELETE neighboring_matrix = neighboring_polys(config, polygon_gdf)
-
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
         # if i == 0:
@@ -115,7 +113,7 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                 if key == 'migration':
                 
                     data_series = value
-                    data_list = migration.migration_in_year_int  (config, migration_data, polygon_gdf, sim_year, out_dir)
+                    data_list = migration.migration_in_year_int (config, migration_data, polygon_gdf, sim_year, out_dir) 
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -133,13 +131,29 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
-                else:
+                elif key == 'csv':
+                
+                    pd.read_csv(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]) 
+
+                    if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                        data_series = value
+                        data_list = variables.Xfiles_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                        XY[key] = data_series
+                        
+                    elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                        data_series = value
+                        data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                        XY[key] = data_series
+                
+                elif key == 'netcdf':
 
                     nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
                     
                     if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                         data_series = value
-                        data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                        data_list = variables.Xfiles_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                         data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                         XY[key] = data_series
                         
