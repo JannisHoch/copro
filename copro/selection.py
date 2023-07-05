@@ -4,44 +4,6 @@ import os
 from copro import utils
 
 
-# def filter_migration_properties(gdf, config): THIS COULD BE changed into selecting + and - net migration
-    # """Filters migration database according to certain migration properties.
-    
-    # Args:
-    #     gdf (geo-dataframe): geo-dataframe containing entries with migration.
-    #     config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-
-    # Returns:
-    #     geo-dataframe: geo-dataframe containing filtered entries.
-    # """    
-    
-    # create dictionary with all selection criteria
-    # selection_criteria ={'net_migration': config.getint('migration', 'country'), .rsplit(',')}
-    
-    # print('INFO: filtering based on migration properties.')
-    
-    # go through all criteria
-    # for key in selection_criteria:
-
-    # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
-       # if key == 'best':
-            # if selection_criteria[key] == '':
-               # pass
-           # else:
-               # if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with lower value', selection_criteria[key])
-               # gdf = gdf[gdf['best'] >= selection_criteria['best']]
-
-        # for other criteria, select all entries matching the specified value(s) per criterion
-        # if key == 'type_of_violence':
-           # if selection_criteria[key] == '':
-              #  pass
-           # else:
-               # if config.getboolean('general', 'verbose'): print('DEBUG: filtering key', key, 'with value(s)', selection_criteria[key])
-               # selection_criteria[key] = [eval(i) for i in selection_criteria[key]]
-               # gdf = gdf[gdf[key].isin(selection_criteria[key])]
-
-    # return gdf
-
 def select_period(gdf, config):
     """Reducing the geo-dataframe to those entries falling into a specified time period.
 
@@ -63,20 +25,9 @@ def select_period(gdf, config):
     
     return gdf
 
-def clip_to_extent(gdf, config, root_dir):
-    """As the original copro worked with a global extent, this function clips the database to those entries which have occured on a specified continent. 
+def define_extent(gdf, config, root_dir):
 
-    Args:
-        gdf (geo-dataframe): geo-dataframe containing entries with migration.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        root_dir (str): path to location of cfg-file.
-
-    Returns:
-        geo-dataframe: geo-dataframe containing filtered entries.
-        geo-dataframe: geo-dataframe containing country polygons of selected continent.
-    """    
-
-    # get path to file with polygons for which analysis is carried out
+  # get path to file with polygons for which analysis is carried out
     shp_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('extent', 'shp'))
     
     # read file
@@ -92,13 +43,56 @@ def clip_to_extent(gdf, config, root_dir):
 
     # clip the migration dataframe to the specified polygons
     
-    if config.getboolean('general', 'verbose'):
-        print('DEBUG: clipping migration dataset to extent')
-    gdf = gpd.intersect(gdf, extent_gdf)
+    #if config.getboolean('general', 'verbose'):
+        #print('DEBUG: clipping migration dataset to extent')
+    
+    # gdf.intersects(extent_gdf.unary_union) 
 
-    return gdf, extent_gdf
+    return extent_gdf
 
-def climate_zoning(gdf, extent_gdf, config, root_dir):
+# def clip_to_extent(gdf, config, root_dir):
+   
+    """As the original copro worked with a global extent, this function clips the database to those entries which have occured on a specified continent. 
+
+    Args:
+        gdf (geo-dataframe): geo-dataframe containing entries with migration.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): path to location of cfg-file.
+
+    Returns:
+        geo-dataframe: geo-dataframe containing filtered entries.
+        geo-dataframe: geo-dataframe containing country polygons of selected continent.
+    """    
+
+    # get path to file with polygons for which analysis is carried out
+    #shp_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('extent', 'shp'))
+    
+    # read file
+    #if config.getboolean('general', 'verbose'): print('DEBUG: reading extent and spatial aggregation level from file {}'.format(shp_fo))
+    #extent_gdf = gpd.read_file(shp_fo)
+
+    # fixing invalid geometries
+    #if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')
+    #extent_gdf.geometry = extent_gdf.buffer(0)
+
+    #if (gdf.crs == extent_gdf.crs):
+    #print("DEBUG: Both layers are in the same crs")
+
+    # clip the migration dataframe to the specified polygons
+    
+    #if config.getboolean('general', 'verbose'):
+        #print('DEBUG: clipping migration dataset to extent')
+    
+    # gdf.intersects(extent_gdf.unary_union) 
+
+    #if isinstance(gdf, gpd.GeoDataFrame):
+        #print("Yes, it is a GeoDataFrame")
+    # else:
+        #print("No, it is not a GeoDataFrame")
+
+    #return gdf, extent_gdf
+
+def climate_zoning(gdf, config, root_dir): 
     """This function allows for selecting only those migration data and polygons falling in specified climate zones.
     Also, a global dataframe is returned containing the IDs and geometry of all polygons after selection procedure.
     This can be used to add geometry information to model output based on common ID.
@@ -122,10 +116,13 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
     code2class = pd.read_csv(code2class_fo, sep='\t')
     
     # if climate zones are specified...
-    if config.get('climate', 'zones') != '':
-
+    if config.get('climate', 'zones') !='':
+        print('code condtinues5')
+   
         # get all classes specified
         look_up_classes = config.get('climate', 'zones').rsplit(',')
+        
+        print('code condtinues6')
 
         # get the corresponding code per class
         code_nrs = []
@@ -146,12 +143,12 @@ def climate_zoning(gdf, extent_gdf, config, root_dir):
 
         # clip the studied polygons to the specified climate zones
         if config.getboolean('general', 'verbose'): print('DEBUG: clipping polygons to climate zones {}'.format(look_up_classes))
-        polygon_gdf = gpd.clip(extent_gdf, KG_gdf.buffer(0))
+        polygon_gdf = gpd.clip(gdf, KG_gdf.buffer(0))
 
     # if not, nothing needs to be done besides aligning names
     else:
 
-        polygon_gdf = extent_gdf.copy()
+        polygon_gdf = gdf.copy()
 
     return gdf, polygon_gdf
 
@@ -181,10 +178,14 @@ def select(config, out_dir, root_dir):
     gdf = select_period(gdf, config)
 
     # clip migration to a spatial extent defined as polygons
-    gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
+    #gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
+
+    # extent_gdf = define_extent(gdf, config, root_dir)
 
     # clip migration and polygons to specified climate zones
-    gdf, polygon_gdf = climate_zoning(gdf, extent_gdf, config, root_dir)
+    gdf, polygon_gdf = climate_zoning(gdf, config, root_dir)
+
+    extent_gdf = define_extent(gdf, config, root_dir)
 
     # get a dataframe containing the ID and geometry of all polygons after selecting for climate zones
     global_df = utils.global_ID_geom_info(polygon_gdf)
