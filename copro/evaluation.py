@@ -167,20 +167,20 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
 
     return df_hit, gdf_hit
 
-# def init_out_ROC_curve():
+def init_out_ROC_curve():
     """Initiates empty lists for range of variables needed to plot ROC-curve per simulation.
 
     Returns:
         lists: empty lists for variables.
     """    
 
-    #tprs = []
-    #aucs = []
-    #mean_fpr = np.linspace(0, 1, 100)
+    tprs = []
+    aucs = []
+    mean_fpr = np.linspace(0, 1, 100)
 
-    # return tprs, aucs, mean_fpr
+    return tprs, aucs, mean_fpr
 
-# def save_out_ROC_curve(tprs, aucs, out_dir):
+def save_out_ROC_curve(tprs, aucs, out_dir):
     """Saves data needed to plot mean ROC and standard deviation to csv-files. 
     They can be loaded again with pandas in a post-processing step.
 
@@ -190,13 +190,13 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
         out_dir (str):  path to output folder. If 'None', no output is stored.
     """    
 
-    # tprs = pd.DataFrame(tprs)
-    # aucs = pd.DataFrame(aucs)
+    tprs = pd.DataFrame(tprs)
+    aucs = pd.DataFrame(aucs)
 
-    #tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False, header=False)
-    #aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False, header=False)
+    tprs.to_csv(os.path.join(out_dir, 'ROC_data_tprs.csv'), index=False, header=False)
+    aucs.to_csv(os.path.join(out_dir, 'ROC_data_aucs.csv'), index=False, header=False)
 
-    #print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
+    print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
 
     #return
 

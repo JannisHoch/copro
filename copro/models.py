@@ -21,7 +21,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
         datatrame: containing model output on polygon-basis.
         dict: dictionary containing evaluation metrics per simulation.
     """    
-    if config.integer('general', 'verbose'): print('DEBUG: using all data')
+    if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
 
     # split X into training-set and test-set, scale training-set data
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
