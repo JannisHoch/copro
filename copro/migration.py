@@ -30,9 +30,9 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     if len(temp_sel_year) == 0:
         click.echo('WARNING: no migration occured in sampled migration data set for year {}'.format(sim_year))
-    
+  
     # merge the dataframes with polygons and migration information, creating a sub-set of polygons/regions
-    data_merged = gpd.sjoin(temp_sel_year, gdf)
+    data_merged = gpd.sjoin(temp_sel_year, migration_gdf)
 
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
@@ -40,9 +40,12 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     if sim_year == config.getint('settings', 'y_end'):
         # get the migration value for each polygon
-        int_per_poly = 'net_migration'
+        #int_per_poly = temp_sel_year # MIGHT NOT BE CORRECT
         # change column name and dtype
-        int_per_poly = int_per_poly.rename(columns={'int_migration'}).astype(int)
+        #int_per_poly = int_per_poly.rename(columns={"net_migration":'int_migration'}).astype(int)
+        int_per_poly = temp_sel_year.copy()  # Make a copy of the DataFrame
+        int_per_poly.rename(columns={"net_migration": "int_migration"}, inplace=True)  # Rename the column
+        int_per_poly["int_migration"] = int_per_poly["int_migration"].astype(int)  # Convert the column to int dtype
         # change index name to fit global_df
         int_per_poly.index = int_per_poly.index.rename('ID')
         # get list of all polygon IDs with their geometry information
@@ -56,15 +59,31 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
         data_stored = data_stored.drop('geometry', axis=1)
         data_stored = data_stored.astype(int)
         data_stored.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
- 
+    column_name = 'GID_2'
+    has_column = column_name in gdf.columns
+
+    if has_column:
+        print(f"The GeoDataFrame has a column named '{column_name}'.")
+    else:
+        print(f"The GeoDataFrame does not have a column named '{column_name}'.")
+
     # loop through all regions and check if exists in sub-set
     list_out = []
     for i in range(len(gdf)):
         i_poly = gdf.iloc[i]['GID_2']
-        migration_value = data_merged.loc[gdf['GID_2'] == i_poly, 'net_migration'].values[0]
-        list_out.append(migration_value)
-    else:
-        print('no migration assigned')
+        if i_poly in gdf['GID_2'].values:
+            migration_value = gdf.loc[(gdf['GID_2'] == i_poly) & (gdf['year'] == sim_year), 'net_migration'].values[0]
+            list_out.append(migration_value)
+        else:
+    # Handle the case when the value is not found
+            migration_value = None  # or assign a default value
+            print(f"WARNING: The value {i_poly} is not present in the 'GID_2' column of gdf.")
+
+    # for i in range(len(gdf)):
+       # i_poly = gdf.iloc[i]['GID_2']
+        #migration_value = data_merged.loc[gdf['GID_2'] == i_poly, sim_year].values[0] # to be adapted
+        #list_out.append(migration_value)
+        #print('migration assigned')
             
     assert (len(gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(gdf), len(list_out)))
 
