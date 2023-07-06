@@ -1,3 +1,4 @@
+import copro
 import os, sys
 import click
 from sklearn import metrics, inspection
@@ -5,17 +6,25 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 
-
-def init_out_dict():
-    """Initiates the main model evaluatoin dictionary for a range of model metric scores. 
+def init_out_dict(config):
+    """Initiates the main model evaluation dictionary for a range of model metric scores. 
     The scores should match the scores used in the dictioary created in 'evaluation.evaluate_prediction()'.
+
+     Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        model: the choosen ML-model
 
     Returns:
         dict: empty dictionary with metrics as keys.
     """    
-# Maybe nice to include if/else statement regarding scores depending on model choice
-    # scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
-    scores = ['mean_absolute_error', 'mean_squared_error', 'r2']
+    if config.get('machine_learning', 'model') == 'NuSVC':
+        scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+    if config.get('machine_learning', 'model') == 'KNeighborsClassifier':
+        scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+    if config.get('machine_learning', 'model') == 'RFClassifier':
+        scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+    elif config.get('machine_learning', 'model') == 'RFRegression':
+        scores = ['mean_absolute_error', 'mean_squared_error', 'r2']
 
     # initialize empty dictionary with one emtpy list per score
     out_dict = {}
@@ -24,7 +33,8 @@ def init_out_dict():
 
     return out_dict
 
-def evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config):
+def evaluate_prediction_classifier(y_test, y_pred, y_prob, X_test, mdl, config):
+     
     """Computes a range of model evaluation metrics and appends the resulting scores to a dictionary.
     This is done for each model execution separately.
     Output will be stored to stderr if possible.
@@ -41,18 +51,19 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config):
         dict: dictionary with scores for each simulation
     """  
 
-    # if config.getboolean('general', 'verbose'):
-       # click.echo("... Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)), err=True)
-       # click.echo("... Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)), err=True)
-       # click.echo("... Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)), err=True)
-       # click.echo('... F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)), err=True)
-       # click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
-       # click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
-       # click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
-       # click.echo('... AP score {0:0.3f}'.format(metrics.average_precision_score(y_test, y_prob[:, 1])), err=True)
+    if config.getboolean('general', 'verbose'):
+       click.echo("... Accuracy: {0:0.3f}".format(metrics.accuracy_score(y_test, y_pred)), err=True)
+       click.echo("... Precision: {0:0.3f}".format(metrics.precision_score(y_test, y_pred)), err=True)
+       click.echo("... Recall: {0:0.3f}".format(metrics.recall_score(y_test, y_pred)), err=True)
+       click.echo('... F1 score: {0:0.3f}'.format(metrics.f1_score(y_test, y_pred)), err=True)
+       click.echo('... Brier loss score: {0:0.3f}'.format(metrics.brier_score_loss(y_test, y_prob[:, 1])), err=True)
+       click.echo('... Cohen-Kappa score: {0:0.3f}'.format(metrics.cohen_kappa_score(y_test, y_pred)), err=True)
+       click.echo('... ROC AUC score {0:0.3f}'.format(metrics.roc_auc_score(y_test, y_prob[:, 1])), err=True)
+       click.echo('... AP score {0:0.3f}'.format(metrics.average_precision_score(y_test, y_prob[:, 1])), err=True)
 
-    # compute value per evaluation metric and assign to list
-    """ eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
+    # compute value per evaluation metric depending on ML-model settings and assign to list
+
+    eval_dict = {'Accuracy': metrics.accuracy_score(y_test, y_pred),
                  'Precision': metrics.precision_score(y_test, y_pred),
                  'Recall': metrics.recall_score(y_test, y_pred),
                  'F1 score': metrics.f1_score(y_test, y_pred),
@@ -60,15 +71,20 @@ def evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config):
                  'Brier loss score': metrics.brier_score_loss(y_test, y_prob[:, 1]),
                  'ROC AUC score': metrics.roc_auc_score(y_test, y_prob[:, 1]),
                  'AP score': metrics.average_precision_score(y_test, y_prob[:, 1]),
-                }"""
+    }
+    
+    return eval_dict
 
+def evaluate_prediction_regression(y_test, y_pred, X_test, mdl, config):
+   
+   if config.getboolean('general', 'verbose'):     
+    click.echo("... Mean Absolute Error: {0:0.3f}".format(metrics.mean_absolute_error(y_test, y_pred)), err=True)
+    click.echo("... Mean Squared Error: {0:0.3f}".format(metrics.mean_squared_error(y_test, y_pred)), err=True)
+    click.echo("... R2 Score: {0:0.3f}".format(metrics.r2_score(y_test, y_pred)), err=True)
+    
     eval_dict = {'mean_absolute_error'(y_test, y_pred),
                  'mean_squared_error'(y_test, y_pred),
-                 'r2'(y_test, y_pred),
-                 }
-
-   
-    return eval_dict
+                 'r2'(y_test, y_pred),}
 
 def fill_out_dict(out_dict, eval_dict):
     """Appends the computed metric score per run to the main output dictionary.

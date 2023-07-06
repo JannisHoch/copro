@@ -220,16 +220,16 @@ def split_migration_geom_data(X):
 
     Returns:
         arrays: seperate arrays with ID, geometry, and actual data 
-    
-    # first column corresponds to ID, second to geometry
-    # all remaining columns are actual data
+ """   
+    #first column corresponds to ID, second to geometry
+    #all remaining columns are actual data
     X_ID = X[:, 0]
     X_geom = X[:, 1]
     X_data = X[: , 2:]
 
     return X_ID, X_geom, X_data
-"""
-def get_pred_migration_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1):
+
+def get_pred_migration_geometry_classifier(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1):
     # Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe. 
     #Contains therefore only the data points used in the test-sample, not in the training-sample. 
     # Additionally computes whether a correct prediction was made.
@@ -252,6 +252,32 @@ def get_pred_migration_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0
     # compute whether a prediction is correct
     # if so, assign 1; otherwise, assign 0
     df['correct_pred'] = np.where(df['y_test'] == df['y_pred'], 1, 0)
+
+    return df
+
+def get_pred_migration_geometry_regression(X_test_ID, X_test_geom, y_test, y_pred):
+    # Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe.
+    # Contains only the data points used in the test-sample, not in the training-sample.
+    # Additionally computes whether a correct prediction was made.
+
+    """
+    Args:
+        X_test_ID (list): list containing the unique identifier per data point.
+        X_test_geom (list): list containing the geometry per data point.
+        y_test (list): list containing test-data.
+        y_pred (list): list containing predictions.
+
+    Returns:
+        dataframe: dataframe with each input list as a column plus computed 'correct_pred'.
+    """
+    # stack separate columns horizontally
+    arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred))
+
+    # convert array to dataframe
+    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred'])
+
+    # compute whether a prediction is correct
+    # since this is regression, there is no exact match, so no 'correct_pred' column is computed
 
     return df
 

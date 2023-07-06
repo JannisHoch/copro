@@ -33,7 +33,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #- also returns root_dir which is the path to the cfg-file
     main_dict, root_dir = copro.utils.initiate_setup(cfg)
 
-    #- get config-objct and out_dir for reference run
+    #- get config-object and out_dir for reference run
     config_REF = main_dict['_REF'][0]
     out_dir_REF = main_dict['_REF'][1]
 
@@ -68,7 +68,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #TODO: put all this into one function
     out_X_df = copro.evaluation.init_out_df()
     out_y_df = copro.evaluation.init_out_df()
-    out_dict = copro.evaluation.init_out_dict()
+    out_dict = copro.evaluation.init_out_dict(config_REF)
     trps, aucs, mean_fpr = copro.evaluation.init_out_ROC_curve()
 
     #- create plot instance for ROC plots
