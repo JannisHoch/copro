@@ -244,31 +244,7 @@ def fill_X_migration(X, config, migration_data, polygon_gdf):
 
     Returns:
         dict: dictionary containing sample and migration values.
-    """    
-
-    # determine all neighbours for each polygon
-    # DELETE: neighboring_matrix = neighboring_polys(config, polygon_gdf)
-
-    # go through all keys in dictionary
-    # DELETE for key, value in X.items(): 
-
-      #  if key == 'conflict_t_min_1':
-
-         #   data_series = value
-         #   data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
-         #   data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-         #  X[key] = data_series
-
-     #   elif key == 'conflict_t_min_1_nb':
-
-        #   data_series = value
-        #  data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data, check_neighbors=True, neighboring_matrix=neighboring_matrix)
-        #    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-        #    X[key] = data_series
-
-        # else:
-
-         #   pass
+    """   
 
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 

@@ -124,7 +124,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
     mdls = machine_learning.load_mdls(config_REF, out_dir_REF)
 
     if config_REF.getint('general', 'model') != 1:
-        raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
+            raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
     # initiate output dataframe
     all_y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
