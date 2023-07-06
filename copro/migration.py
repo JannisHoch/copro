@@ -40,9 +40,6 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     if sim_year == config.getint('settings', 'y_end'):
         # get the migration value for each polygon
-        #int_per_poly = temp_sel_year # MIGHT NOT BE CORRECT
-        # change column name and dtype
-        #int_per_poly = int_per_poly.rename(columns={"net_migration":'int_migration'}).astype(int)
         int_per_poly = temp_sel_year.copy()  # Make a copy of the DataFrame
         int_per_poly.rename(columns={"net_migration": "int_migration"}, inplace=True)  # Rename the column
         int_per_poly["int_migration"] = int_per_poly["int_migration"].astype(int)  # Convert the column to int dtype
@@ -88,68 +85,6 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
     assert (len(gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(gdf), len(list_out)))
 
     return list_out
-
-# DELETE STEP ON CONFLICT in previous year
-# def conflict_in_previous_year(config, conflict_gdf, extent_gdf, sim_year, check_neighbors=False, neighboring_matrix=None):
-    # Creates a list for each timestep with boolean information whether a conflict took place in a polygon at the previous timestep or not.
-    # If the current time step is the first (t=0), then this year is skipped and the model continues at the next time step.
-
-    # Args:
-       # config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-       # conflict_gdf (geodataframe): geo-dataframe containing georeferenced information of conflict (tested with PRIO/UCDP data).
-       # extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
-       # sim_year (int): year for which data is extracted.
-       # check_neighbors (bool): whether to check conflict events in neighboring polygons. Defaults to False.
-       # neighboring_matrix (dataframe): lookup-dataframe indicating which polygons are mutual neighbors. Defaults to None.
-
-   # Raises:
-       # ValueError: raised if check_neighbors is True, but no matrix is provided.
-       # AssertionError: raised if the length of output list does not match length of input geo-dataframe.
-
-   # Returns:
-       # list: list containing 0/1 per polygon depending on conflict occurence if checkinf for conflict at t-1, and containing log-transformed number of conflict events in neighboring polygons if specified.
-   
-    # if config.getboolean('general', 'verbose'): 
-       # if check_neighbors: print('DEBUG: checking for conflicts in neighboring polygons at t-1')
-       # else: print('DEBUG: checking for conflict event in polygon at t-1')
-
-    # get conflicts at t-1
-    # temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year-1]  
-
-    # assert (len(temp_sel_year) != 0), AssertionError('ERROR: no conflicts were found in sampled conflict data set for year {}'.format(sim_year-1))
-    
-    # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
-    # data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-    
-    # conflicts_per_poly = data_merged.id.groupby(data_merged['watprovID']).count().to_frame().rename(columns={"id": 'conflict_count'})
-
-    # loop through all polygons and check if exists in sub-set
-    #list_out = []
-    # for i in range(len(extent_gdf)):
-
-      #  i_poly = extent_gdf.watprovID.iloc[i]
-
-      #  if i_poly in conflicts_per_poly.index.values:
-
-          #  if check_neighbors:
-
-            # determine log-scaled number of conflict events in neighboring polygons
-            #  val = calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly)
-            # append resulting value
-            # list_out.append(val)
-
-           # else:
-
-             #   list_out.append(1)
-
-        # else:
-
-        # if polygon not in list with conflict polygons, assign 0
-        # list_out.append(0)
-            
-    # assert (len(extent_gdf) == len(list_out)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_out)))
-
-   #  return list_out
 
 def read_projected_migration(extent_gdf, int_migration): # DELETE check_neighbors=False, neighboring_matrix=None)
     """Creates a list for each timestep with integer information on migration per polygon.
