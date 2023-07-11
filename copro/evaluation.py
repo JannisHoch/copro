@@ -16,20 +16,27 @@ def init_out_dict(config):
 
     Returns:
         dict: empty dictionary with metrics as keys.
-    """    
+    """  
     if config.get('machine_learning', 'model') == 'NuSVC':
-        scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+       scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
     if config.get('machine_learning', 'model') == 'KNeighborsClassifier':
-        scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+       scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
     if config.get('machine_learning', 'model') == 'RFClassifier':
-        scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+       scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+         
     elif config.get('machine_learning', 'model') == 'RFRegression':
-        scores = ['mean_absolute_error', 'mean_squared_error', 'r2']
+        scores = ['Mean Absolute Error', 'Mean Squared Error', 'R2 Score']  
+        print ('INFO: calculated evaluation for RFRegression')               
 
-    # initialize empty dictionary with one emtpy list per score
+     # initialize empty dictionary with one emtpy list per score
     out_dict = {}
     for score in scores:
         out_dict[score] = list()
+
+    
+    #elif config.get('machine_learning', 'model') == 'RFRegression':
+        #scores = ['Mean Squared Error', 'Mean Squared Error', 'R2 Score']
+
 
     return out_dict
 
@@ -82,9 +89,11 @@ def evaluate_prediction_regression(y_test, y_pred, X_test, mdl, config):
     click.echo("... Mean Squared Error: {0:0.3f}".format(metrics.mean_squared_error(y_test, y_pred)), err=True)
     click.echo("... R2 Score: {0:0.3f}".format(metrics.r2_score(y_test, y_pred)), err=True)
     
-    eval_dict = {'mean_absolute_error'(y_test, y_pred),
-                 'mean_squared_error'(y_test, y_pred),
-                 'r2'(y_test, y_pred),}
+    eval_dict = {'Mean Absolute Error': metrics.mean_absolute_error(y_test, y_pred),
+                 'Mean Squared Error': metrics.mean_squared_error(y_test, y_pred),
+                 'R2 Score': metrics.r2_score(y_test, y_pred),}
+
+    return eval_dict
 
 def fill_out_dict(out_dict, eval_dict):
     """Appends the computed metric score per run to the main output dictionary.
@@ -99,7 +108,7 @@ def fill_out_dict(out_dict, eval_dict):
     """    
 
     for key in out_dict:
-        out_dict[key].append(eval_dict[key])
+       out_dict[key].append(eval_dict[key])
 
     return out_dict
 
@@ -123,11 +132,12 @@ def fill_out_df(out_df, y_df):
         dataframe: main output dataframe containing results of all simulations.
     """    
 
-    out_df = out_df.append(y_df, ignore_index=True)
+    out_df = pd.concat([out_df, y_df], ignore_index=True)
 
     return out_df
 
-def polygon_model_accuracy(df, global_df, make_proj=False):
+# CAN BE DELETED?
+# def polygon_model_accuracy(df, global_df, make_proj=False):
     """Determines a range of model accuracy values for each polygon.
     Reduces dataframe with results from each simulation to values per unique polygon identifier.
     Determines the total number of predictions made per polygon as well as fraction of correct predictions made for overall and migration-only data.
@@ -142,46 +152,49 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     """    
 
     #- create a dataframe containing the number of occurence per ID
-    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'nr_predictions'})
+    #ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'nr_predictions'})
     #- add column containing the IDs
-    ID_count['ID'] = ID_count.index.values
+    #ID_count['ID'] = ID_count.index.values
     #- set index with index named ID now
-    ID_count.set_index(ID_count.ID, inplace=True)
+    #ID_count.set_index(ID_count.ID, inplace=True)
     #- remove column ID
-    ID_count = ID_count.drop('ID', axis=1)
+    #ID_count = ID_count.drop('ID', axis=1)
 
-    df_count = pd.DataFrame()
+    #df_count = pd.DataFrame()
     
     #- per polygon ID, compute sum of overall correct predictions and rename column name
-    if not make_proj: df_count['nr_correct_predictions'] = df.correct_pred.groupby(df.ID).sum()
+    # CAN BE DELETED?
+    # if not make_proj: df_count['nr_correct_predictions'] = df.correct_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    if not make_proj: df_count['nr_observed_conflicts'] = df.y_test.groupby(df.ID).sum()
+    # CAN BE DELETED
+    # if not make_proj: df_count['nr_observed_conflicts'] = df.y_test.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all conflict data points and add to dataframe
-    df_count['nr_predicted_conflicts'] = df.y_pred.groupby(df.ID).sum()
+    # CAN BE DELETED, changed 
+    # df_count['nr_predicted_conflicts'] = df.y_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute average probability that conflict occurs
-    df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
-    df_count['probability_of_conflict'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
-    df_count['max_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
+    #df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
+    #df_count['probability_of_conflict'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
+    #df_count['max_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
 
     #- merge the two dataframes with ID as key
-    df_temp = pd.merge(ID_count, df_count, on='ID')
+    #df_temp = pd.merge(ID_count, df_count, on='ID')
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.nr_correct_predictions / df_temp.nr_predictions
+    #if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.nr_correct_predictions / df_temp.nr_predictions
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['chance_of_conflict'] = df_temp.nr_predicted_conflicts / df_temp.nr_predictions
+    #df_temp['chance_of_conflict'] = df_temp.nr_predicted_conflicts / df_temp.nr_predictions
 
     #- merge with global dataframe containing IDs and geometry, and keep only those polygons occuring in test sample
-    df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
+    #df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
 
     # #- convert to geodataframe
-    gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
+    #gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
-    return df_hit, gdf_hit
+    #return df_hit, gdf_hit
 
 def init_out_ROC_curve():
     """Initiates empty lists for range of variables needed to plot ROC-curve per simulation.
