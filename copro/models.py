@@ -40,7 +40,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
         y_df = migration.get_pred_migration_geometry_classifier(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
     
     elif config.get('machine_learning', 'model') == 'RFRegression':
-        y_pred = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr) 
+        y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr) 
         # evaluate prediction and save to dict
         eval_dict = evaluation.evaluate_prediction_regression(y_test, y_pred, X_test, mdl, config)
         # aggregate predictions per polygon
