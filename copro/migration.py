@@ -59,11 +59,6 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
     column_name = 'GID_2'
     has_column = column_name in gdf.columns
 
-    if has_column:
-        print(f"The GeoDataFrame has a column named '{column_name}'.")
-    else:
-        print(f"The GeoDataFrame does not have a column named '{column_name}'.")
-
     # loop through all regions and check if exists in sub-set
     list_out = []
     for i in range(len(gdf)):
