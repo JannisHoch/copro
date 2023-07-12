@@ -1,5 +1,3 @@
-#Change all conflict references to migration. ALso, delete code refering to conflict T-1 and conflict in neighbouring countries
-
 from copro import utils, data
 import geopandas as gpd
 import pandas as pd
@@ -27,37 +25,43 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     # select the entries which occured in this year
     temp_sel_year = migration_gdf.loc[migration_gdf.year == sim_year]  
+    temp_sel_year.to_csv(os.path.join(out_dir, 'temp_sel_year_in_{}.csv'.format(sim_year)))
 
     if len(temp_sel_year) == 0:
         click.echo('WARNING: no migration occured in sampled migration data set for year {}'.format(sim_year))
   
     # merge the dataframes with polygons and migration information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, migration_gdf)
+    data_merged.to_csv(os.path.join(out_dir, 'data_merged_in_{}.csv'.format(sim_year)))
 
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
 
     if sim_year == config.getint('settings', 'y_end'):
+    
         # get the migration value for each polygon
-        int_per_poly = temp_sel_year.copy()  # Make a copy of the DataFrame
-        int_per_poly.rename(columns={"net_migration": "int_migration"}, inplace=True)  # Rename the column
-        int_per_poly["int_migration"] = int_per_poly["int_migration"].astype(int)  # Convert the column to int dtype
-        # change index name to fit global_df
-        int_per_poly.index = int_per_poly.index.rename('ID')
+        int_per_poly = temp_sel_year.copy()  
+        # DELETE change column name - seems unnecessary  
+        # DELETE int_per_poly = int_per_poly.rename(columns={"net_migration": "int_migration"}) # check if this renaming is still necessary, doesnt seem to be the case
+        int_per_poly = int_per_poly.rename(columns={int_per_poly.columns[0]: 'GID_2'}) # check if what happens here is correct
+        # change index name to fit global_df --> 
+        int_per_poly = int_per_poly.reset_index().rename(columns={'GID_2': 'ID'})
+        # int_per_poly.index = int_per_poly.index.rename('ID')
+      
         # get list of all polygon IDs with their geometry information
         global_df = utils.global_ID_geom_info(gdf)
-        # merge the integer info with geometry
         # for all polygons without net migration, set a 0
         if config.getboolean('general', 'verbose'): print('DEBUG: storing integer migration map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
-        # data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').fillna(0)
-        data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').dropna()
-        data_stored.index = data_stored.index.rename('GID_2')
-        data_stored = data_stored.drop('geometry', axis=1)
-        data_stored = data_stored.astype(int)
+        int_per_poly['ID'] = int_per_poly['ID'].astype(object)
+        data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').fillna(0)
+        # data_stored.index = data_stored.index.rename('GID_2')
+        data_stored = data_stored.drop(columns=['geometry_x', 'geometry_y'])
         data_stored.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
     column_name = 'GID_2'
     has_column = column_name in gdf.columns
+       
+
 
     # loop through all regions and check if exists in sub-set
     list_out = []
@@ -81,14 +85,14 @@ extent_gdf (geodataframe): geo-dataframe containing one or more polygons with ge
 
     return list_out
 
-def read_projected_migration(extent_gdf, int_migration): # DELETE check_neighbors=False, neighboring_matrix=None)
+def read_projected_migration(extent_gdf, net_migration): # DELETE check_neighbors=False, neighboring_matrix=None)
     """Creates a list for each timestep with integer information on migration per polygon.
-    Input migratation data (int_migration) must contain an index with IDs corresponding with the 'watprovID' values of extent_gdf. #waterprovID to be adapted
+    Input migratation data (net_migration) must contain an index with IDs corresponding with the 'GID_2' values of the gdf. 
     Optionally, the algorithm can be extended to the neighboring polygons.
 
     Args:
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
-        int_migration (dataframe): dataframe with integer values per polygon on net migration.
+        net_migration (dataframe): dataframe with integer values per polygon on net migration.
         # DELETE check_neighbors (bool, optional): whether or not to check for conflict in neighboring polygons. Defaults to False.
         # DELETE neighboring_matrix (dataframe, optional): look-up dataframe listing all neighboring polygons. Defaults to None.
 
@@ -97,7 +101,7 @@ def read_projected_migration(extent_gdf, int_migration): # DELETE check_neighbor
     """
 
         # assert that there are actually conflicts reported
-    assert (len(int_migration) != 0), AssertionError('ERROR: no migration was found in sampled migration data set for year {}'.format(sim_year-1))
+    assert (len(net_migration) != 0), AssertionError('ERROR: no migration was found in sampled migration data set for year {}'.format(sim_year-1))
 
     # loop through all polygons and check if exists in sub-set
     list_out = []
@@ -105,7 +109,7 @@ def read_projected_migration(extent_gdf, int_migration): # DELETE check_neighbor
 
         i_poly = extent_gdf.GID_2.iloc[i] 
 
-        if i_poly in int_migration.index.values:
+        if i_poly in net_migration.index.values:
 
             list_out.append(1)
 

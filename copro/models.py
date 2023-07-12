@@ -194,9 +194,15 @@ def predictive(X, mdl, scaler, config):
 
     # LINES BELOW NEED TO BE ADAPTED
     # predict probabilites of outcomes
-    y_prob = mdl.predict_proba(X_ft)
-    y_prob_0 = y_prob[:, 0] # probability to predict 0
-    y_prob_1 = y_prob[:, 1] # probability to predict 1
+
+    #if config.get('machine_learning', 'model') != 'RFRegression':
+       # y_prob = mdl.predict_proba(X_ft)
+       # y_prob_0 = y_prob[:, 0] # probability to predict 0
+       # y_prob_1 = y_prob[:, 1] # probability to predict 1
+    #if config.get('machine_learning', 'model') == 'RFRegression':
+        #pass
+
+    
 
     # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
     # OLD: arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1)) (Deleted y_prob_0, y_prob_1)

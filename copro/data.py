@@ -94,8 +94,8 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """    
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1) # deleted + 1: Does this refer to the 1 year time lag that was used to understand conflict?
-    click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) # delete -1 ?
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1) 
+    click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) 
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
@@ -284,61 +284,3 @@ def split_XY_data(XY, config):
         click.echo('DEBUG: a fraction of {} percent in the data corresponds to migration.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
-
-# NOT needed in current run 
-# def neighboring_polys(config, extent_gdf, identifier='watprovID'):
-    """For each polygon, determines its neighboring polygons.
-    As result, a (n x n) look-up dataframe is obtained containing, where n is number of polygons in extent_gdf.
-
-    Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        extent_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        identifier (str, optional): column name in extent_gdf to be used to identify neighbors. Defaults to 'watprovID'.
-
-    Returns:
-        dataframe: look-up dataframe containing True/False statement per polygon for all other polygons.
-    """    
-
-    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: determining matrix with neighboring polygons')
-
-    # initialise empty dataframe
-    # df = pd.DataFrame()
-
-    # go through each polygon aka water province
-    # for i in range(len(extent_gdf)):
-        # get geometry of current polygon
-        # wp = extent_gdf.geometry.iloc[i]
-        # check which polygons in geodataframe (i.e. all water provinces) touch the current polygon
-        # also create a dataframe from result (integer)
-        # the transpose is needed to easier concat
-        # df_temp = pd.DataFrame(extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]).T
-        # concat the dataframe
-        # df = pd.concat([df, df_temp], axis=0, ignore_index=True)
-
-    # replace generic indices with actual water province IDs
-   # df.set_index(extent_gdf[identifier], inplace=True)
-
-    # replace generic columns with actual water province IDs
-    # df.columns = extent_gdf[identifier].values
-
-    # return df
-
-# DELETE ALL LINE 336-354
-# def find_neighbors(ID, neighboring_matrix):
-    """Filters all polygons which are actually neighbors to given polygon.
-
-    Args:
-        ID (int): ID of specific polygon under consideration.
-        neighboring_matrix (dataframe): output from neighboring_polys().
-
-    Returns:
-        dataframe: dataframe containig IDs of all polygons that are actual neighbors.
-    """    
-
-    # locaties entry for polygon under consideration
-    # neighbours = neighboring_matrix.loc[neighboring_matrix.index == ID].T
-    
-    # filters all actual neighbors defined as neighboring polygons with True statement
-   # actual_neighbours = neighbours.loc[neighbours[ID] == True].index.values
-
-    # return actual_neighbours
