@@ -12,7 +12,7 @@ from distutils import util
 import warnings
 warnings.filterwarnings("ignore")
 
-def Xfile_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
+def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
@@ -29,7 +29,7 @@ def Xfile_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year)
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
-        var_name (str): name of variable in nc or csv file, must also be the same under which path to file is specified in cfg-file.
+        var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
         sim_year (int): year for which data is extracted.
 
     Raises:
@@ -53,7 +53,7 @@ def Xfile_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year)
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 0 
+    lag_time = 1
     click.echo('INFO: applying {} year lag time'.format(lag_time))
     sim_year = sim_year - lag_time
 
@@ -63,40 +63,15 @@ def Xfile_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year)
         else:
             click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
 
-    # Check if the file is NetCDF or CSV
-    file_extension = os.path.splitext(nc_fo)[1]
-
-    if file_extension == '.nc':
-        # open nc-file 
-        nc_ds = xr.open_dataset(nc_fo)
-        # Extract the required variable from the nc-file data
-        nc_var = nc_ds[var_name]
-    elif file_extension == '.csv':
-        # Read CSV file 
-        csv_data = pd.read_csv(nc_fo)
-        # Extract the required variable from the CSV data
-        nc_var = csv_data[var_name].values
-    else:
-        raise ValueError('ERROR: Unsupported file format. Only NetCDF (.nc) and CSV (.csv) files are supported.')
-    
-    
     # open nc-file with xarray as dataset
-    # nc_ds = xr.open_dataset(nc_fo)
+    nc_ds = xr.open_dataset(nc_fo)
     # get xarray data-array for specified variable
-    #nc_var = nc_ds[var_name]
+    nc_var = nc_ds[var_name]
     if ln_flag:
         nc_var = np.log(nc_var)
         if config.getboolean('general', 'verbose'): click.echo('DEBUG: log-transform variable {}'.format(var_name))
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
-
-    # Check if the file is nc-file or CSV to align nc-file with the extent polygon boundaries
-    file_extension = os.path.splitext(nc_fo)[1]
-
-    if file_extension == '.nc':
-        affine = rio.open(nc_fo).transform
-    elif file_extension == '.csv':
-        affine = None
 
     # get values from data-array for specified year
     nc_arr = nc_var.sel(time=sim_year)
@@ -109,24 +84,24 @@ def Xfile_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year)
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(extent_gdf)):
 
-        # polygon (GID_2) i
-        polygon = extent_gdf.iloc[i]
+        # province i
+        prov = extent_gdf.iloc[i]
 
-        # compute zonal stats for this polygon (GID_2)
+        # compute zonal stats for this province
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
+        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
         val = zonal_stats[0][stat_method]
 
-        # if specified, log-transform value
+        # # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), polygon.GID_2))
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.watprovID))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.watprovID))
                 val = np.log(val+1)
             else:
                 val = val_ln
@@ -140,6 +115,7 @@ def Xfile_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year)
     assert len(extent_gdf) == len(list_out), AssertionError('ERROR: lengths do not match!')
 
     return list_out
+
 
 def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
@@ -247,5 +223,125 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         list_out.append(val)
 
     assert len(extent_gdf) == len(list_out), AssertionError('ERROR: lengths do not match!')
+
+    return list_out
+
+def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
+    """This function extracts a value from a csv-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+    In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
+
+    NOTE:
+    The key in the cfg-file must be identical to variable name in csv-file. 
+
+    NOTE:
+    Works only with csv-files with annual data.
+
+    Args:
+        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
+        config (config): parsed configuration settings of run.
+        root_dir (str): path to location of cfg-file. 
+        var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
+        sim_year (int): year for which data is extracted.
+
+    Raises:
+        ValueError: raised if not everything is specified in cfg-file.
+        ValueError: raised if specfied year cannot be found in years in nc-file.
+        ValueError: raised if the extracted variable at a time step does not contain data.
+
+    Returns:
+        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+    """   
+
+    # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
+    data_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name)).rsplit(',')
+
+    # if not all of these three aspects are provided, raise error
+    if len(data_fo) != 3:
+        raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
+    
+    # if not, split the list into separate variables
+    else:
+        nc_fo = data_fo[0] # i have to change this name thoughout the code
+        ln_flag = bool(util.strtobool(data_fo[1]))
+        stat_method = str(data_fo[2])
+
+    lag_time = 0
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    sim_year = sim_year - lag_time
+
+    if config.getboolean('general', 'verbose'): 
+        if ln_flag:
+            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+        else:
+            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+
+   # Read the CSV file
+    csv_data = pd.read_csv(nc_fo)
+
+    # Extract the required variable from the CSV data
+    csv_var = csv_data[var_name].values
+
+    if ln_flag:
+        csv_var = np.log(csv_var)
+        if config.getboolean('general', 'verbose'):
+            click.echo('DEBUG: Log-transform variable {}'.format(var_name))
+
+    # Get the years contained in the CSV file
+    years = pd.to_datetime(csv_data['time'], format='%Y').dt.year
+    if sim_year not in years:
+        click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
+        click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
+        sim_year = sim_year + 0
+        # raise ValueError('ERROR: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
+    
+    # Get the index which corresponds to sim_year in the years array
+    sim_year_idx = years[years == sim_year].index[0]
+
+    # Get the values from the CSV variable for the specified year
+    csv_arr_vals = csv_var[sim_year_idx]
+
+    if csv_arr_vals.size == 0:
+        raise ValueError('ERROR: No data was found for this year in the CSV file {}, check if all is correct'.format(nc_fo))
+
+    # open nc-file with rasterio to get affine information
+    affine = rio.open(nc_fo).transform
+
+    # initialize output list
+    list_out = []
+    # loop through all polygons in geo-dataframe and compute statistics, then append to output file
+    for i in range(len(extent_gdf)):
+
+        # polygon i
+        polygon = extent_gdf.iloc[i]
+
+        # compute zonal stats for this polygon
+        zonal_stats = rstats.zonal_stats(polygon.geometry, csv_var, stats=stat_method)
+                # Get the statistical value for the specified method
+        
+        val = zonal_stats[0][stat_method]
+
+        # If specified, log-transform the value
+        if ln_flag:
+            # Works only if zonal_stats is not None, i.e. if it's None it stays None
+            if val is not None:
+                val_ln = np.log(val)
+            else:
+                click.echo('WARNING: A value of {} for ID {} was computed - not good!'.format(np.log(val+1), polygon.GID_2))
+
+            # In case the log-transformed value results in -inf, replace it with None
+            if val_ln == -math.inf:
+                if config.getboolean('general', 'verbose'):
+                    click.echo('DEBUG: Set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
+                val = np.log(val+1)
+            else:
+                val = val_ln
+
+        # Click.echo a warning if the result is None
+        if (val is None) and (config.getboolean('general', 'verbose')):
+            click.echo('WARNING: NaN computed!')
+
+        list_out.append(val)
+
+    assert len(extent_gdf) == len(list_out), AssertionError('ERROR: Lengths do not match!')
 
     return list_out

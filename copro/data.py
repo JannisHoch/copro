@@ -1,4 +1,3 @@
-
 from copro import migration, variables, evaluation
 import click
 import numpy as np
@@ -31,9 +30,7 @@ def initiate_XY_data(config):
     XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
-    # DELETE XY['conflict_t_min_1'] = pd.Series(dtype=bool)
-    # DELETE XY['conflict_t_min_1_nb'] = pd.Series(dtype=float)
-    XY['migration'] = pd.Series(dtype=int)
+    XY['net_migration'] = pd.Series(dtype=int)
 
     if config.getboolean('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
@@ -63,13 +60,16 @@ def initiate_X_data(config):
     X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
-    # DELETE X['conflict_t_min_1'] = pd.Series(dtype=int)
-    # DELETE X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
-
+    # DELETE/ADAPT X['conflict_t_min_1'] = pd.Series(dtype=int)
+    # DELETE/ADAPT X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
+    print('Creating X dic NOW')
     if config.getboolean('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in X:
             click.echo('...{}'.format(key))
+    print('created x dicto')
+    df_X = pd.DataFrame(X)
+    df_X.to_csv(r'C:\Users\Sophie\copro\example\X.csv', index=False)
 
     return X
 
@@ -99,18 +99,13 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
-        # if i == 0:
-
-           # click.echo('INFO: skipping first year {} to start up model'.format(sim_year))
-
-        # else:
 
             click.echo('INFO: entering year {}'.format(sim_year))
 
             # go through all keys in dictionary
             for key, value in XY.items(): 
 
-                if key == 'migration':
+                if key == 'net_migration':
                 
                     data_series = value
                     data_list = migration.migration_in_year_int (config, migration_data, polygon_gdf, sim_year, out_dir) 
@@ -129,47 +124,43 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     data_series = value
                     data_list = migration.get_poly_geometry(polygon_gdf, config)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    XY[key] = data_series
-
-                elif key == 'csv':
-                
-                    pd.read_csv(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]) 
-
-                    if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
-                        data_series = value
-                        data_list = variables.Xfiles_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                        XY[key] = data_series
+                    XY[key] = data_series                        
                         
-                    elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                        data_series = value
-                        data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                        XY[key] = data_series
-                
-                elif key == 'netcdf':
+                else: 
+                    for i, file_path in enumerate(value):
+                        file_extension = os.path.splitext(file_path)[1]
+                        if file_extension == '.csv':
+                            csv_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
+                            data_series = value
+                            data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                            XY[key] = data_series
 
-                    nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
-                    
-                    if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
-                        data_series = value
-                        data_list = variables.Xfiles_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                        XY[key] = data_series
+                        else:                    
+                            nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
+
+                            if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                                    data_series = value
+                                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                                    XY[key] = data_series
                         
-                    elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                        data_series = value
-                        data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                        XY[key] = data_series
-                        
-                    else:
-                        raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
+                            elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                                    data_series = value
+                                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                                    XY[key] = data_series
 
-            if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
+                            else:
+                                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
-    df_out = pd.DataFrame.from_dict(XY)
-    
+    if config.getboolean('general', 'verbose'):
+            click.echo('DEBUG: all data read')
+
+    df_out = pd.DataFrame(XY)
+    df_out.to_csv(os.path.join(out_dir, 'DF_out.csv'), index=False, header=False)
+    print('df_out.csv saved in output folder')
+
     return df_out.to_numpy()
 
 def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):

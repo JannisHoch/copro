@@ -111,7 +111,7 @@ def read_projected_migration(extent_gdf, net_migration): # DELETE check_neighbor
 
         if i_poly in net_migration.index.values:
 
-            list_out.append(1)
+            list_out.append(1) # should this be changed to just give the integer value? 
 
         else:
 
@@ -157,7 +157,7 @@ def read_projected_migration(extent_gdf, net_migration): # DELETE check_neighbor
     #return val
 
 def get_poly_ID(extent_gdf): 
-    """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifiers are currently limited to 'watprovID'. # to be changed to GID_2
+    """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifier is in this version limited to 'GID_2', can be adapted to the identifier one has.
 
     Args:
         extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons.
