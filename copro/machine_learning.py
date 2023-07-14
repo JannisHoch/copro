@@ -138,7 +138,6 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
         y_prob = mdl.predict_proba(X_test)
     elif (config.get('machine_learning', 'model')) == 'RFRegression': 
         y_prob = 1 # TEMP fix, is this the right way? mdl.predict_proba(X_test)
-        print('no_y_prob in analysis for evaluation')
    
     return y_pred, y_prob
 
