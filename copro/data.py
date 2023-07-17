@@ -73,7 +73,7 @@ def initiate_X_data(config):
 
     return X
 
-def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
+def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """Fills the (XY-)dictionary with data for each variable and migration for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -127,35 +127,37 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     XY[key] = data_series                        
                         
                 else: 
-                    for i, file_path in enumerate(value):
-                        file_extension = os.path.splitext(file_path)[1]
-                        if file_extension == '.csv':
-                            csv_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
+                    file_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
+                    file_extension = os.path.splitext(file_path)[1]
+                    
+                    if file_extension == '.csv':
+                        data_series = value
+                        data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                        XY[key] = data_series
+
+                    elif file_extension == '.nc':                    
+                        nc_ds = xr.open_dataset(file_path)
+
+                        if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                             data_series = value
-                            data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                            data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                            XY[key] = data_series
+                
+                        elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                            data_series = value
+                            data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                             XY[key] = data_series
 
-                        else:                    
-                            nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
-
-                            if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
-                                    data_series = value
-                                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                                    XY[key] = data_series
-                        
-                            elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                                    data_series = value
-                                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                                    data_series = data_series.append(pd.Series(data_list), ignore_index=True)
-                                    XY[key] = data_series
-
-                            else:
-                                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
+                        else:
+                            raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
+                    else:
+                        raise ValueError('ERROR: the file extension of the input file is not supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
     if config.getboolean('general', 'verbose'):
-            click.echo('DEBUG: all data read')
+        click.echo('DEBUG: all data read')
 
     df_out = pd.DataFrame(XY)
     df_out.to_csv(os.path.join(out_dir, 'DF_out.csv'), index=False, header=False)
