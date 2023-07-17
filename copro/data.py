@@ -1,5 +1,4 @@
-
-from copro import  migration, variables, evaluation
+from copro import migration, variables, evaluation
 import click
 import numpy as np
 import xarray as xr
@@ -31,9 +30,7 @@ def initiate_XY_data(config):
     XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
-    # DELETE XY['conflict_t_min_1'] = pd.Series(dtype=bool)
-    # DELETE XY['conflict_t_min_1_nb'] = pd.Series(dtype=float)
-    XY['migration'] = pd.Series(dtype=int)
+    XY['net_migration'] = pd.Series(dtype=int)
 
     if config.getboolean('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
@@ -63,17 +60,20 @@ def initiate_X_data(config):
     X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
-    # DELETE X['conflict_t_min_1'] = pd.Series(dtype=int)
-    # DELETE X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
-
+    # DELETE/ADAPT X['conflict_t_min_1'] = pd.Series(dtype=int)
+    # DELETE/ADAPT X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
+    print('Creating X dic NOW')
     if config.getboolean('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in X:
             click.echo('...{}'.format(key))
+    print('created x dicto')
+    df_X = pd.DataFrame(X)
+    df_X.to_csv(r'C:\Users\Sophie\copro\example\X.csv', index=False)
 
     return X
 
-def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
+def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """Fills the (XY-)dictionary with data for each variable and migration for each polygon for each simulation year. 
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -94,28 +94,21 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """    
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end'), 1) # deleted + 1: Does this refer to the 1 year time lag that was used to understand conflict?
-    click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) # delete -1 ?
-
-    # DELETE neighboring_matrix = neighboring_polys(config, polygon_gdf)
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1) 
+    click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) 
 
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
-        # if i == 0:
-
-           # click.echo('INFO: skipping first year {} to start up model'.format(sim_year))
-
-        # else:
 
             click.echo('INFO: entering year {}'.format(sim_year))
 
             # go through all keys in dictionary
             for key, value in XY.items(): 
 
-                if key == 'migration':
+                if key == 'net_migration':
                 
                     data_series = value
-                    data_list = migration.migration_in_year_int  (config, migration_data, polygon_gdf, sim_year, out_dir)
+                    data_list = migration.migration_in_year_int (config, migration_data, polygon_gdf, sim_year, out_dir) 
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -131,31 +124,45 @@ def fill_XY (XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     data_series = value
                     data_list = migration.get_poly_geometry(polygon_gdf, config)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    XY[key] = data_series
-
-                else:
-
-                    nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
+                    XY[key] = data_series                        
+                        
+                else: 
+                    file_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
+                    file_extension = os.path.splitext(file_path)[1]
                     
-                    if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                    if file_extension == '.csv':
                         data_series = value
-                        data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                        data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        data_series = data_series.append(pd.Series(data_list), ignore_index=True)
                         XY[key] = data_series
-                        
-                    elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                        data_series = value
-                        data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                        XY[key] = data_series
-                        
+
+                    elif file_extension == '.nc':                    
+                        nc_ds = xr.open_dataset(file_path)
+
+                        if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                            data_series = value
+                            data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                            XY[key] = data_series
+                
+                        elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                            data_series = value
+                            data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                            XY[key] = data_series
+
+                        else:
+                            raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
                     else:
-                        raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
+                        raise ValueError('ERROR: the file extension of the input file is not supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
-            if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
+    if config.getboolean('general', 'verbose'):
+        click.echo('DEBUG: all data read')
 
-    df_out = pd.DataFrame.from_dict(XY)
-    
+    df_out = pd.DataFrame(XY)
+    df_out.to_csv(os.path.join(out_dir, 'DF_out.csv'), index=False, header=False)
+    print('df_out.csv saved in output folder')
+
     return df_out.to_numpy()
 
 def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
@@ -230,31 +237,7 @@ def fill_X_migration(X, config, migration_data, polygon_gdf):
 
     Returns:
         dict: dictionary containing sample and migration values.
-    """    
-
-    # determine all neighbours for each polygon
-    # DELETE: neighboring_matrix = neighboring_polys(config, polygon_gdf)
-
-    # go through all keys in dictionary
-    # DELETE for key, value in X.items(): 
-
-      #  if key == 'conflict_t_min_1':
-
-         #   data_series = value
-         #   data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
-         #   data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-         #  X[key] = data_series
-
-     #   elif key == 'conflict_t_min_1_nb':
-
-        #   data_series = value
-        #  data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data, check_neighbors=True, neighboring_matrix=neighboring_matrix)
-        #    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-        #    X[key] = data_series
-
-        # else:
-
-         #   pass
+    """   
 
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
 
@@ -294,61 +277,3 @@ def split_XY_data(XY, config):
         click.echo('DEBUG: a fraction of {} percent in the data corresponds to migration.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
-
-# NOT needed in current run 
-# def neighboring_polys(config, extent_gdf, identifier='watprovID'):
-    """For each polygon, determines its neighboring polygons.
-    As result, a (n x n) look-up dataframe is obtained containing, where n is number of polygons in extent_gdf.
-
-    Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        extent_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        identifier (str, optional): column name in extent_gdf to be used to identify neighbors. Defaults to 'watprovID'.
-
-    Returns:
-        dataframe: look-up dataframe containing True/False statement per polygon for all other polygons.
-    """    
-
-    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: determining matrix with neighboring polygons')
-
-    # initialise empty dataframe
-    # df = pd.DataFrame()
-
-    # go through each polygon aka water province
-    # for i in range(len(extent_gdf)):
-        # get geometry of current polygon
-        # wp = extent_gdf.geometry.iloc[i]
-        # check which polygons in geodataframe (i.e. all water provinces) touch the current polygon
-        # also create a dataframe from result (integer)
-        # the transpose is needed to easier concat
-        # df_temp = pd.DataFrame(extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]).T
-        # concat the dataframe
-        # df = pd.concat([df, df_temp], axis=0, ignore_index=True)
-
-    # replace generic indices with actual water province IDs
-   # df.set_index(extent_gdf[identifier], inplace=True)
-
-    # replace generic columns with actual water province IDs
-    # df.columns = extent_gdf[identifier].values
-
-    # return df
-
-# DELETE ALL LINE 336-354
-# def find_neighbors(ID, neighboring_matrix):
-    """Filters all polygons which are actually neighbors to given polygon.
-
-    Args:
-        ID (int): ID of specific polygon under consideration.
-        neighboring_matrix (dataframe): output from neighboring_polys().
-
-    Returns:
-        dataframe: dataframe containig IDs of all polygons that are actual neighbors.
-    """    
-
-    # locaties entry for polygon under consideration
-    # neighbours = neighboring_matrix.loc[neighboring_matrix.index == ID].T
-    
-    # filters all actual neighbors defined as neighboring polygons with True statement
-   # actual_neighbours = neighbours.loc[neighbours[ID] == True].index.values
-
-    # return actual_neighbours
