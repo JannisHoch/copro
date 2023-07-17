@@ -9,7 +9,6 @@ from shutil import copyfile
 from sklearn import utils
 from datetime import date
 import click
-from shapely.geometry import multipolygon, Polygon
 import copro
 
 def get_geodataframe(config, root_dir, crs = 'WGS84'):
@@ -19,7 +18,7 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
     click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
     gdf = gpd.read_file(migration_fo)
 
-    # Rename year columns from M(yearX) to (yearX) since columnnames have to start with a letter in arcgis
+    # Rename year columns from yearX to year since column names have to start with a letter in arcgis
 
     gdf.rename(columns = {'M2001':'2001', 'M2002':'2002', 'M2003':'2003', 'M2004':'2004', 
                           'M2005':'2005', 'M2006':'2006', 'M2007':'2007', 'M2008':'2008', 
@@ -31,12 +30,10 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
     gdf = gdf.melt(id_vars=['GID_2', 'geometry'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
                                                               '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], 
                                                               var_name='year', value_name='net_migration')
-
+    
+    gdf.to_file(os.path.join(root_dir, 'gdf.gpkg'))
 
     gdf.year = gdf.year.astype(int)
-
-    # gdf = gpd.GeoDataFrame(gdf, geometry=gdf.set_geometry('geometry'))
-
 
     return gdf
 
@@ -292,29 +289,6 @@ def global_ID_geom_info(gdf):
     df = df.drop('ID', axis=1)
 
     return df
-
-#DELETE? def get_conflict_datapoints_only(X_df, y_df):
-    """Filters out only those polygons where conflict was actually observed in the test-sample.
-
-    Args:
-        X_df (dataframe): variable values per polygon.
-        y_df (dataframe): conflict data per polygon.
-
-    Returns:
-        dataframe: variable values for polyons where conflict was observed.
-        dataframe: conflict data for polyons where conflict was observed.
-    """    
-
-    # concatenate dataframes of sample data and target values
-    # df = pd.concat([X_df, y_df], axis=1)
-    # keep only those entries where conflict was observed
-    # df = df.loc[df.y_test==1]
-
-    # split again into X and Y
-    # df = df[df.columns[:len(X_df.columns)]]
-    # y1_df = df[df.columns[len(X_df.columns):]]
-
-   # return X1_df, y1_df
 
 def save_to_csv(arg, out_dir, fname):
     """Saves an dictionary to csv-file.

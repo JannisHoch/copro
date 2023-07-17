@@ -124,7 +124,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
     mdls = machine_learning.load_mdls(config_REF, out_dir_REF)
 
     if config_REF.getint('general', 'model') != 1:
-        raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
+            raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
     # initiate output dataframe
     all_y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
@@ -212,17 +212,20 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                     os.remove(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)))
 
                 # append to all classifiers dataframe
-                y_df = y_df.append(mdl, ignore_index=True)
+                y_df = pd.concat([y_df, y_df_mdl], ignore_index=True)
 
             # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
             if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
-            df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
-            # df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
-            gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
-
+            if config_REF.get('machine_learning', 'model') != 'RFRegression':
+                df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
+                df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
+                gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
+            if config_REF.get('machine_learning', 'model') == 'RFRegression':  
+                pass 
+            
         # create one major output dataframe containing all output for all projections with all classifiers
-        all_y_df = all_y_df.append(y_df, ignore_index=True)
+        all_y_df = pd.concat([y_df], ignore_index=True)
 
     return all_y_df

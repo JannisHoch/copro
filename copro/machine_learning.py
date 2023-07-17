@@ -133,8 +133,12 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     y_pred = mdl.predict(X_test)
 
     # make prediction of probability
-    y_prob = mdl.predict_proba(X_test)
 
+    if (config.get('machine_learning', 'model')) == 'NuSVC' or (config.get('machine_learning', 'model')) == 'KNeighborsClassifier' or (config.get('machine_learning', 'model')) == 'RFClassifier':
+        y_prob = mdl.predict_proba(X_test)
+    elif (config.get('machine_learning', 'model')) == 'RFRegression': 
+        y_prob = 1 # TEMP fix, is this the right way? mdl.predict_proba(X_test)
+   
     return y_pred, y_prob
 
 def pickle_mdl(scaler, mdl, config, root_dir):

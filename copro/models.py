@@ -21,7 +21,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
         datatrame: containing model output on polygon-basis.
         dict: dictionary containing evaluation metrics per simulation.
     """    
-    if config.integer('general', 'verbose'): print('DEBUG: using all data')
+    if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
 
     # split X into training-set and test-set, scale training-set data
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
@@ -29,20 +29,26 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
     # convert to dataframe
     X_df = pd.DataFrame(X_test)
 
-    # fit model and make prediction with test-set
-    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr)
-    y_prob_0 = y_prob[:, 0] # probability to predict 0
-    y_prob_1 = y_prob[:, 1] # probability to predict 1
-
-    # evaluate prediction and save to dict
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config)
-
-    # aggregate predictions per polygon
-    y_df = migration.get_pred_migration_geometry(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
+    # fit model and make prediction with test-set depending on model choice
+    if config.get('machine_learning', 'model') == 'NuSVC' or ('machine_learning', 'model') == 'KNeighborsClassifier' or ('machine_learning', 'model') == 'RFClassifier':
+        y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr)
+        y_prob_0 = y_prob[:, 0] # probability to predict 0
+        y_prob_1 = y_prob[:, 1] # probability to predict 1 
+        # evaluate prediction and save to dict  
+        eval_dict = evaluation.evaluate_prediction_classifier(y_test, y_pred, y_prob, X_test, mdl, config) 
+        # aggregate predictions per polygon
+        y_df = migration.get_pred_migration_geometry_classifier(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
+    
+    elif config.get('machine_learning', 'model') == 'RFRegression':
+        y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr) 
+        # evaluate prediction and save to dict
+        eval_dict = evaluation.evaluate_prediction_regression(y_test, y_pred, X_test, mdl, config)
+        # aggregate predictions per polygon
+        y_df = migration.get_pred_migration_geometry_regression(X_test_ID, X_test_geom, y_test, y_pred)         
 
     return X_df, y_df, eval_dict
 
-def leave_one_out(X, Y, config, scaler, mdl, out_dir):
+# def leave_one_out(X, Y, config, scaler, mdl, out_dir):
     """Model workflow when each variable is left out from analysis once. 
     Output is limited to the metric scores. 
     Output is stored to sub-folders of the output directory, with each sub-folder containing output for a n-1 variable combination.
@@ -61,30 +67,29 @@ def leave_one_out(X, Y, config, scaler, mdl, out_dir):
         DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
 
-    raise DeprecationWarning('WARNING: the leave-one-out model is not supported anymore and will be deprecated in a future release')
+    #raise DeprecationWarning('WARNING: the leave-one-out model is not supported anymore and will be deprecated in a future release')
 
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+    #X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
-    for i, key in zip(range(X_train.shape[1]), config.items('data')):
+    #for i, key in zip(range(X_train.shape[1]), config.items('data')):
 
-        print('INFO: removing data for variable {}'.format(key[0]))
+        #print('INFO: removing data for variable {}'.format(key[0]))
+    #X_train_loo = np.delete(X_train, i, axis=1)
+        #X_test_loo = np.delete(X_test, i, axis=1)
 
-        X_train_loo = np.delete(X_train, i, axis=1)
-        X_test_loo = np.delete(X_test, i, axis=1)
+        #sub_out_dir = os.path.join(out_dir, '_only_'+str(key[0]))
+        #if not os.path.isdir(sub_out_dir):
+            #os.makedirs(sub_out_dir)
 
-        sub_out_dir = os.path.join(out_dir, '_only_'+str(key[0]))
-        if not os.path.isdir(sub_out_dir):
-            os.makedirs(sub_out_dir)
+        #y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, mdl, model, config)
 
-        y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, mdl, config)
+        #eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, mdl, model, config)
 
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, mdl, config)
-
-        utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
+        #utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
     
-    sys.exit('INFO: leave-one-out model execution stops here.')
+    #sys.exit('INFO: leave-one-out model execution stops here.')
 
-def single_variables(X, Y, config, scaler, mdl, out_dir):
+#def single_variables(X, Y, config, scaler, mdl, out_dir):
     """Model workflow when the model is based on only one single variable. 
     Output is limited to the metric scores. 
     Output is stored to sub-folders of the output directory, with each sub-folder containing output for a 1 variable combination.
@@ -103,7 +108,7 @@ def single_variables(X, Y, config, scaler, mdl, out_dir):
         DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
     """    
 
-    raise DeprecationWarning('WARNING: the single-variable model is not supported anymore and will be deprecated in a future release')
+    """raise DeprecationWarning('WARNING: the single-variable model is not supported anymore and will be deprecated in a future release')
 
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
 
@@ -124,10 +129,10 @@ def single_variables(X, Y, config, scaler, mdl, out_dir):
 
         utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
 
-    sys.exit('INFO: single-variable model execution stops here.')
+    sys.exit('INFO: single-variable model execution stops here.')"""
 
-def dubbelsteen(X, Y, config, scaler, mdl, out_dir):
-    """Model workflow when the relation between variables and migration is based on randomness.
+"""def dubbelsteen(X, Y, config, scaler, mdl, out_dir):
+    Model workflow when the relation between variables and migration is based on randomness.
     Thereby, the fraction of actual migration is equal to observations, but the location in array is randomized by shuffling.
     The model workflow is executed for each model simulation.
 
@@ -142,8 +147,7 @@ def dubbelsteen(X, Y, config, scaler, mdl, out_dir):
     Returns:
         dataframe: containing the test-data X-array values.
         datatrame: containing model output on polygon-basis.
-        dict: dictionary containing evaluation metrics per simulation.
-    """   
+        dict: dictionary containing evaluation metrics per simulation.   
 
     print('INFO: dubbelsteenmodel running')
     raise DeprecationWarning('WARNING: the dubbelsteenmodel model is not supported anymore and will be deprecated in a future release')
@@ -160,7 +164,7 @@ def dubbelsteen(X, Y, config, scaler, mdl, out_dir):
 
     X_df = pd.DataFrame(X_test)
 
-    return X_df, y_df, eval_dict
+    return X_df, y_df, eval_dict"""
 
 def predictive(X, mdl, scaler, config):
     """Predictive model to use the already fitted model to make annual projections for the projection period.
@@ -190,9 +194,15 @@ def predictive(X, mdl, scaler, config):
 
     # LINES BELOW NEED TO BE ADAPTED
     # predict probabilites of outcomes
-    y_prob = mdl.predict_proba(X_ft)
-    # y_prob_0 = y_prob[:, 0] # probability to predict 0
-    # y_prob_1 = y_prob[:, 1] # probability to predict 1
+
+    #if config.get('machine_learning', 'model') != 'RFRegression':
+       # y_prob = mdl.predict_proba(X_ft)
+       # y_prob_0 = y_prob[:, 0] # probability to predict 0
+       # y_prob_1 = y_prob[:, 1] # probability to predict 1
+    #if config.get('machine_learning', 'model') == 'RFRegression':
+        #pass
+
+    
 
     # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
     # OLD: arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1)) (Deleted y_prob_0, y_prob_1)

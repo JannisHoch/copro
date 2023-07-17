@@ -1,5 +1,4 @@
 import copro 
-
 import click
 import pandas as pd
 import numpy as np
@@ -33,7 +32,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #- also returns root_dir which is the path to the cfg-file
     main_dict, root_dir = copro.utils.initiate_setup(cfg)
 
-    #- get config-objct and out_dir for reference run
+    #- get config-object and out_dir for reference run
     config_REF = main_dict['_REF'][0]
     out_dir_REF = main_dict['_REF'][1]
 
@@ -68,7 +67,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #TODO: put all this into one function
     out_X_df = copro.evaluation.init_out_df()
     out_y_df = copro.evaluation.init_out_df()
-    out_dict = copro.evaluation.init_out_dict()
+    out_dict = copro.evaluation.init_out_dict(config_REF)
     trps, aucs, mean_fpr = copro.evaluation.init_out_ROC_curve()
 
     #- create plot instance for ROC plots
@@ -108,24 +107,29 @@ def cli(cfg, make_plots=True, verbose=False):
     copro.utils.save_to_npy(out_y_df, out_dir_REF, 'raw_output_data')
     
     #- print mean values of all evaluation metrics
-    if config_REF.getboolean('general', 'verbose'):
-        for key in out_dict:
-            click.echo('DEBUG: average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config_REF.getint('machine_learning', 'n_runs'), np.mean(out_dict[key])))
+    config_REF.getboolean('general', 'verbose')
+    for key in out_dict:
+        click.echo('DEBUG: average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config_REF.getint('machine_learning', 'n_runs'), np.mean(out_dict[key])))
 
-    #- create accuracy values per polygon and save to output folder
+    #- create accuracy values per polygon and save to output folder if MLmodel = a classifier
     #- note only the dataframe is stored, not the geo-dataframe
-    df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
 
-    gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
+    #if config_REF.get('machine_learning', 'model') == 'NuSVC' or 'KNeighborsClassifier' or 'RFClassifier':
+    
+        #df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
 
-    #- plot distribution of all evaluation metrics
-    if make_plots:
-        fig, ax = plt.subplots(1, 1)
-        copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
-        plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
+        #gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
+    #elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
+        #print ('no accuracy score per GID_2')
 
-    df_feat_imp = copro.evaluation.get_feature_importance(mdl, config_REF, out_dir_REF) 
-    df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
+        #- plot distribution of all evaluation metrics
+        if make_plots:
+            fig, ax = plt.subplots(1, 1)
+            copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
+            plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
+
+        df_feat_imp = copro.evaluation.get_feature_importance(mdl, config_REF, out_dir_REF) 
+        df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
 
     click.echo(click.style('\nINFO: reference run succesfully finished\n', fg='cyan'))
 

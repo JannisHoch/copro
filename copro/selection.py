@@ -117,12 +117,9 @@ def climate_zoning(gdf, config, root_dir):
     
     # if climate zones are specified...
     if config.get('climate', 'zones') !='':
-        print('code condtinues5')
    
         # get all classes specified
         look_up_classes = config.get('climate', 'zones').rsplit(',')
-        
-        print('code condtinues6')
 
         # get the corresponding code per class
         code_nrs = []
