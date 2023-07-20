@@ -27,7 +27,7 @@ def initiate_XY_data(config):
     # some entries are set by default, besides the ones corresponding to input data variables
     XY = {}
     XY['poly_ID'] = pd.Series()
-    XY['poly_geometry'] = pd.Series()
+    #XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['net_migration'] = pd.Series(dtype=int)
@@ -57,19 +57,13 @@ def initiate_X_data(config):
     # some entries are set by default, besides the ones corresponding to input data variables
     X = {}
     X['poly_ID'] = pd.Series()
-    X['poly_geometry'] = pd.Series()
+    #X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
-    # DELETE/ADAPT X['conflict_t_min_1'] = pd.Series(dtype=int)
-    # DELETE/ADAPT X['conflict_t_min_1_nb'] = pd.Series(dtype=float)
-    print('Creating X dic NOW')
     if config.getboolean('general', 'verbose'): 
         click.echo('DEBUG: the columns in the sample matrix used are:')
         for key in X:
             click.echo('...{}'.format(key))
-    print('created x dicto')
-    df_X = pd.DataFrame(X)
-    df_X.to_csv(r'C:\Users\Sophie\copro\example\X.csv', index=False)
 
     return X
 
@@ -119,21 +113,22 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
-                elif key == 'poly_geometry':
+                #elif key == 'poly_geometry':
                 
-                    data_series = value
-                    data_list = migration.get_poly_geometry(polygon_gdf, config)
-                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    XY[key] = data_series                        
+                    #data_series = value
+                    #data_list = migration.get_poly_geometry(polygon_gdf, config)
+                    #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    #XY[key] = data_series                        
                         
                 else: 
                     file_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
                     file_extension = os.path.splitext(file_path)[1]
                     
                     if file_extension == '.csv':
-                        data_series = value
+                        # For keys with .csv extension, the concatenation can remain inside the loop
+                        data_series = value 
                         data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
-                        data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                        data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                         XY[key] = data_series
 
                     elif file_extension == '.nc':                    
@@ -160,13 +155,14 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
         click.echo('DEBUG: all data read')
 
     df_out = pd.DataFrame(XY)
-    df_out.to_csv(os.path.join(out_dir, 'DF_out.csv'), index=False, header=False)
+    df_out.to_csv(os.path.join(out_dir, 'DF_out.csv'), index=False, header=True)
     print('df_out.csv saved in output folder')
 
     return df_out.to_numpy()
 
+
 def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
-    """Fills the X-dictionary with the data sample data besides the migration data for each polygon and each year.
+    """Fills the X-dictionary with the sample data besides the migration data for each polygon and each year.
     Used during the projection runs as the sample and migration data need to be treated separately there.
 
     Args:
@@ -195,12 +191,12 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
-        #elif key == 'poly_geometry':
+        elif key == 'poly_geometry':
         
-            #data_series = value
-            #data_list = migration.get_poly_geometry(polygon_gdf, config)
-            #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-            #X[key] = data_series
+            data_series = value
+            data_list = migration.get_poly_geometry(polygon_gdf, config)
+            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+            X[key] = data_series
 
        #else:
 
@@ -226,6 +222,8 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     return X
 
 def fill_X_migration(X, config, migration_data, polygon_gdf):
+
+    # IS THIS Necessary? USED TO FILL THE CONFLICT T-1 AND NEIGHBOURING CONFLICT
     """Fills the X-dictionary with the migration data for each polygon and each year.
     Used during the projection runs as the sample and migration data need to be treated separately there.
 

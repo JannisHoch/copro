@@ -48,6 +48,10 @@ def define_extent(gdf, config, root_dir):
     
     # gdf.intersects(extent_gdf.unary_union) 
 
+    # Save extent_gdf as CSV to check
+    csv_output_path = os.path.join(root_dir, config.get('general', 'output_dir'), 'extent_data.csv')
+    extent_gdf.to_csv(csv_output_path, index=False)
+
     return extent_gdf
 
 # def clip_to_extent(gdf, config, root_dir):
@@ -182,7 +186,7 @@ def select(config, out_dir, root_dir):
     # clip migration and polygons to specified climate zones
     gdf, polygon_gdf = climate_zoning(gdf, config, root_dir)
 
-    extent_gdf = define_extent(gdf, config, root_dir)
+    # extent_gdf = define_extent(gdf, config, root_dir)
 
     # get a dataframe containing the ID and geometry of all polygons after selecting for climate zones
     global_df = utils.global_ID_geom_info(polygon_gdf)
