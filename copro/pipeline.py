@@ -188,7 +188,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 # for all other projection years than the first one, we need to read projected migration from the previous projection year
                 if i > 0:
                     if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_PROJ, 'mdls', str(mdl), 'projection_for_{}.csv'.format(proj_year-1))))
-                    migration_data = pd.read_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0)
+                    migration_data = pd.read_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0) # maybe delete proj_year-1
 
                     if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data for {}'.format(mdl.rsplit('.')[0]))
                     X = data.fill_X_migration(X, config_PROJ, migration_data, selected_polygons_gdf)
