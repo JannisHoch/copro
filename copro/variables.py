@@ -264,14 +264,15 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     else:
         csv_fo = data_fo[0] 
         ln_flag = bool(util.strtobool(data_fo[1]))
-        # stat_method = str(data_fo[2])
+        stat_method = str(data_fo[2])
 
     lag_time = 0
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     list_out = []
-   # Read the CSV file
+
+    # Read the CSV file
     csv_data = pd.read_csv(csv_fo)
 
     # select the polygons that must be selected
@@ -282,13 +283,20 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     selected_data = selected_csv_data.copy()
     selected_data = selected_data.query(f'time == {sim_year}')
 
+    if selected_data.size == 0:
+        raise ValueError('ERROR: No data was found for this year in the CSV file {}, check if all is correct'.format(var_name))
+
     if config.get('data', var_name).split(','):
         values = selected_data[var_name].values.tolist()
-        list_out.extend(zip(values, selected_data['GID_2'].values.tolist()))
-
-    # list_out = list(zip(selected_data[(config.get('data', var_name))].values.tolist(), selected_data['GID_2'].values.tolist()))
-    # list_out = list(zip(selected_data[config.get('data', var_name)].values.tolist(), selected_data['GID_2'].values.tolist()))
-    
-    # assert len(extent_gdf) == len(list_out), AssertionError('ERROR: Lengths do not match!')
+        
+    #log-transform the variable
+    if ln_flag:
+        values = np.log(values)
+        if config.getboolean('general', 'verbose'):
+            click.echo('DEBUG: Log-transform variable {}'.format(var_name))
+        else: 
+            click.echo('DEBUG: Not log-transforming {}'.format(var_name))
+        
+    list_out.extend(zip(values, selected_data['GID_2'].values.tolist()))
     
     return list_out

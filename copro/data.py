@@ -91,8 +91,7 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1) 
     click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) 
 
-    for (sim_year, i) in zip(model_period, range(len(model_period))):
-
+    for sim_year in model_period:
 
             click.echo('INFO: entering year {}'.format(sim_year))
 
@@ -125,7 +124,6 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     file_extension = os.path.splitext(file_path)[1]
                     
                     if file_extension == '.csv':
-                        # For keys with .csv extension, the concatenation can remain inside the loop
                         data_series = value 
                         data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
                         data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
@@ -137,13 +135,13 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                         if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                             data_series = value
                             data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
                 
                         elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                             data_series = value
                             data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
-                            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+                            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
 
                         else:
@@ -151,10 +149,39 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     else:
                         raise ValueError('ERROR: the file extension of the input file is not supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
+    # Sort the dictionary based on the 'poly_ID' key in the second element of the tuple columns
+
+    sorted_XY = dict(sorted(XY.items(), key=lambda x: (x[1].get('poly_ID', ''), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
+    # Delete the column named 'poly_ID'
+    del sorted_XY['poly_ID']
+
+    df_out = pd.DataFrame(sorted_XY)
+
+    # Find the correct 'poly_ID' column
+    poly_ID_column = next(col for col in df_out.columns if isinstance(df_out[col][0], tuple))
+
+    # Insert a new column 'poly_ID' with the second element of the tuples
+    df_out.insert(0, 'poly_ID', df_out[poly_ID_column].apply(lambda x: x[1] if isinstance(x, tuple) else x))
+
+    # Find the correct 'poly_ID' column
+    poly_ID_column = next(col for col in df_out.columns if isinstance(df_out[col][0], tuple))
+
+    for col in df_out.columns:
+        if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
+            df_out[col] = df_out[col].apply(lambda x: x[0]) 
+      
+ 
+    # make sure net_migration is the last column 
+    df_out = df_out[[col for col in df_out.columns if col != 'net_migration'] + ['net_migration']]
+    # Extract only the integer part from each tuple column
+    for col in df_out.columns:
+        if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
+           df_out[col] = df_out[col].apply(lambda x: x[0]) 
+      
     if config.getboolean('general', 'verbose'):
         click.echo('DEBUG: all data read')
 
-    df_out = pd.DataFrame(XY)
+    # Save the DataFrame to a CSV file to check it 
     df_out.to_csv(os.path.join(out_dir, 'DF_out.csv'), index=False, header=True)
     print('df_out.csv saved in output folder')
 
@@ -198,32 +225,67 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
-       #else:
+        else: 
+            file_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
+            file_extension = os.path.splitext(file_path)[1]
+                    
+            if file_extension == '.csv':
+                data_series = value 
+                data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, proj_year)
+                data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                X[key] = data_series
 
-        # DELETE if (key != 'conflict_t_min_1') and (key != 'conflict_t_min_1_nb'):
-
-                # nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
+            elif file_extension == '.nc':                    
+                nc_ds = xr.open_dataset(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0])
                 
-                #if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
-                    #data_series = value
-                    #data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
-                    #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    #X[key] = data_series
+                if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+                    data_series = value
+                    data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    X[key] = data_series
                     
-                #elif np.dtype(nc_ds.time) == 'datetime64[ns]':
-                    #data_series = value
-                    #data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
-                    #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    #X[key] = data_series
+                elif np.dtype(nc_ds.time) == 'datetime64[ns]':
+                    data_series = value
+                    data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    X[key] = data_series
                     
-                #else:
-                   #raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                else:
+                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
+     # Sort the x-dictionary based on the 'poly_ID' key in the second element of the tuple columns
+
+    sorted_X = dict(sorted(X.items(), key=lambda x: (x[1].get('poly_ID', ''), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
+    # Delete the column named 'poly_ID'
+    del sorted_X['poly_ID']
+
+    df_out = pd.DataFrame(sorted_X)
+
+    # add correct poly_ID matching the X variables
+    poly_ID_column = df_out.columns[1]
+
+    # Insert a new column 'poly_ID' with the second element of the tuples
+    df_out.insert(0, 'poly_ID', df_out[poly_ID_column].apply(lambda x: x[1]))
+
+
+    # Extract only the integer part from each tuple column
+    for col in df_out.columns:
+        if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
+           df_out[col] = df_out[col].apply(lambda x: x[0]) 
+      
+    if config.getboolean('general', 'verbose'):
+        click.echo('DEBUG: all X-prediction data read')
+
+    X = df_out.set_index('poly_ID').to_dict(orient='index')
+
+    df_out.to_csv(os.path.join(root_dir, 'DFX_out.csv'), index=False, header=True)
+    print('dfX_out.csv saved in output folder') # creates a weird csv, not as it must be
+    
     return X
 
 def fill_X_migration(X, config, migration_data, polygon_gdf):
 
-    # IS THIS Necessary? USED TO FILL THE CONFLICT T-1 AND NEIGHBOURING CONFLICT
+    # IS THIS Necessary? USED TO FILL THE CONFLICT T-1 AND NEIGHBOURING CONFLICT. DONT THINK SO, check later 
     """Fills the X-dictionary with the migration data for each polygon and each year.
     Used during the projection runs as the sample and migration data need to be treated separately there.
 

@@ -6,7 +6,7 @@ import os, sys
 import click
 
 
-def migration_in_year_int(config, migration_gdf, gdf, sim_year, out_dir): 
+def migration_in_year_int(config, migration_gdf, extent_gdf, sim_year, out_dir): 
     """Creates a list for each timestep with integer information on migration in a polygon."
 
     Args: config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -29,10 +29,6 @@ def migration_in_year_int(config, migration_gdf, gdf, sim_year, out_dir):
 
     if len(temp_sel_year) == 0:
         click.echo('WARNING: no migration occured in sampled migration data set for year {}'.format(sim_year))
-  
-    # DELETE?? merge the dataframes with polygons and migration information, creating a sub-set of polygons/regions
-    #data_merged = gpd.sjoin(temp_sel_year, migration_gdf)
-    #data_merged.to_csv(os.path.join(out_dir, 'data_merged_in_{}.csv'.format(sim_year)))
 
     out_dir = os.path.join(out_dir, 'files')
     if not os.path.isdir(out_dir):
@@ -42,26 +38,23 @@ def migration_in_year_int(config, migration_gdf, gdf, sim_year, out_dir):
     
         # get the migration value for each polygon
         int_per_poly = temp_sel_year.copy()  
-        # change column name   
-        # int_per_poly = int_per_poly.rename(columns={int_per_poly.columns[0]: 'GID_2'}) # check if what happens here is correct
-        # change index name to fit global_df --> 
-        # int_per_poly = int_per_poly.reset_index().rename(columns={'GID_2': 'ID'})
-        # int_per_poly.index = int_per_poly.index.rename('ID')
-      
-        # get list of all polygon IDs with their geometry information
-        #global_df = utils.global_ID_geom_info(gdf)
-        # for all polygons without net migration, set a 0
+
         if config.getboolean('general', 'verbose'): print('DEBUG: storing integer migration map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
-        # int_per_poly['ID'] = int_per_poly['ID'].astype(object)
-        #data_stored = pd.merge(int_per_poly, global_df, on='ID', how='right').fillna(0)
-        # data_stored.index = data_stored.index.rename('GID_2')
-        #data_stored = data_stored.drop(columns=['geometry_x', 'geometry_y'])
-        int_per_poly.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))) #DIT IS SOWIESO VERKEERD
+
+        int_per_poly.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))) 
             
 
     # loop through all regions and check if exists in sub-set
     list_out = []
-    list_out = temp_sel_year['net_migration'].tolist()
+
+    # select the polygons that must be selected
+    polygon_names = extent_gdf['GID_2'].unique().tolist()
+
+    selected_migration_data = temp_sel_year[temp_sel_year['GID_2'].isin(polygon_names)]
+
+    selected_data = selected_migration_data.copy()
+   
+    list_out.extend(zip(selected_data['net_migration'], selected_data['GID_2'].values.tolist()))
 
     return list_out
 
