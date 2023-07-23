@@ -157,3 +157,6 @@ example/temp_files/*
 gdf.gpkg
 \example\example_data\hydro\storUppTotal_annuaAvg_output_1958-01-31_to_2015-12-31.nc
 \example\example_data\hydro\spei12_long_1900-2018_yearmean.nc
+\example\gdf.gpkg
+\example\example_data\ADM2_Pakistan_yearly_net_migration.shp
+\example\example_data\ADM2_SA_yearly_net_migration.shp
