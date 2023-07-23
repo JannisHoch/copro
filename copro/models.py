@@ -48,124 +48,6 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
 
     return X_df, y_df, eval_dict
 
-# def leave_one_out(X, Y, config, scaler, mdl, out_dir):
-    """Model workflow when each variable is left out from analysis once. 
-    Output is limited to the metric scores. 
-    Output is stored to sub-folders of the output directory, with each sub-folder containing output for a n-1 variable combination.
-    After computing metric scores per prediction (i.e. n-1 variables combinations), model exit is forced.
-    Not tested yet for more than one simulation!
-
-    Args:
-        X (array): array containing the variable values plus unique identifer and geometry information.
-        Y (array): array containing the migration data.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        scaler (scaler): the specified scaling method instance.
-        mdl (model): the specified model instance.
-        out_dir (str): path to output folder.
-
-    Raises:
-        DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
-    """    
-
-    #raise DeprecationWarning('WARNING: the leave-one-out model is not supported anymore and will be deprecated in a future release')
-
-    #X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
-
-    #for i, key in zip(range(X_train.shape[1]), config.items('data')):
-
-        #print('INFO: removing data for variable {}'.format(key[0]))
-    #X_train_loo = np.delete(X_train, i, axis=1)
-        #X_test_loo = np.delete(X_test, i, axis=1)
-
-        #sub_out_dir = os.path.join(out_dir, '_only_'+str(key[0]))
-        #if not os.path.isdir(sub_out_dir):
-            #os.makedirs(sub_out_dir)
-
-        #y_pred, y_prob = machine_learning.fit_predict(X_train_loo, y_train, X_test_loo, mdl, model, config)
-
-        #eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_loo, mdl, model, config)
-
-        #utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
-    
-    #sys.exit('INFO: leave-one-out model execution stops here.')
-
-#def single_variables(X, Y, config, scaler, mdl, out_dir):
-    """Model workflow when the model is based on only one single variable. 
-    Output is limited to the metric scores. 
-    Output is stored to sub-folders of the output directory, with each sub-folder containing output for a 1 variable combination.
-    After computing metric scores per prediction (i.e. per variable), model exit is forced.
-    Not tested yet for more than one simulation!
-
-    Args:
-        X (array): array containing the variable values plus unique identifer and geometry information.
-        Y (array): array containing the migration data.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        scaler (scaler): the specified scaling method instance.
-        mdl (mdl): the specified model instance.
-        out_dir (str): path to output folder.
-
-    Raises:
-        DeprecationWarning: this function will most likely be deprecated due to lack of added value and applicability.
-    """    
-
-    """raise DeprecationWarning('WARNING: the single-variable model is not supported anymore and will be deprecated in a future release')
-
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
-
-    for i, key in zip(range(X_train.shape[1]), config.items('data')):
-
-        print('INFO: single-variable model with variable {}'.format(key[0]))
-
-        X_train_svmod = X_train[:, i].reshape(-1, 1)
-        X_test_svmod = X_test[:, i].reshape(-1, 1)
-
-        sub_out_dir = os.path.join(out_dir, '_excl_'+str(key[0]))
-        if not os.path.isdir(sub_out_dir):
-            os.makedirs(sub_out_dir)
-
-        y_pred, y_prob = machine_learning.fit_predict(X_train_svmod, y_train, X_test_svmod, mdl, config)
-
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test_svmod, mdl, config)
-
-        utils.save_to_csv(eval_dict, sub_out_dir, 'evaluation_metrics')
-
-    sys.exit('INFO: single-variable model execution stops here.')"""
-
-"""def dubbelsteen(X, Y, config, scaler, mdl, out_dir):
-    Model workflow when the relation between variables and migration is based on randomness.
-    Thereby, the fraction of actual migration is equal to observations, but the location in array is randomized by shuffling.
-    The model workflow is executed for each model simulation.
-
-    Args:
-        X (array): array containing the variable values plus unique identifer and geometry information.
-        Y (array): array containing the migration data.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        scaler (scaler): the specified scaling method instance.
-        mdl (model): the specified model instance.
-        out_dir (str): path to output folder.
-
-    Returns:
-        dataframe: containing the test-data X-array values.
-        datatrame: containing model output on polygon-basis.
-        dict: dictionary containing evaluation metrics per simulation.   
-
-    print('INFO: dubbelsteenmodel running')
-    raise DeprecationWarning('WARNING: the dubbelsteenmodel model is not supported anymore and will be deprecated in a future release')
-
-    Y = utils.create_artificial_Y(Y)
-
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
-
-    y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config)
-
-    eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, X_test, mdl, config)
-
-    y_df = migration.get_pred_migration_geometry(X_test_ID, X_test_geom, y_test, y_pred)
-
-    X_df = pd.DataFrame(X_test)
-
-    return X_df, y_df, eval_dict"""
-
 def predictive(X, mdl, scaler, config):
     """Predictive model to use the already fitted model to make annual projections for the projection period.
     As other models, it reads data which are then scaled and used in conjuction with the model to project net migration.
@@ -186,7 +68,7 @@ def predictive(X, mdl, scaler, config):
     # transforming the data
     # fitting is not needed as already happend before
     if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
-    X_ft = scaler.transform(X_data)
+    X_ft = scaler.transform(X_data) # Check why the X-data needs to be transformed
 
     # make projection with transformed data
     if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    

@@ -279,7 +279,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     X = df_out.set_index('poly_ID').to_dict(orient='index')
 
     df_out.to_csv(os.path.join(root_dir, 'DFX_out.csv'), index=False, header=True)
-    print('dfX_out.csv saved in output folder') # creates a weird csv, not as it must be
+    print('dfX_out.csv saved in output folder') # creates a csv with correct indicators, but education values seems to be incorrect, since they are negative
     
     return X
 
