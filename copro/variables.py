@@ -168,6 +168,17 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
+    
+    # If lon and lat are spatial dimensions, rename those to x and y to avoid errors
+    if 'lon' in nc_ds.dims:
+        nc_ds = nc_ds.rename({'lon': 'x'})
+    if 'lat' in nc_ds.dims:
+        nc_ds = nc_ds.rename({'lat': 'y'})
+
+    # if y-axis is flipped, flip it back
+    if nc_ds.rio.transform().e > 0:
+        nc_ds = nc_ds.reindex(y=list(reversed(nc_ds.y)))
+
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
     # get years contained in nc-file as integer array to be compatible with sim_year
@@ -187,15 +198,23 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         raise ValueError('ERROR: no data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
 
     # open nc-file with rasterio to get affine information
-    affine = rio.open(nc_fo).transform
+    # get affine from xarray data-array
+    affine = nc_ds.rio.transform()
+
+    # load crs from config file, if not specified, get crs from nc-file. If neither is specified, raise error
+    crs = config.get('crs', var_name) or nc_var.rio.crs
+    assert crs is not None, 'ERROR: no CRS found for variable {}'.format(var_name)
+
+    # convert extent_gdf to crs of nc-file
+    extent_gdf_crs_corrected = extent_gdf.to_crs(crs)
 
     # initialize output list
     list_out = []
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf)):
+    for i in range(len(extent_gdf_crs_corrected)):
 
         # polygon i
-        polygon = extent_gdf.iloc[i]
+        polygon = extent_gdf_crs_corrected.iloc[i]
 
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
