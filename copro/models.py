@@ -24,7 +24,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
     if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
 
     # split X into training-set and test-set, scale training-set data
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+    X_train, X_test, y_train, y_test, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler) # deleted X_train_geom, X_test_geom
     
     # convert to dataframe
     X_df = pd.DataFrame(X_test)
@@ -37,14 +37,14 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
         # evaluate prediction and save to dict  
         eval_dict = evaluation.evaluate_prediction_classifier(y_test, y_pred, y_prob, X_test, mdl, config) 
         # aggregate predictions per polygon
-        y_df = migration.get_pred_migration_geometry_classifier(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1)
+        y_df = migration.get_pred_migration_geometry_classifier(X_test_ID, y_test, y_pred, y_prob_0, y_prob_1) # deleted X_test_geom, 
     
     elif config.get('machine_learning', 'model') == 'RFRegression':
         y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr) 
         # evaluate prediction and save to dict
         eval_dict = evaluation.evaluate_prediction_regression(y_test, y_pred, X_test, mdl, config)
         # aggregate predictions per polygon
-        y_df = migration.get_pred_migration_geometry_regression(X_test_ID, X_test_geom, y_test, y_pred)         
+        y_df = migration.get_pred_migration_geometry_regression(X_test_ID, y_test, y_pred)    # deleted X_test_geom,      
 
     return X_df, y_df, eval_dict
 
@@ -63,7 +63,7 @@ def predictive(X, mdl, scaler, config):
     """    
 
     # splitting the data from the ID and geometry part of X
-    X_ID, X_geom, X_data = migration.split_migration_geom_data(X.to_numpy())
+    X_ID, X_data = migration.split_migration_geom_data(X.to_numpy()) # deleted X_geom
 
     # transforming the data
     # fitting is not needed as already happend before
@@ -84,11 +84,8 @@ def predictive(X, mdl, scaler, config):
     #if config.get('machine_learning', 'model') == 'RFRegression':
         #pass
 
-    
-
     # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
-    # OLD: arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1)) (Deleted y_prob_0, y_prob_1)
-    arr = np.column_stack((X_ID, X_geom, y_pred))
-    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred']) # (Deleted y_prob_0, y_prob_1)
+    arr = np.column_stack((X_ID, y_pred)) # deleted X_geom
+    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred']) # (Deleted y_prob_0, y_prob_1) maybe also deleted 'geometry' 
     
     return y_df

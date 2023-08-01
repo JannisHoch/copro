@@ -163,12 +163,12 @@ def split_migration_geom_data(X):
     #first column corresponds to ID, second to geometry
     #all remaining columns are actual data
     X_ID = X[:, 0]
-    X_geom = X[:, 1]
-    X_data = X[: , 2:]
+    # X_geom = X[:, 1]
+    X_data = X[: , 1:]
 
-    return X_ID, X_geom, X_data
+    return X_ID, X_data # deleted X_geom, 
 
-def get_pred_migration_geometry_classifier(X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1):
+def get_pred_migration_geometry_classifier(X_test_ID, y_test, y_pred, y_prob_0, y_prob_1): # deleted X_test_geom, 
     # Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe. 
     #Contains therefore only the data points used in the test-sample, not in the training-sample. 
     # Additionally computes whether a correct prediction was made.
@@ -183,7 +183,7 @@ def get_pred_migration_geometry_classifier(X_test_ID, X_test_geom, y_test, y_pre
         dataframe: dataframe with each input list as column plus computed 'correct_pred'.
 """
     # stack separate columns horizontally
-    arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1))
+    arr = np.column_stack((X_test_ID, y_test, y_pred, y_prob_0, y_prob_1)) # deleted X_test_geom
 
     # convert array to dataframe
     df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred', 'y_prob_0', 'y_prob_1'])
@@ -194,7 +194,7 @@ def get_pred_migration_geometry_classifier(X_test_ID, X_test_geom, y_test, y_pre
 
     return df
 
-def get_pred_migration_geometry_regression(X_test_ID, X_test_geom, y_test, y_pred):
+def get_pred_migration_geometry_regression(X_test_ID, y_test, y_pred): # deleted X_test_geom, 
     # Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe.
     # Contains only the data points used in the test-sample, not in the training-sample.
     # Additionally computes whether a correct prediction was made.
@@ -210,10 +210,10 @@ def get_pred_migration_geometry_regression(X_test_ID, X_test_geom, y_test, y_pre
         dataframe: dataframe with each input list as a column plus computed 'correct_pred'.
     """
     # stack separate columns horizontally
-    arr = np.column_stack((X_test_ID, X_test_geom, y_test, y_pred))
+    arr = np.column_stack((X_test_ID, y_test, y_pred)) # X_test_geom
 
     # convert array to dataframe
-    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred'])
+    df = pd.DataFrame(arr, columns=['ID',  'y_test', 'y_pred']) # delete 'geometry'
 
     # compute whether a prediction is correct
     # since this is regression, there is no exact match, so no 'correct_pred' column is computed

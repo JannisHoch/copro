@@ -262,7 +262,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     df_out = pd.DataFrame(sorted_X)
 
     # add correct poly_ID matching the X variables
-    poly_ID_column = df_out.columns[1]
+    poly_ID_column = df_out.columns[0]
 
     # Insert a new column 'poly_ID' with the second element of the tuples
     df_out.insert(0, 'poly_ID', df_out[poly_ID_column].apply(lambda x: x[1]))

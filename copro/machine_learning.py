@@ -77,14 +77,14 @@ def split_scale_train_test_split(X, Y, config, scaler):
     """ 
 
     ##- separate arrays for ID, geometry, and variable values
-    X_ID, X_geom, X_data = migration.split_migration_geom_data(X)
+    X_ID, X_data = migration.split_migration_geom_data(X) #X_geom deleted 
 
     ##- scaling only the variable values
     if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     X_ft = scaler.fit_transform(X_data)
 
     ##- combining ID, geometry and scaled sample values per polygon
-    X_cs = np.column_stack((X_ID, X_geom, X_ft))
+    X_cs = np.column_stack((X_ID, X_ft)) # deleted X_geom
 
     ##- splitting in train and test samples based on user-specified fraction
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
@@ -93,10 +93,10 @@ def split_scale_train_test_split(X, Y, config, scaler):
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
 
     # for training-set and test-set, split in ID, geometry, and values
-    X_train_ID, X_train_geom, X_train = migration.split_migration_geom_data(X_train)
-    X_test_ID, X_test_geom, X_test = migration.split_migration_geom_data(X_test)
+    X_train_ID, X_train = migration.split_migration_geom_data(X_train) # deleted X_train_geom, 
+    X_test_ID, X_test = migration.split_migration_geom_data(X_test) # deleted X_test_geom
 
-    return X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID
+    return X_train, X_test, y_train, y_test, X_train_ID, X_test_ID # deleted X_train_geom, X_test_geom, 
 
 def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     """Fits model based on training-data and makes predictions.
@@ -169,7 +169,7 @@ def pickle_mdl(scaler, mdl, config, root_dir):
     # split in X and Y data
     X_fit, Y_fit = data.split_XY_data(XY_fit, config)
     # split X in ID, geometry, and values
-    X_ID_fit, X_geom_fit, X_data_fit = migration.split_migration_geom_data(X_fit)
+    X_ID_fit, X_data_fit = migration.split_migration_geom_data(X_fit) # deleted X_geom_fit,
     # scale values
     X_ft_fit = scaler.fit_transform(X_data_fit)
     # fit model with values
