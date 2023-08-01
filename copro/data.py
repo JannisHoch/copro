@@ -218,12 +218,12 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
-        elif key == 'poly_geometry':
+        #elif key == 'poly_geometry':
         
-            data_series = value
-            data_list = migration.get_poly_geometry(polygon_gdf, config)
-            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-            X[key] = data_series
+            #data_series = value
+            #data_list = migration.get_poly_geometry(polygon_gdf, config)
+            #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+            #X[key] = data_series
 
         else: 
             file_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
@@ -266,7 +266,6 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
 
     # Insert a new column 'poly_ID' with the second element of the tuples
     df_out.insert(0, 'poly_ID', df_out[poly_ID_column].apply(lambda x: x[1]))
-
 
     # Extract only the integer part from each tuple column
     for col in df_out.columns:

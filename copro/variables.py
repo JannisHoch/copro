@@ -78,14 +78,21 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     nc_arr_vals = nc_arr.values
     if nc_arr_vals.size == 0:
         raise ValueError('ERROR: the data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
-
+  
+    # Initialize a set to store unique identifiers
+    unique_ids = set()
+ 
     # initialize output list
     list_out = []
+
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(extent_gdf)):
 
         # province i
         prov = extent_gdf.iloc[i]
+
+        if prov.GID_2 in unique_ids:
+            continue 
 
         # compute zonal stats for this province
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
@@ -97,11 +104,11 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.watprovID))
+            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.GID_2))
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.watprovID))
+                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.GID_2))
                 val = np.log(val+1)
             else:
                 val = val_ln
@@ -215,7 +222,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
         # polygon i
         polygon = extent_gdf_crs_corrected.iloc[i]
-
+        
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons

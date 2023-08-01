@@ -50,7 +50,9 @@ def define_extent(gdf, config, root_dir):
 
     # Save extent_gdf as CSV to check
     csv_output_path = os.path.join(root_dir, config.get('general', 'output_dir'), 'extent_data.csv')
+    print('Saving extent_gdf to:', csv_output_path)
     extent_gdf.to_csv(csv_output_path, index=False)
+    print('saved')
 
     return extent_gdf
 
@@ -89,11 +91,6 @@ def define_extent(gdf, config, root_dir):
     
     # gdf.intersects(extent_gdf.unary_union) 
 
-    #if isinstance(gdf, gpd.GeoDataFrame):
-        #print("Yes, it is a GeoDataFrame")
-    # else:
-        #print("No, it is not a GeoDataFrame")
-
     #return gdf, extent_gdf
 
 def climate_zoning(gdf, config, root_dir): 
@@ -115,6 +112,7 @@ def climate_zoning(gdf, config, root_dir):
     # load file with extents of climate zones
     Koeppen_Geiger_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('climate', 'shp'))
     KG_gdf = gpd.read_file(Koeppen_Geiger_fo)
+    
     # load file to look-up climate zone names with codes in shp-file
     code2class_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('climate', 'code2class'))
     code2class = pd.read_csv(code2class_fo, sep='\t')
@@ -181,8 +179,6 @@ def select(config, out_dir, root_dir):
     # clip migration to a spatial extent defined as polygons
     #gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
 
-    # extent_gdf = define_extent(gdf, config, root_dir)
-
     # clip migration and polygons to specified climate zones
     gdf, polygon_gdf = climate_zoning(gdf, config, root_dir)
 
@@ -192,7 +188,7 @@ def select(config, out_dir, root_dir):
     global_df = utils.global_ID_geom_info(polygon_gdf)
 
     # save migration data and polygon to shp-file
-    gdf.to_file(os.path.join(out_dir, 'selected_migration.geojson'), driver='GeoJSON', crs='WGS84') #change projection
-    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='WGS84') #change projection
+    gdf.to_file(os.path.join(out_dir, 'selected_migration.geojson'), driver='GeoJSON', crs='WGS84') 
+    polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='WGS84') 
 
     return gdf, polygon_gdf, global_df
