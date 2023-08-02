@@ -64,7 +64,7 @@ def cli(cfg, make_plots=True, verbose=False):
     scaler_fitted = scaler.fit(X[: , 1:]) # turn into 2 again if geometry is included again
 
     #- initializing output variables
-    #TODO: put all this into one function
+
     out_X_df = copro.evaluation.init_out_df()
     out_y_df = copro.evaluation.init_out_df()
     out_dict = copro.evaluation.init_out_dict(config_REF)
@@ -84,7 +84,7 @@ def cli(cfg, make_plots=True, verbose=False):
         X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config_REF, scaler, mdl , out_dir_REF, run_nr=n+1)
         
         #- append per model execution
-        #TODO: put all this into one function
+ 
         out_X_df = copro.evaluation.fill_out_df(out_X_df, X_df)
         out_y_df = copro.evaluation.fill_out_df(out_y_df, y_df)
         out_dict = copro.evaluation.fill_out_dict(out_dict, eval_dict)

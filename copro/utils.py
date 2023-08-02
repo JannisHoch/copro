@@ -14,26 +14,52 @@ import copro
 def get_geodataframe(config, root_dir, crs = 'WGS84'):
     migration_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'migration_file'))
 
-    # read file to geopandas dataframe
-    click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
-    gdf = gpd.read_file(migration_fo)
+    # Check if the input file is a CSV or a Shapefile
+    if migration_fo.endswith('.csv'):
+        # Read the migration data from CSV into a DataFrame
+        df = pd.read_csv(migration_fo)
 
-    # Rename year columns from yearX to year since column names have to start with a letter in arcgis
-
-    gdf.rename(columns = {'M2001':'2001', 'M2002':'2002', 'M2003':'2003', 'M2004':'2004', 
-                          'M2005':'2005', 'M2006':'2006', 'M2007':'2007', 'M2008':'2008', 
-                          'M2009':'2009', 'M2010':'2010', 'M2011':'2011', 'M2012':'2012', 'M2013':'2013', 'M2014':'2014', 'M2015':'2015'}, inplace = True)
-
-
-    # Reorganise GDF so that years can be selected 
-
-    gdf = gdf.melt(id_vars=['GID_2', 'geometry'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
+        # Reorganise GDF so that years can be selected 
+        df = df.melt(id_vars=['GID_2'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
                                                               '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], 
                                                               var_name='year', value_name='net_migration')
+
+    
+        df.year = df.year.astype(int)
+
+        shapefile_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'migration_shapefile'))
+        shapefile_gdf = gpd.read_file(shapefile_path)
+
+        # Perform the join based on the common 'GID_2' column
+        merged_gdf = shapefile_gdf.merge(df[['GID_2', 'year', 'net_migration']], on='GID_2', how='left')
+
+        # Keep only the 'GID_2' values present in the DataFrame 'df'
+        gdf = merged_gdf[merged_gdf['GID_2'].isin(df['GID_2'])]
+
+    elif migration_fo.endswith('.shp'):
+        # Read the migration data from Shapefile into a GeoDataFrame
+        gdf = gpd.read_file(migration_fo)
+
+        # Rename year columns from yearX to year since column names have to start with a letter in arcgis
+
+        gdf.rename(columns = {'M2001':'2001', 'M2002':'2002', 'M2003':'2003', 'M2004':'2004', 
+                          'M2005':'2005', 'M2006':'2006', 'M2007':'2007', 'M2008':'2008', 
+                          'M2009':'2009', 'M2010':'2010', 'M2011':'2011', 'M2012':'2012', 'M2013':'2013', 'M2014':'2014', 'M2015':'2015'}, inplace = True)
+        
+        # Reorganise GDF so that years can be selected 
+        gdf = gdf.melt(id_vars=['GID_2', 'geometry'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
+                                                              '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], 
+                                                              var_name='year', value_name='net_migration')
+
+        gdf.year = gdf.year.astype(int)
+    
+    else:
+        raise ValueError("Unsupported file format. Only CSV and Shapefile are supported.")
+    
+    # read file to geopandas dataframe
+    click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
     
     gdf.to_file(os.path.join(root_dir, 'gdf.gpkg'))
-
-    gdf.year = gdf.year.astype(int)
 
     return gdf
 
