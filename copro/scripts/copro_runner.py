@@ -61,7 +61,7 @@ def cli(cfg, make_plots=True, verbose=False):
 
     #- fit-transform on scaler to be used later during projections
     click.echo('INFO: fitting scaler to sample data')
-    scaler_fitted = scaler.fit(X[: , 1:]) # turn into 2 again if geometry is included again
+    scaler_fitted = scaler.fit(X[: , 2:]) 
 
     #- initializing output variables
 
@@ -129,7 +129,7 @@ def cli(cfg, make_plots=True, verbose=False):
             plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
         df_feat_imp = copro.evaluation.get_feature_importance(mdl, config_REF, out_dir_REF) 
-        df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,1:]), Y, df_feat_imp, out_dir_REF)
+        df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
 
     click.echo(click.style('\nINFO: reference run succesfully finished\n', fg='cyan'))
 
