@@ -25,7 +25,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
 
     # split X into training-set and test-set, scale training-set data
     X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler) 
-    
+
     # convert to dataframe
     X_df = pd.DataFrame(X_test)
 
@@ -61,19 +61,14 @@ def predictive(X, mdl, scaler, config):
     Returns:
         datatrame: containing model output on polygon-basis.
     """    
-
+     # Transpose the DataFrame - I dont see where this is now going wrong, but if i dont do this the x-projection data is not read properly
+    X = X.transpose()
+    X.reset_index(inplace=True)
+    X.rename(columns={'index': 'poly_ID'}, inplace=True)
+    
     # splitting the data from the ID and geometry part of X
     X_ID, X_geom, X_data = migration.split_migration_geom_data(X.to_numpy()) 
-
-    # Print the content of X_data
-    print("X_data before scaling:")
-    print(X_data)
-
-    print(X_geom)
-
-    print("X_ID before scaling:")
-    print(X_ID)
-
+    
     num_features = X_data.shape[1]
     print("Number of features in X_data:", num_features)
 
@@ -81,21 +76,11 @@ def predictive(X, mdl, scaler, config):
     # fitting is not needed as already happend before
     if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
     
-    X_ft = scaler.transform(X_data) # Check why the X-data needs to be transformed
+    X_ft = scaler.transform(X_data) 
 
     # make projection with transformed data
     if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
     y_pred = mdl.predict(X_ft)
-
-    # LINES BELOW NEED TO BE ADAPTED
-    # predict probabilites of outcomes
-
-    #if config.get('machine_learning', 'model') != 'RFRegression':
-       # y_prob = mdl.predict_proba(X_ft)
-       # y_prob_0 = y_prob[:, 0] # probability to predict 0
-       # y_prob_1 = y_prob[:, 1] # probability to predict 1
-    #if config.get('machine_learning', 'model') == 'RFRegression':
-        #pass
 
     # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
     arr = np.column_stack((X_ID, X_geom, y_pred)) 

@@ -27,7 +27,6 @@ def migration_in_year_int(config, migration_gdf, extent_gdf, sim_year, out_dir):
 
     # select the entries which occured in this year
     temp_sel_year = migration_gdf.loc[migration_gdf.year == sim_year] 
-    temp_sel_year.to_csv(os.path.join(out_dir, 'temp_sel_year_in_{}.csv'.format(sim_year)))
 
     if len(temp_sel_year) == 0:
         click.echo('WARNING: no migration occured in sampled migration data set for year {}'.format(sim_year))
@@ -170,6 +169,7 @@ def split_migration_geom_data(X):
  """   
     #first column corresponds to ID, second to geometry
     #all remaining columns are actual data
+
     X_ID = X[:, 0]
     X_geom = X[:, 1]
     X_data = X[: , 2:]

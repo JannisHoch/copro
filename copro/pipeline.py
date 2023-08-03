@@ -158,16 +158,8 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             click.echo('INFO: making projection for year {}'.format(proj_year))
 
             X = data.initiate_X_data(config_PROJ)
-            X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year)
 
-            # for the first projection year, we need to fall back on the observed migration at the last time step of the reference run
-            if i == 0:
-                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_REF, 'files', 'migration_in_{}.csv'.format(config_REF.getint('settings', 'y_end')))))
-                migration_data = pd.read_csv(os.path.join(out_dir_REF, 'files', 'migration_in_{}.csv'.format(config_REF.getint('settings', 'y_end'))), index_col=0)
-
-                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data from previous year')
-                X = data.fill_X_migration(X, config_PROJ, migration_data, selected_polygons_gdf)
-                X = pd.DataFrame.from_dict(X).to_numpy()
+            X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year)              
 
             # initiating dataframe containing all projections from all models for this timestep
             y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
@@ -184,17 +176,9 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                 with open(os.path.join(out_dir_REF, 'mdls', mdl), 'rb') as f:
                     if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: loading classifier {} from {}'.format(mdl, os.path.join(out_dir_REF, 'mdls')))
                     mdl_obj = pickle.load(f)
-
-                # for all other projection years than the first one, we need to read projected migration from the previous projection year
-                if i > 0:
-                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: reading previous migration from file {}'.format(os.path.join(out_dir_PROJ, 'mdls', str(mdl), 'projection_for_{}.csv'.format(proj_year-1))))
-                    migration_data = pd.read_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year-1)), index_col=0) # maybe delete proj_year-1
-
-                    if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: combining sample data with migration data for {}'.format(mdl.rsplit('.')[0]))
-                    X = data.fill_X_migration(X, config_PROJ, migration_data, selected_polygons_gdf)
-                    X = pd.DataFrame.from_dict(X).to_numpy()
-
+               
                 X = pd.DataFrame(X)
+
                 if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
 
                 X = X.fillna(0)

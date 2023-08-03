@@ -151,15 +151,14 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
 
     # Sort the dictionary based on the 'poly_ID' key in the second element of the tuple columns
 
-    print(XY)
-    sorted_XY = dict(sorted(XY.items(), key=lambda x: (str(x[2].get('poly_ID', '')), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
+    sorted_XY = dict(sorted(XY.items(), key=lambda x: str(x[1][0])))
 
-    # Delete the column named 'poly_ID'
+    # Delete the column named 'poly_ID' since somehow I cant fix it to het the right poly_ID in the correct row
     del sorted_XY['poly_ID']
 
     df_out = pd.DataFrame(sorted_XY)
 
-    # Find the correct 'poly_ID' column
+    # Find the correct 'poly_ID' column and add it (again)
     poly_ID_column = next(col for col in df_out.columns if isinstance(df_out[col][0], tuple))
 
     # Insert a new column 'poly_ID' with the second element of the tuples
@@ -171,10 +170,10 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     for col in df_out.columns:
         if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
             df_out[col] = df_out[col].apply(lambda x: x[0]) 
-      
- 
-    # make sure net_migration is the last column 
-    df_out = df_out[[col for col in df_out.columns if col != 'net_migration'] + ['net_migration']]
+
+    # make sure the order of the columns is correct for later analysis: 
+    df_out = df_out[['poly_ID', 'poly_geometry'] + list(df_out.columns.drop(['poly_ID', 'poly_geometry', 'net_migration'])) + ['net_migration']]
+
     # Extract only the integer part from each tuple column
     for col in df_out.columns:
         if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
@@ -255,21 +254,17 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                 else:
                     raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
-     # Sort the x-dictionary based on the 'poly_ID' key in the second element of the tuple columns
-    
-    print(X)
-    sorted_X = dict(sorted(X.items(), key=lambda x: (str(x[2].get('poly_ID', '')), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
-
     # Delete the column named 'poly_ID'
-    del sorted_X['poly_ID']
+    del X['poly_ID']
 
-    df_out = pd.DataFrame(sorted_X)
-
-    # add correct poly_ID matching the X variables
-    poly_ID_column = df_out.columns[0]
+    #df_out = pd.DataFrame(sorted_X)
+    df_out = pd.DataFrame(X)
 
     # Insert a new column 'poly_ID' with the second element of the tuples
-    df_out.insert(0, 'poly_ID', df_out[poly_ID_column].apply(lambda x: x[1]))
+    df_out.insert(0, 'poly_ID', df_out.iloc[:, 2].apply(lambda x: x[1]))
+
+     # make sure the order of the columns is correct for later analysis: 
+    df_out = df_out[['poly_ID', 'poly_geometry'] + list(df_out.columns.drop(['poly_ID', 'poly_geometry']))]
 
     # Extract only the integer part from each tuple column
     for col in df_out.columns:
@@ -282,28 +277,8 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     X = df_out.set_index('poly_ID').to_dict(orient='index')
 
     df_out.to_csv(os.path.join(root_dir, 'DFX_out.csv'), index=False, header=True)
-    print('dfX_out.csv saved in output folder') # creates a csv with correct indicators
+    print('dfX_out.csv saved in output folder') # creates a csv to check if all went well, to be deleted when all runs well
     
-    return X
-
-def fill_X_migration(X, config, migration_data, polygon_gdf):
-
-    # IS THIS Necessary? USED TO FILL THE CONFLICT T-1 AND NEIGHBOURING CONFLICT. DONT THINK SO, check later 
-    """Fills the X-dictionary with the migration data for each polygon and each year.
-    Used during the projection runs as the sample and migration data need to be treated separately there.
-
-    Args:
-        X (dict): dictionary containing keys to be sampled.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        migration_data (dataframe): dataframe containing all polygons with migration.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-
-    Returns:
-        dict: dictionary containing sample and migration values.
-    """   
-
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: all data read')
-
     return X
 
 def split_XY_data(XY, config):
@@ -331,6 +306,7 @@ def split_XY_data(XY, config):
     # get X data
     # since migration is the last column, we know that all previous columns must be variable values
     X = XY[:, :-1] 
+
     # get Y data 
     Y = XY[:, -1]
 

@@ -75,8 +75,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
     Returns:
         arrays: arrays containing training-set and test-set for X-data and Y-data as well as IDs and geometry.
     """ 
-    print(X)
-    ##- separate arrays for ID, geometry, and variable values
+    ## separate arrays for ID, geometry, and variable values
     X_ID, X_geom, X_data = migration.split_migration_geom_data(X)  
 
     ##- scaling only the variable values
