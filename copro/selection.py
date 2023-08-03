@@ -56,7 +56,7 @@ def define_extent(gdf, config, root_dir):
 
     return extent_gdf
 
-# def clip_to_extent(gdf, config, root_dir):
+# def clip_to_extent(gdf, config, root_dir): I want to delete this completely from the model
    
     """As the original copro worked with a global extent, this function clips the database to those entries which have occured on a specified continent. 
 
