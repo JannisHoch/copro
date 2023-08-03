@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import os, sys
 import click
+import shapely
+from shapely.wkt import loads
 
 
 def migration_in_year_int(config, migration_gdf, extent_gdf, sim_year, out_dir): 
@@ -138,16 +140,22 @@ def get_poly_geometry(extent_gdf, config):
     
     if config.getboolean('general', 'verbose'): print('DEBUG: getting the geometry of all geographical units')
 
-    # initiatie empty list
-    list_geometry = []
+    # initiate an empty set to store unique geometry representations
+    unique_geometries = set()
 
     # loop through all polygons
     for i in range(len(extent_gdf)):
-        # append geometry of each polygon to list
-        list_geometry.append(extent_gdf.iloc[i]['geometry'])
+        # get the geometry of the current polygon
+        geometry = extent_gdf.iloc[i]['geometry']
 
-    # in the end, the same number of polygons should be in geodataframe and list        
-    assert (len(extent_gdf) == len(list_geometry)), AssertionError('ERROR: the dataframe with polygons has a lenght {0} while the lenght of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
+        # add the geometry's string representation to the set (it will only be added if it's unique)
+        unique_geometries.add(str(geometry))
+
+    # convert the set back to a list of geometries
+    list_geometry = [shapely.wkt.loads(geometry_str) for geometry_str in unique_geometries]
+
+    # in the end, the same number of unique polygons should be in the set and list
+    # assert len(extent_gdf) == len(list_geometry), AssertionError('ERROR: the dataframe with polygons has a length {0} while the length of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
         
     return list_geometry
 
@@ -163,10 +171,10 @@ def split_migration_geom_data(X):
     #first column corresponds to ID, second to geometry
     #all remaining columns are actual data
     X_ID = X[:, 0]
-    # X_geom = X[:, 1]
-    X_data = X[: , 1:]
+    X_geom = X[:, 1]
+    X_data = X[: , 2:]
 
-    return X_ID, X_data # deleted X_geom, 
+    return X_ID, X_geom, X_data  
 
 def get_pred_migration_geometry_classifier(X_test_ID, y_test, y_pred, y_prob_0, y_prob_1): # deleted X_test_geom, 
     # Stacks together the arrays with unique identifier, geometry, test data, and predicted data into a dataframe. 

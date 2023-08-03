@@ -27,7 +27,7 @@ def initiate_XY_data(config):
     # some entries are set by default, besides the ones corresponding to input data variables
     XY = {}
     XY['poly_ID'] = pd.Series()
-    #XY['poly_geometry'] = pd.Series()
+    XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['net_migration'] = pd.Series(dtype=int)
@@ -57,7 +57,7 @@ def initiate_X_data(config):
     # some entries are set by default, besides the ones corresponding to input data variables
     X = {}
     X['poly_ID'] = pd.Series()
-    #X['poly_geometry'] = pd.Series()
+    X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
     if config.getboolean('general', 'verbose'): 
@@ -112,12 +112,12 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
-                #elif key == 'poly_geometry':
+                elif key == 'poly_geometry':
                 
-                    #data_series = value
-                    #data_list = migration.get_poly_geometry(polygon_gdf, config)
-                    #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-                    #XY[key] = data_series                        
+                    data_series = value
+                    data_list = migration.get_poly_geometry(polygon_gdf, config)
+                    data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+                    XY[key] = data_series                        
                         
                 else: 
                     file_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
@@ -151,7 +151,9 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
 
     # Sort the dictionary based on the 'poly_ID' key in the second element of the tuple columns
 
-    sorted_XY = dict(sorted(XY.items(), key=lambda x: (x[1].get('poly_ID', ''), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
+    print(XY)
+    sorted_XY = dict(sorted(XY.items(), key=lambda x: (str(x[2].get('poly_ID', '')), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
+
     # Delete the column named 'poly_ID'
     del sorted_XY['poly_ID']
 
@@ -218,12 +220,12 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
             X[key] = data_series
 
-        #elif key == 'poly_geometry':
+        elif key == 'poly_geometry':
         
-            #data_series = value
-            #data_list = migration.get_poly_geometry(polygon_gdf, config)
-            #data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
-            #X[key] = data_series
+            data_series = value
+            data_list = migration.get_poly_geometry(polygon_gdf, config)
+            data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
+            X[key] = data_series
 
         else: 
             file_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key)).rsplit(',')[0]
@@ -254,8 +256,10 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
 
      # Sort the x-dictionary based on the 'poly_ID' key in the second element of the tuple columns
+    
+    print(X)
+    sorted_X = dict(sorted(X.items(), key=lambda x: (str(x[2].get('poly_ID', '')), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
 
-    sorted_X = dict(sorted(X.items(), key=lambda x: (x[1].get('poly_ID', ''), *[str(col[1]) if isinstance(col[1], tuple) else col[1] for col in x[1].items()])))
     # Delete the column named 'poly_ID'
     del sorted_X['poly_ID']
 
@@ -278,7 +282,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     X = df_out.set_index('poly_ID').to_dict(orient='index')
 
     df_out.to_csv(os.path.join(root_dir, 'DFX_out.csv'), index=False, header=True)
-    print('dfX_out.csv saved in output folder') # creates a csv with correct indicators, but education values seems to be incorrect, since they are negative
+    print('dfX_out.csv saved in output folder') # creates a csv with correct indicators
     
     return X
 
@@ -327,9 +331,8 @@ def split_XY_data(XY, config):
     # get X data
     # since migration is the last column, we know that all previous columns must be variable values
     X = XY[:, :-1] 
-    # get Y data and convert to integer values
+    # get Y data 
     Y = XY[:, -1]
-    Y = Y.astype(int)
 
     if config.getboolean('general', 'verbose'): 
         fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
