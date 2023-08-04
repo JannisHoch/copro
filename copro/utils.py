@@ -119,6 +119,7 @@ def parse_projection_settings(config, root_dir):
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
+        root_dir (str): absolute path to location of configurations-file
 
     Returns:
         dict: dictionary with name and config-object per specified projection run.

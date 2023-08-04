@@ -8,12 +8,13 @@ import shapely
 from shapely.wkt import loads
 
 
-def migration_in_year_int(config, migration_gdf, extent_gdf, sim_year, out_dir): 
-    """Creates a list for each timestep with integer information on migration in a polygon."
+def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year, out_dir): 
+    """Creates a list for each timestep with integer information on migration in a polygon, or if indicated in the cfg file a weightened list based on the total population per polygon."
 
     Args: config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        # migration_gdf (geodataframe): geo-dataframe containing georeferenced information of migration.
-        
+        root_dir (str): absolute path to location of configurations-file
+        migration_gdf (geodataframe): geo-dataframe containing georeferenced information of migration.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
         sim_year (int): year for which data is extracted.
         out_dir (str): path to output folder. If 'None', no output is stored.
@@ -35,16 +36,41 @@ def migration_in_year_int(config, migration_gdf, extent_gdf, sim_year, out_dir):
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
 
+    if config.getboolean('general', 'verbose'): print('DEBUG: check if migration should be weightened based on population')
+    # check if migration should be weightened:
+    if config.getboolean('migration', 'weight_migration'): 
+        total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
+        total_population = pd.read_csv(total_population_fo)
+        # select the total population per polygon this year
+        population_total_sel_year = total_population.loc[total_population['time'] == sim_year]
+
+        combined_migration_data = temp_sel_year.merge(population_total_sel_year, on='GID_2', how='left')
+        combined_migration_data['weighted_migration'] = combined_migration_data['net_migration'] / combined_migration_data['total_population']
+
+        # drop 'old' net_migration column
+        combined_migration_data.drop(columns='net_migration', inplace=True)
+
+        # Rename the column 'weighted_migration' to 'net_migration'
+        combined_migration_data.rename(columns={'weighted_migration': 'net_migration'}, inplace=True)
+
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing weightened migration csv of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'weightened_migration_in_{}.csv'.format(sim_year))))
+        combined_migration_data_exgeo = combined_migration_data.drop(columns='geometry') 
+        combined_migration_data_exgeo.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
+
+
+        temp_sel_year = combined_migration_data
+    else:
+        pass
+
     if sim_year == config.getint('settings', 'y_end'):
     
         # get the migration value for each polygon
         int_per_poly = temp_sel_year.copy()  
 
-        if config.getboolean('general', 'verbose'): print('DEBUG: storing integer migration map of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing integer migration csv of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))))
 
         int_per_poly.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year))) 
             
-
     # loop through all regions and check if exists in sub-set
     list_out = []
 
@@ -59,7 +85,7 @@ def migration_in_year_int(config, migration_gdf, extent_gdf, sim_year, out_dir):
 
     return list_out
 
-def read_projected_migration(extent_gdf, net_migration): # DELETE check_neighbors=False, neighboring_matrix=None)
+def read_projected_migration(extent_gdf, net_migration): # THIS CAN MOST LIKELY BE DELETED check_neighbors=False, neighboring_matrix=None)
     """Creates a list for each timestep with integer information on migration per polygon.
     Input migratation data (net_migration) must contain an index with IDs corresponding with the 'GID_2' values of the gdf. 
     Optionally, the algorithm can be extended to the neighboring polygons.
@@ -83,7 +109,7 @@ def read_projected_migration(extent_gdf, net_migration): # DELETE check_neighbor
 
         if i_poly in net_migration.index.values:
 
-            list_out.append(1) # should this be changed to just give the integer value? 
+            list_out.append(1)  
 
         else:
 
