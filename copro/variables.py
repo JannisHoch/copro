@@ -81,19 +81,23 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
   
     # Initialize a set to store unique identifiers
     unique_ids = set()
- 
+
     # initialize output list
     list_out = []
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(extent_gdf)):
 
-        # province i
-        prov = extent_gdf.iloc[i]
+        # polygon i
+        polygon = extent_gdf.iloc[i]
 
-        if prov.GID_2 in unique_ids:
-            continue 
+        # If this GID_2 has already been processed, skip to the next polygon
+        if polygon.GID_2 in unique_ids:
+            continue
 
+        # Add the GID_2 of this polygon to the set of unique IDs
+        unique_ids.add(polygon.GID_2)
+         
         # compute zonal stats for this province
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
@@ -117,12 +121,13 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         if (val == None) and (config.getboolean('general', 'verbose')): 
             click.echo('WARNING: NaN computed!')
 
-        list_out.append(val)
-
-    assert len(extent_gdf) == len(list_out), AssertionError('ERROR: lengths do not match!')
+        print(val) # out of curiosity
+            
+        # Append the GID_2 ID and the computed value as a tuple to the output list
+        list_out.append((polygon.GID_2, val))
+        print(val)
 
     return list_out
-
 
 def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
@@ -147,7 +152,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         ValueError: raised if the extracted variable at a time step does not contain data.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+         list: list of tuples, where each tuple contains the computed value and its corresponding GID_2 ID.
     """   
 
     # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
@@ -215,13 +220,24 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     # convert extent_gdf to crs of nc-file
     extent_gdf_crs_corrected = extent_gdf.to_crs(crs)
 
+    # Initialize a set to store unique identifiers
+    unique_ids = set()
+
     # initialize output list
     list_out = []
+
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf_crs_corrected)):
+    for i in range(len(extent_gdf)):
 
         # polygon i
-        polygon = extent_gdf_crs_corrected.iloc[i]
+        polygon = extent_gdf.iloc[i]
+
+        # If this GID_2 has already been processed, skip to the next polygon
+        if polygon.GID_2 in unique_ids:
+            continue
+
+        # Add the GID_2 of this polygon to the set of unique IDs
+        unique_ids.add(polygon.GID_2)
         
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
@@ -246,9 +262,10 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         if (val == None) or (val == np.nan) and (config.getboolean('general', 'verbose')): 
             click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
         
-        list_out.append(val)
-
-    assert len(extent_gdf) == len(list_out), AssertionError('ERROR: lengths do not match!')
+        
+        # Append the GID_2 ID and the computed value as a tuple to the output list
+        list_out.append((polygon.GID_2, val))
+        print(val)
 
     return list_out
 

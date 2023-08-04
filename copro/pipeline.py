@@ -190,6 +190,12 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
                 # storing the projection per mdl to be used in the following timestep
                 y_df_mdl.to_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
+                
+                # storing the projection per mdl without the geometry
+                y_df_mdl_exgeo = y_df_mdl.drop(columns=['geometry'])
+
+                # storing the projection per mdl to be used in the following timestep
+                y_df_mdl_exgeo.to_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}_exgeo.csv'.format(proj_year)))
 
                 # removing projection of previous time step as not needed anymore
                 if i > 0:

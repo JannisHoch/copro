@@ -33,6 +33,7 @@ def define_extent(gdf, config, root_dir):
     # read file
     if config.getboolean('general', 'verbose'): print('DEBUG: reading extent and spatial aggregation level from file {}'.format(shp_fo))
     extent_gdf = gpd.read_file(shp_fo)
+    print(extent_gdf)
 
     # fixing invalid geometries
     if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')

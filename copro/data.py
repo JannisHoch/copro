@@ -101,7 +101,7 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                 if key == 'net_migration':
                 
                     data_series = value
-                    data_list = migration.migration_in_year_int (config, migration_data, polygon_gdf, sim_year, out_dir) 
+                    data_list = migration.migration_in_year_int (root_dir, config, migration_data, polygon_gdf, sim_year, out_dir) 
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -182,9 +182,13 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     if config.getboolean('general', 'verbose'):
         click.echo('DEBUG: all data read')
 
-    # Save the DataFrame to a CSV file to check it 
-    df_out.to_csv(os.path.join(out_dir, 'DF_out.csv'), index=False, header=True)
-    print('df_out.csv saved in output folder')
+
+    # Drop the 'poly_geometry' column from the DataFrame temporarily for saving to CSV
+    df_out_to_save = df_out.drop(columns=['poly_geometry'])
+
+    # Save the temporary DataFrame to a CSV file
+    df_out_to_save.to_csv(os.path.join(out_dir, 'DF_out_exgeometry.csv'), index=False, header=True)
+    print('df_out_exgeometry.csv saved in the output folder')
 
     return df_out.to_numpy()
 
@@ -295,7 +299,7 @@ def split_XY_data(XY, config):
 
     # convert array to dataframe for easier handling
     XY = pd.DataFrame(XY)
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY)))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY))) # this is not correct now
 
     # fill all missing values with 0
     XY = XY.fillna(0)
