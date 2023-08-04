@@ -59,7 +59,7 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
     # read file to geopandas dataframe
     click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
     
-    gdf.to_file(os.path.join(root_dir, 'gdf.gpkg'))
+    # gdf.to_file(os.path.join(root_dir, 'gdf.gpkg')) not necessary for now
 
     return gdf
 

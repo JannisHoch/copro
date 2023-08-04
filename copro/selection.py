@@ -33,7 +33,6 @@ def define_extent(gdf, config, root_dir):
     # read file
     if config.getboolean('general', 'verbose'): print('DEBUG: reading extent and spatial aggregation level from file {}'.format(shp_fo))
     extent_gdf = gpd.read_file(shp_fo)
-    print(extent_gdf)
 
     # fixing invalid geometries
     if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')
@@ -41,19 +40,6 @@ def define_extent(gdf, config, root_dir):
 
     if (gdf.crs == extent_gdf.crs):
         print("DEBUG: Both layers are in the same crs")
-
-    # clip the migration dataframe to the specified polygons
-    
-    #if config.getboolean('general', 'verbose'):
-        #print('DEBUG: clipping migration dataset to extent')
-    
-    # gdf.intersects(extent_gdf.unary_union) 
-
-    # Save extent_gdf as CSV to check
-    csv_output_path = os.path.join(root_dir, config.get('general', 'output_dir'), 'extent_data.csv')
-    print('Saving extent_gdf to:', csv_output_path)
-    extent_gdf.to_csv(csv_output_path, index=False)
-    print('saved')
 
     return extent_gdf
 
@@ -171,9 +157,6 @@ def select(config, out_dir, root_dir):
     # get the migration data
     gdf = utils.get_geodataframe(config, root_dir)
 
-    # filter based on migration properties --> THIS CAN MOST LIKELY BE DELETED
-    # gdf = filter_migration_properties(gdf, config)
-
     # selected migration falling in a specified time period
     gdf = select_period(gdf, config)
 
@@ -183,7 +166,7 @@ def select(config, out_dir, root_dir):
     # clip migration and polygons to specified climate zones
     gdf, polygon_gdf = climate_zoning(gdf, config, root_dir)
 
-    # extent_gdf = define_extent(gdf, config, root_dir)
+    extent_gdf = define_extent(gdf, config, root_dir) # check is this is going ok
 
     # get a dataframe containing the ID and geometry of all polygons after selecting for climate zones
     global_df = utils.global_ID_geom_info(polygon_gdf)
@@ -192,4 +175,4 @@ def select(config, out_dir, root_dir):
     gdf.to_file(os.path.join(out_dir, 'selected_migration.geojson'), driver='GeoJSON', crs='WGS84') 
     polygon_gdf.to_file(os.path.join(out_dir, 'selected_polygons.geojson'), driver='GeoJSON', crs='WGS84') 
 
-    return gdf, polygon_gdf, global_df
+    return gdf, polygon_gdf, global_df, extent_gdf

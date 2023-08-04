@@ -178,10 +178,7 @@ def get_poly_geometry(extent_gdf, config):
 
     # convert the set back to a list of geometries
     list_geometry = [shapely.wkt.loads(geometry_str) for geometry_str in unique_geometries]
-
-    # in the end, the same number of unique polygons should be in the set and list
-    # assert len(extent_gdf) == len(list_geometry), AssertionError('ERROR: the dataframe with polygons has a length {0} while the length of the resulting list is {1}'.format(len(extent_gdf), len(list_geometry)))
-        
+    
     return list_geometry
 
 def split_migration_geom_data(X):

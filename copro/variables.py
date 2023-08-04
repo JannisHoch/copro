@@ -65,68 +65,105 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
+
+     # If lon and lat are spatial dimensions, rename those to x and y to avoid errors
+    if 'lon' in nc_ds.dims:
+        nc_ds = nc_ds.rename({'lon': 'x'})
+    if 'lat' in nc_ds.dims:
+        nc_ds = nc_ds.rename({'lat': 'y'})
+
+    # if y-axis is flipped, flip it back
+    if nc_ds.rio.transform().e > 0:
+        nc_ds = nc_ds.reindex(y=list(reversed(nc_ds.y)))
+
+
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
+
     if ln_flag:
-        nc_var = np.log(nc_var)
-        if config.getboolean('general', 'verbose'): click.echo('DEBUG: log-transform variable {}'.format(var_name))
+    # Replace -inf values with 0 before applying the logarithm
+        nc_var = xr.where(nc_var == -math.inf, 0, nc_var)
+
+    # Get the non-zero and positive mask along the time dimension
+        non_zero_positive_mask = nc_var > 0
+
+    # Apply logarithm only to positive values using the mask along the time dimension
+        nc_var = xr.where(non_zero_positive_mask, np.log(nc_var), nc_var)
+
+    # Handle cases where log-transformed value results in -inf
+        nc_var = xr.where(nc_var == -math.inf, 0, nc_var)
+
+    if config.getboolean('general', 'verbose'):
+        click.echo('DEBUG: log-transform variable {}'.format(var_name))
+
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
 
     # get values from data-array for specified year
     nc_arr = nc_var.sel(time=sim_year)
     nc_arr_vals = nc_arr.values
-    if nc_arr_vals.size == 0:
-        raise ValueError('ERROR: the data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
-  
-    # Initialize a set to store unique identifiers
-    unique_ids = set()
 
-    # initialize output list
+    # Handle cases where nc_arr_vals is empty (i.e., no data found for the specified year)
+    if nc_arr_vals.size == 0:
+        print('WARNING: No data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
+        return []
+
+    # load crs from config file, if not specified, get crs from nc-file. If neither is specified, raise error
+    crs = config.get('crs', var_name) or nc_var.rio.crs
+    assert crs is not None, 'ERROR: no CRS found for variable {}'.format(var_name)
+
+    # convert extent_gdf to crs of nc-file
+    extent_gdf_crs_corrected = extent_gdf.to_crs(crs)
+
+    # initialize output list and a set to keep track of processed polygons
     list_out = []
+    processed_polygons = set()
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf)):
+    for index, polygon in extent_gdf_crs_corrected.iterrows():
 
-        # polygon i
-        polygon = extent_gdf.iloc[i]
-
-        # If this GID_2 has already been processed, skip to the next polygon
-        if polygon.GID_2 in unique_ids:
+    # Check if the polygon has already been processed, if yes, skip to the next iteration
+        if polygon.GID_2 in processed_polygons:
             continue
 
-        # Add the GID_2 of this polygon to the set of unique IDs
-        unique_ids.add(polygon.GID_2)
-         
-        # compute zonal stats for this province
-        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
-        # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
-        val = zonal_stats[0][stat_method]
+        # Mark the current polygon as processed
+        processed_polygons.add(polygon.GID_2)
 
-        # # if specified, log-transform value
+        # compute zonal stats for this polygon
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
+        if not zonal_stats:
+            print("No valid statistics found for polygon:", polygon.GID_2)
+            # Decide whether to skip the polygon or assign a default value to val
+            # For example, assign np.nan or 0
+            val = 0  # or np.nan
+        else:
+            val = zonal_stats[0][stat_method]
+
+        # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
-            if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.GID_2))
-        
+            if val is not None:
+                val_ln = np.log(val)
+            else:
+                click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val + 1), polygon.GID_2))
+                val_ln = None
+
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.GID_2))
-                val = np.log(val+1)
-            else:
-                val = val_ln
+                if config.getboolean('general', 'verbose'):
+                    click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val + 1), polygon.GID_2))
+                    val = np.log(val + 1)
+                else:
+                    val = val_ln
 
-        # click.echo a warning if result is None
-        if (val == None) and (config.getboolean('general', 'verbose')): 
-            click.echo('WARNING: NaN computed!')
+        # print a warning if result is None
+        if (val is None or val == np.nan) and config.getboolean('general', 'verbose'):
+            click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
 
-        print(val) # out of curiosity
-            
-        # Append the GID_2 ID and the computed value as a tuple to the output list
-        list_out.append((polygon.GID_2, val))
-        print(val)
+        # Append the computed value to the output list
+        list_out.append(val)
 
+    print(list_out)
     return list_out
 
 def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
@@ -168,7 +205,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 1
+    lag_time = 1 # ideally this can be set in the cfg file per variable
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
@@ -199,7 +236,6 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
         click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
         sim_year = sim_year + 1
-        # raise ValueError('ERROR: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
     
     # get index which corresponds with sim_year in years in nc-file
     sim_year_idx = int(np.where(years == sim_year)[0])
@@ -220,24 +256,22 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     # convert extent_gdf to crs of nc-file
     extent_gdf_crs_corrected = extent_gdf.to_crs(crs)
 
-    # Initialize a set to store unique identifiers
-    unique_ids = set()
-
-    # initialize output list
+    # initialize output list and a set to keep track of processed polygons
     list_out = []
+    processed_polygons = set()
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf)):
+    for i in range(len(extent_gdf_crs_corrected)):
 
-        # polygon i
-        polygon = extent_gdf.iloc[i]
+        # province i
+        polygon = extent_gdf_crs_corrected.iloc[i]
 
-        # If this GID_2 has already been processed, skip to the next polygon
-        if polygon.GID_2 in unique_ids:
+        # Check if the polygon has already been processed, if yes, skip to the next iteration
+        if polygon.GID_2 in processed_polygons:
             continue
 
-        # Add the GID_2 of this polygon to the set of unique IDs
-        unique_ids.add(polygon.GID_2)
+        # Mark the current polygon as processed
+        processed_polygons.add(polygon.GID_2)
         
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
@@ -262,10 +296,8 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         if (val == None) or (val == np.nan) and (config.getboolean('general', 'verbose')): 
             click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
         
-        
-        # Append the GID_2 ID and the computed value as a tuple to the output list
-        list_out.append((polygon.GID_2, val))
-        print(val)
+        # Append the computed value to the output list
+        list_out.append(val)
 
     return list_out
 

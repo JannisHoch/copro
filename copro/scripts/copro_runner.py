@@ -43,7 +43,7 @@ def cli(cfg, make_plots=True, verbose=False):
     click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting migration and getting area-of-interest and aggregation level
-    migration_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
+    migration_gdf, extent_active_polys_gdf, global_df, extent_gdf = copro.selection.select(config_REF, out_dir_REF, root_dir)
 
     #- plot polygons:
     if make_plots:
