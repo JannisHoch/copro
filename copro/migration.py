@@ -36,24 +36,24 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
     if not os.path.isdir(out_dir):
         os.makedirs(out_dir)
 
-    if config.getboolean('general', 'verbose'): print('DEBUG: check if migration should be weightened based on population')
-    # check if migration should be weightened:
-    if config.getboolean('migration', 'weight_migration'): 
+    if config.getboolean('general', 'verbose'): print('DEBUG: check if migration should be set to % based on population')
+    # check if migration should be in %:
+    if config.getboolean('migration', 'migration_percentage'): 
         total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
         total_population = pd.read_csv(total_population_fo)
         # select the total population per polygon this year
         population_total_sel_year = total_population.loc[total_population['time'] == sim_year]
 
         combined_migration_data = temp_sel_year.merge(population_total_sel_year, on='GID_2', how='left')
-        combined_migration_data['weighted_migration'] = combined_migration_data['net_migration'] / combined_migration_data['total_population']
+        combined_migration_data['migration_perc'] = combined_migration_data['net_migration'] / combined_migration_data['total_population']
 
         # drop 'old' net_migration column
         combined_migration_data.drop(columns='net_migration', inplace=True)
 
         # Rename the column 'weighted_migration' to 'net_migration'
-        combined_migration_data.rename(columns={'weighted_migration': 'net_migration'}, inplace=True)
+        combined_migration_data.rename(columns={'migration_perc': 'net_migration'}, inplace=True)
 
-        if config.getboolean('general', 'verbose'): print('DEBUG: storing weightened migration csv of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'weightened_migration_in_{}.csv'.format(sim_year))))
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing migration % csv of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'weightened_migration_in_{}.csv'.format(sim_year))))
         combined_migration_data_exgeo = combined_migration_data.drop(columns='geometry') 
         combined_migration_data_exgeo.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
 

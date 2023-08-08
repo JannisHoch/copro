@@ -45,16 +45,22 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
     # if not all of these three aspects are provided, raise error
     if len(data_fo) != 3:
-        raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
+            raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
     
     # if not, split the list into separate variables
     else:
-        nc_fo = data_fo[0]
-        ln_flag = bool(util.strtobool(data_fo[1]))
-        stat_method = str(data_fo[2])
+            nc_fo = data_fo[0]
+            ln_flag = bool(util.strtobool(data_fo[1]))
+            stat_method = str(data_fo[2])
 
-    lag_time = 0
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    if config.getboolean('timelag', var_name): 
+            lag_time = 1
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    else:
+            lag_time =0
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+
+    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
@@ -209,8 +215,14 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 0 # ideally this can be set in the cfg file per variable
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    if config.getboolean('timelag', var_name): 
+            lag_time = 1
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    else:
+            lag_time =0
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    
+    #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
@@ -349,8 +361,13 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 0
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    if config.getboolean('timelag', var_name): 
+            lag_time = 1
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    else:
+            lag_time =0
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     list_out = []

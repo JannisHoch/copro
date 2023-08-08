@@ -179,8 +179,6 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                
                 X = pd.DataFrame(X)
 
-                if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(X)))
-
                 X = X.fillna(0)
                 
                 # put all the data into the machine learning algo
