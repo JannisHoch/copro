@@ -54,7 +54,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         stat_method = str(data_fo[2])
 
     lag_time = 0
-    click.echo('INFO: applying {} year lag time'.format(lag_time))
+    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
@@ -76,32 +76,31 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     if nc_ds.rio.transform().e > 0:
         nc_ds = nc_ds.reindex(y=list(reversed(nc_ds.y)))
 
-
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
 
-    if ln_flag:
+    # Ensure the variable values are in float32
+    if nc_var.values.dtype != np.float32:
+        nc_var = nc_var.astype(np.float32)
+
+    # MAYBE INCLUDE AGAIN LATER: 
     # Replace -inf values with 0 before applying the logarithm
-        nc_var = xr.where(nc_var == -math.inf, 0, nc_var)
+    # nc_var = xr.where(nc_var == -math.inf, 0, nc_var)
 
     # Get the non-zero and positive mask along the time dimension
-        non_zero_positive_mask = nc_var > 0
+    non_zero_positive_mask = nc_var.values > 0
 
     # Apply logarithm only to positive values using the mask along the time dimension
-        nc_var = xr.where(non_zero_positive_mask, np.log(nc_var), nc_var)
+    nc_var.values = xr.where(non_zero_positive_mask, np.log(nc_var.values), nc_var)
 
     # Handle cases where log-transformed value results in -inf
-        nc_var = xr.where(nc_var == -math.inf, 0, nc_var)
-
-    if config.getboolean('general', 'verbose'):
-        click.echo('DEBUG: log-transform variable {}'.format(var_name))
+    nc_var = xr.where(nc_var.values == -math.inf, 0, nc_var)
 
     # open nc-file with rasterio to get affine information
-    affine = rio.open(nc_fo).transform
+    affine = nc_ds.rio.transform()
 
     # get values from data-array for specified year
-    nc_arr = nc_var.sel(time=sim_year)
-    nc_arr_vals = nc_arr.values
+    nc_arr_vals = nc_var.sel(time=sim_year)
 
     # Handle cases where nc_arr_vals is empty (i.e., no data found for the specified year)
     if nc_arr_vals.size == 0:
@@ -119,10 +118,16 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     list_out = []
     processed_polygons = set()
 
-    # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for index, polygon in extent_gdf_crs_corrected.iterrows():
+    # Extract the data values from the xarray DataArray
+    nc_arr_vals_data = nc_arr_vals.values
 
-    # Check if the polygon has already been processed, if yes, skip to the next iteration
+    # loop through all polygons in geo-dataframe and compute statistics, then append to output file
+    for i in range(len(extent_gdf_crs_corrected)):
+
+        # province i
+        polygon = extent_gdf_crs_corrected.iloc[i]
+
+        # Check if the polygon has already been processed, if yes, skip to the next iteration
         if polygon.GID_2 in processed_polygons:
             continue
 
@@ -130,7 +135,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         processed_polygons.add(polygon.GID_2)
 
         # compute zonal stats for this polygon
-        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals_data, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
         if not zonal_stats:
             print("No valid statistics found for polygon:", polygon.GID_2)
             # Decide whether to skip the polygon or assign a default value to val
@@ -163,7 +168,6 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         # Append the computed value to the output list
         list_out.append(val)
 
-    print(list_out)
     return list_out
 
 def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
@@ -205,7 +209,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 1 # ideally this can be set in the cfg file per variable
+    lag_time = 0 # ideally this can be set in the cfg file per variable
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
@@ -230,6 +234,8 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
+    if nc_var.values.dtype != np.float32:
+        nc_var = nc_var.astype(np.float32)
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     if sim_year not in years:
@@ -276,7 +282,9 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
+
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+
         val = zonal_stats[0][stat_method]
 
         # # if specified, log-transform value
