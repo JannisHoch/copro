@@ -6,6 +6,7 @@ import os, sys
 import click
 import shapely
 from shapely.wkt import loads
+from scipy.stats.mstats import winsorize
 
 
 def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year, out_dir): 
@@ -42,7 +43,7 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
         total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
         total_population = pd.read_csv(total_population_fo)
         # select the total population per polygon this year
-        population_total_sel_year = total_population.loc[total_population['time'] == sim_year]
+        population_total_sel_year = total_population.loc[total_population['year'] == sim_year]
 
         combined_migration_data = temp_sel_year.merge(population_total_sel_year, on='GID_2', how='left')
         combined_migration_data['migration_perc'] = combined_migration_data['net_migration'] / combined_migration_data['total_population']
@@ -53,7 +54,7 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
         # Rename the column 'weighted_migration' to 'net_migration'
         combined_migration_data.rename(columns={'migration_perc': 'net_migration'}, inplace=True)
 
-        if config.getboolean('general', 'verbose'): print('DEBUG: storing migration % csv of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'weightened_migration_in_{}.csv'.format(sim_year))))
+        if config.getboolean('general', 'verbose'): print('DEBUG: storing migration % csv of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'net_migration%_in_{}.csv'.format(sim_year))))
         combined_migration_data_exgeo = combined_migration_data.drop(columns='geometry') 
         combined_migration_data_exgeo.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
 
@@ -85,7 +86,7 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
 
     return list_out
 
-def read_projected_migration(extent_gdf, net_migration): # THIS CAN MOST LIKELY BE DELETED check_neighbors=False, neighboring_matrix=None)
+def read_projected_migration(extent_gdf, net_migration):
     """Creates a list for each timestep with integer information on migration per polygon.
     Input migratation data (net_migration) must contain an index with IDs corresponding with the 'GID_2' values of the gdf. 
     Optionally, the algorithm can be extended to the neighboring polygons.
@@ -97,9 +98,6 @@ def read_projected_migration(extent_gdf, net_migration): # THIS CAN MOST LIKELY 
     Returns:
         list: containing net migration values for each polygon. # DELETE If check_neighbors=True, then 1 if neighboring polygon contains conflict and 0 is not.
     """
-
-        # assert that there are actually conflicts reported
-    assert (len(net_migration) != 0), AssertionError('ERROR: no migration was found in sampled migration data set for year {}'.format(sim_year-1))
 
     # loop through all polygons and check if exists in sub-set
     list_out = []
@@ -250,4 +248,41 @@ def get_pred_migration_geometry_regression(X_test_ID, y_test, y_pred): # deleted
     # since this is regression, there is no exact match, so no 'correct_pred' column is computed
 
     return df
+
+def weight_migration(config, root_dir):
+        # description of function
+
+        """ Args:
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model. 
+        root_dir (str): absolute path to location of configurations-file
+
+        Returns:
+        
+        """
+        if config.getboolean('general', 'weighting_Y_train'): 
+            total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
+            total_population = pd.read_csv(total_population_fo)
+
+            # Define the year range from the configuration
+            y_start = config.getint('settings', 'y_start')
+            y_end = config.getint('settings', 'y_end')
+            
+            # Select total population for the specified years using boolean indexing
+            selected_total_population = total_population[(total_population['year'] >= y_start) & (total_population['year'] <= y_end)]
+
+        
+        # merge migration and total population
+        merged_gdf = y_train_df.merge(population_per_polygon, on=['GID_2', 'year'], how='left')
+
+        # calculate weights based on population
+        weights = merged_gdf['total_population'].values
+
+        # Winsorization threshold
+        winsor_threshold = 0.90 # to discuss what a good value for this threshold we could take
+
+        # Winsorize the weights
+        winsorised_weights = winsorize(weights, limits=(0, winsor_threshold))
+        normalised_weights = winsorised_weights / np.sum(winsorised_weights)
+
+        return normalised_weights
 

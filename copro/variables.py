@@ -381,7 +381,7 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     selected_csv_data = csv_data[csv_data['GID_2'].isin(polygon_names)]
 
     selected_data = selected_csv_data.copy()
-    selected_data = selected_data.query(f'time == {sim_year}')
+    selected_data = selected_data.query(f'year == {sim_year}')
 
     if selected_data.size == 0:
         raise ValueError('ERROR: No data was found for this year in the CSV file {}, check if all is correct'.format(var_name))

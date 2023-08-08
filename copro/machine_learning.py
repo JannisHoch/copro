@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
 from copro import migration, data 
+from scipy.stats.mstats import winsorize
 
 def define_scaling(config):
     """Defines scaling method based on model configurations.
@@ -89,8 +90,8 @@ def split_scale_train_test_split(X, Y, config, scaler):
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
                                                                         Y,
-                                                                        test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
-
+                                                                        test_size=1-config.getfloat('machine_learning', 'train_fraction')) 
+    
     # for training-set and test-set, split in ID, geometry, and values
     X_train_ID, X_train_geom, X_train = migration.split_migration_geom_data(X_train)  
     X_test_ID, X_test_geom, X_test = migration.split_migration_geom_data(X_test) 
@@ -114,9 +115,13 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     Returns:
         arrays: arrays including the predictions made and their probabilities
     """    
-
-    # fit the modl with training data
-    mdl.fit(X_train, y_train)
+        # fit the model with training data
+    if config.getboolean('general', 'weighting_Y_train'): # determine if Y_train should be weighted based on population per polygon
+        normalised_weights = migration.weight_migration(config, out_dir)
+        mdl.fit(X_train, y_train, sample_weight=normalised_weights)
+    
+    else: # if no weighing is selected in the cfg-file
+        mdl.fit(X_train, y_train)
 
     # create folder to store all model with pickle
     mdl_pickle_rep = os.path.join(out_dir, 'mdls')
