@@ -82,7 +82,7 @@ def cli(cfg, make_plots=True, verbose=False):
         click.echo('INFO: run {} of {}'.format(n+1, config_REF.getint('machine_learning', 'n_runs')))
 
         #- run machine learning model and return outputs
-        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config_REF, scaler, mdl , out_dir_REF, run_nr=n+1)
+        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, migration_gdf, config_REF, scaler, mdl , out_dir_REF, root_dir, run_nr=n+1)
         
         #- append per model execution
  

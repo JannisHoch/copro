@@ -58,7 +58,6 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
         combined_migration_data_exgeo = combined_migration_data.drop(columns='geometry') 
         combined_migration_data_exgeo.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
 
-
         temp_sel_year = combined_migration_data
     else:
         pass
@@ -249,40 +248,56 @@ def get_pred_migration_geometry_regression(X_test_ID, y_test, y_pred): # deleted
 
     return df
 
-def weight_migration(config, root_dir):
-        # description of function
-
+def weight_migration(config, root_dir, migration_gdf):
         """ Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model. 
-        root_dir (str): absolute path to location of configurations-file
+    config (ConfigParser-object): object containing the parsed configuration-settings of the model. 
+    root_dir (str): absolute path to location of configurations-file
+    migration_gdf (GeoDataFrame): GeoDataFrame containing migration data
 
-        Returns:
-        
-        """
-        if config.getboolean('general', 'weighting_Y_train'): 
-            total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
-            total_population = pd.read_csv(total_population_fo)
+    Returns:
+    A variable with normalised_weights to weight the y_train data if indicated in the cfg-file
+    """
+        # Define the year range from the configuration
+        y_start = config.getint('settings', 'y_start')
+        y_end = config.getint('settings', 'y_end')
+        years_range = list(range(y_start, y_end +1))
 
-            # Define the year range from the configuration
-            y_start = config.getint('settings', 'y_start')
-            y_end = config.getint('settings', 'y_end')
-            
-            # Select total population for the specified years using boolean indexing
-            selected_total_population = total_population[(total_population['year'] >= y_start) & (total_population['year'] <= y_end)]
+        total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
+        total_population = pd.read_csv(total_population_fo)
+        selected_population = total_population[(total_population['year'] >= y_start) & (total_population['year'] <= y_end +1)]
+    
+        merged_dfs = []
 
-        
-        # merge migration and total population
-        merged_gdf = y_train_df.merge(population_per_polygon, on=['GID_2', 'year'], how='left')
+        # Get unique GID_2 values from migration_gdf
+        unique_gid_2_values = migration_gdf['GID_2'].unique()
+
+        for gid_2 in unique_gid_2_values:
+            for year in years_range:
+                # Create a DataFrame with all combinations of GID_2 and year
+                combination_df = pd.DataFrame({'GID_2': [gid_2], 'year': [year]})
+
+                # Merge combination_df with selected_total_population based on GID_2 and year
+                merged_df = combination_df.merge(selected_population, on=['GID_2', 'year'], how='left')
+
+                # Merge merged_df with migration_gdf based on GID_2 and year
+                merged_df = merged_df.merge(migration_gdf, on=['GID_2', 'year'], how='left')
+
+                # Append the merged DataFrame to the list
+                merged_dfs.append(merged_df)
+
+        # Concatenate all merged DataFrames to get the final result
+        final_merged_df = pd.concat(merged_dfs, ignore_index=True)
 
         # calculate weights based on population
-        weights = merged_gdf['total_population'].values
+        weights = final_merged_df['total_population'].values
 
         # Winsorization threshold
-        winsor_threshold = 0.90 # to discuss what a good value for this threshold we could take
+        winsor_threshold = 0.5 # to discuss what a good value for this threshold we could take
 
         # Winsorize the weights
-        winsorised_weights = winsorize(weights, limits=(0, winsor_threshold))
-        normalised_weights = winsorised_weights / np.sum(winsorised_weights)
+        winsorised_weights = winsorize(weights, limits=(0, winsor_threshold)) # to discuss, is this the best way to robustly weight the migration data? 
+        # Create a DataFrame to store GID_2, year, and their corresponding weights
+        gid2_weights = pd.DataFrame({'GID_2': final_merged_df['GID_2'],'year': final_merged_df['year'],'weight': winsorised_weights})
 
-        return normalised_weights
+        return gid2_weights
 

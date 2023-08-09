@@ -39,7 +39,6 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, migration_gdf):
 
     # if path to XY.npy is specified, read the data intead
     else:
-
         click.echo('INFO: loading XY data from file {}'.format(os.path.join(root_dir, config.get('pre_calc', 'XY'))))
         XY = np.load(os.path.join(root_dir, config.get('pre_calc', 'XY')), allow_pickle=True)
         
@@ -65,7 +64,7 @@ def prepare_ML(config):
 
     return scaler, mdl
 
-def run_reference(X, Y, config, scaler, mdl, out_dir, run_nr):
+def run_reference(X, Y, migration_gdf, config, scaler, mdl, out_dir, root_dir, run_nr):
     """Top-level function to run one of the four supported models.
 
     Args:
@@ -87,7 +86,7 @@ def run_reference(X, Y, config, scaler, mdl, out_dir, run_nr):
 
     # depending on selection, run corresponding model with data
     if config.getint('general', 'model') == 1:
-        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, mdl, out_dir, run_nr)
+        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf)
     elif config.getint('general', 'model') == 2:
         X_df, y_df, eval_dict = models.leave_one_out(X, Y, config, scaler, mdl, out_dir)
     elif config.getint('general', 'model') == 3:
