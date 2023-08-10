@@ -159,10 +159,9 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
                 click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val + 1), polygon.GID_2))
                 val_ln = None
 
-            # in case log-transformed value results in -inf, replace with None
+            # in case log-transformed value results in -inf, replace with 0, because several values must be 0 (e.g. days per year of t above 35 degrees)
             if val_ln == -math.inf:
                 if config.getboolean('general', 'verbose'):
-                    click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val + 1), polygon.GID_2))
                     val = np.log(val + 1)
                 else:
                     val = val_ln
@@ -307,7 +306,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
+                # if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
                 val = np.log(val+1)
             else:
                 val = val_ln
