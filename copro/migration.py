@@ -253,7 +253,7 @@ def weight_migration(config, root_dir, migration_gdf):
         y_end = config.getint('settings', 'y_end')
         years_range = list(range(y_start, y_end +1))
 
-        total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
+        total_population_fo = os.path.join(root_dir, config.get('PROJ_data', 'population_total'))
         total_population = pd.read_csv(total_population_fo)
         selected_population = total_population[(total_population['year'] >= y_start) & (total_population['year'] <= y_end +1)]
     
@@ -280,7 +280,7 @@ def weight_migration(config, root_dir, migration_gdf):
         final_merged_df = pd.concat(merged_dfs, ignore_index=True)
 
         # calculate weights based on population
-        weights = final_merged_df['total_population'].values
+        weights = final_merged_df['population_total'].values
 
         # Winsorization threshold
         winsor_threshold = 0.5 # to discuss what a good value for this threshold we could take
@@ -288,7 +288,7 @@ def weight_migration(config, root_dir, migration_gdf):
         # Winsorize the weights
         winsorised_weights = winsorize(weights, limits=(0, winsor_threshold)) # to discuss, is this the best way to robustly weight the migration data? 
         # Create a DataFrame to store GID_2, year, and their corresponding weights
-        gid2_weights = pd.DataFrame({'GID_2': final_merged_df['GID_2'],'year': final_merged_df['year'],'weight': winsorised_weights})
+        gid2_weights = pd.DataFrame({'GID_2': final_merged_df['GID_2'],'year': final_merged_df['year'],'population_total': final_merged_df['population_total'], 'weight': winsorised_weights})
 
         return gid2_weights
 
