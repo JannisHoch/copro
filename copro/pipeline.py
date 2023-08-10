@@ -1,4 +1,4 @@
-from copro import models, data, machine_learning, evaluation, utils
+from copro import models, data, machine_learning, evaluation, utils, migration
 import pandas as pd
 import numpy as np
 import pickle
@@ -139,7 +139,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
         # aligning verbosity settings across config-objects
         config_PROJ.set('general', 'verbose', str(config_REF.getboolean('general', 'verbose')))
 
-        if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing output for this projections to folder {}'.format(out_dir_PROJ))
+        if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing output for this projection to folder {}'.format(out_dir_PROJ))
 
         # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
         #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
@@ -180,9 +180,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
                 X = X.fillna(0)
                 
-                # put all the data into the machine learning algo
-                # here the data will be used to make projections with various models
-                # returns the prediction based on one individual model
+                # put all the data into the machine learning algo to return the prediction
                 y_df_mdl = models.predictive(X, mdl_obj, scaler, config_PROJ)
 
                 # storing the projection per mdl to be used in the following timestep
@@ -204,7 +202,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
-            if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing model output for year {} to output folder'.format(proj_year))
+            if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing net migration % for year {} to output folder'.format(proj_year))
             if config_REF.get('machine_learning', 'model') != 'RFRegression':
                 df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
                 df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
@@ -215,4 +213,12 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
         # create one major output dataframe containing all output for all projections with all classifiers
         all_y_df = pd.concat([y_df], ignore_index=True)
 
-    return all_y_df
+        # for this projection, go through all years
+        for i in range(len(projection_period)):
+
+            proj_year = projection_period[i]
+            click.echo('INFO: making projection of the total population per polygon for year {}'.format(proj_year))
+            merged_df = migration.make_projections_population(config_REF, root_dir, proj_year, out_dir_PROJ)  
+            if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing total population per polygon for year {} to output folder'.format(proj_year))
+            
+    return all_y_df, merged_df  

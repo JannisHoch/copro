@@ -116,7 +116,8 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
         arrays: arrays including the predictions made and their probabilities
     """    
         # fit the model with training data - 
-    if config.getboolean('general', 'weighting_Y_train'): # determine if Y_train should be weighted based on population per polygon - if Jannis or Jens could do the below calculation in a more elegant way, please go ahead, it was quite a struggle..
+    if config.getboolean('general', 'weighting_Y_train'): # determine if Y_train should be weighted based on population per polygon 
+        # if Jannis or Jens could do the below calculation in a more elegant way, please go ahead, it was quite a struggle..
         gid2_weights = migration.weight_migration(config, root_dir, migration_gdf)
         print('print gid2_weights')
         print(gid2_weights)
@@ -140,6 +141,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
     
     else: # if no weighing is selected in the cfg-file
         mdl.fit(X_train, y_train)
+        print('Y_test data is not winsorized')
 
     # create folder to store all model with pickle
     mdl_pickle_rep = os.path.join(out_dir, 'mdls')

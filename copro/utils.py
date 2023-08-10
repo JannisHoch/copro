@@ -270,24 +270,6 @@ def initiate_setup(settings_file, verbose=None):
 
     return main_dict, root_dir
 
-# def create_artificial_Y(Y):
-    """Creates an array with identical net migration input array.
-
-    Args:
-        Y (array): original array containing integer migration data.
-
-    Returns:
-        array: array with reshuffled migration data.
-    """    
-
-    #arr_1 = np.ones(len(np.where(Y != 0)[0]))
-    #arr_0 = np.zeros(int(len(Y) - len(np.where(Y != 0)[0])))
-    #Y_r_1 = np.append(arr_1, arr_0)
-
-    #Y_r = utils.shuffle(Y_r_1, random_state=42)
-
-    #return Y_r
-
 def global_ID_geom_info(gdf):
     """Retrieves unique ID and geometry information from geo-dataframe for a global look-up dataframe. 
     The IDs supported are 'name' or 'GID_2'.
@@ -363,7 +345,7 @@ def determine_projection_period(config_REF, config_PROJ):
 
     Args:
         config_REF (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
-        config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run..
+        config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run.
 
     Returns:
         list: list containing all years of the projection period.

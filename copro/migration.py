@@ -40,25 +40,21 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
     if config.getboolean('general', 'verbose'): print('DEBUG: check if migration should be set to % based on population')
     # check if migration should be in %:
     if config.getboolean('migration', 'migration_percentage'): 
-        total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'total_population'))
+        total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'population_total'))
         total_population = pd.read_csv(total_population_fo)
         # select the total population per polygon this year
         population_total_sel_year = total_population.loc[total_population['year'] == sim_year]
-
+        # merge the two dataframes
         combined_migration_data = temp_sel_year.merge(population_total_sel_year, on='GID_2', how='left')
-        combined_migration_data['migration_perc'] = combined_migration_data['net_migration'] / combined_migration_data['total_population']
-
+        #calculate the net migration percentage based on the total population per polygon
+        combined_migration_data['migration_perc'] = combined_migration_data['net_migration'] / combined_migration_data['population_total']
         # drop 'old' net_migration column
         combined_migration_data.drop(columns='net_migration', inplace=True)
-
         # Rename the column 'weighted_migration' to 'net_migration'
         combined_migration_data.rename(columns={'migration_perc': 'net_migration'}, inplace=True)
 
-        if config.getboolean('general', 'verbose'): print('DEBUG: storing migration % csv of year {} to file {}'.format(sim_year, os.path.join(out_dir, 'net_migration%_in_{}.csv'.format(sim_year))))
-        combined_migration_data_exgeo = combined_migration_data.drop(columns='geometry') 
-        combined_migration_data_exgeo.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(sim_year)))
-
         temp_sel_year = combined_migration_data
+
     else:
         pass
 
@@ -87,8 +83,7 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
 
 def read_projected_migration(extent_gdf, net_migration):
     """Creates a list for each timestep with integer information on migration per polygon.
-    Input migratation data (net_migration) must contain an index with IDs corresponding with the 'GID_2' values of the gdf. 
-    Optionally, the algorithm can be extended to the neighboring polygons.
+    Input migratation data (net_migration) must contain an index with IDs corresponding to the 'GID_2' values of the gdf. 
 
     Args:
         extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
@@ -101,20 +96,16 @@ def read_projected_migration(extent_gdf, net_migration):
     # loop through all polygons and check if exists in sub-set
     list_out = []
     for i in range(len(extent_gdf)):
-
         i_poly = extent_gdf.GID_2.iloc[i] 
 
         if i_poly in net_migration.index.values:
-
             list_out.append(1)  
 
         else:
-
             # if polygon not in list with conflict polygons, assign 0
             list_out.append(0)
 
     return list_out
-
 
 def get_poly_ID(extent_gdf): 
     """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifier is in this version limited to 'GID_2', can be adapted to the identifier one has.
@@ -300,4 +291,60 @@ def weight_migration(config, root_dir, migration_gdf):
         gid2_weights = pd.DataFrame({'GID_2': final_merged_df['GID_2'],'year': final_merged_df['year'],'weight': winsorised_weights})
 
         return gid2_weights
+
+def make_projections_population(config, root_dir, proj_year, out_dir_PROJ):
+    """ Args:
+    config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run.
+    config_REF (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
+    config (ConfigParser-object): object containing the parsed configuration-settings of the model. 
+    root_dir (str): absolute path to location of configurations-file
+    migration_gdf (geo-dataframe): geo-dataframe containing selected migration data
+
+    Returns:
+    A (geo)dataframe with the new population per polygon, based on population t-1, population growth and net migration t-1
+    """   
+
+    projection_year_min1 = int(config.get('settings', 'y_end'))
+   
+    if proj_year == int(config.get('settings', 'y_end')) + 1:
+        if config.getboolean('general', 'verbose'):
+            print('DEBUG: calculating and storing total population per polygon for the first projection year')
+            
+            # get the total population for each polygon
+            tot_population_path = os.path.join(root_dir, config.get('PROJ_data', 'population_total'))
+            tot_population = pd.read_csv(tot_population_path)
+            population_total_last_year = tot_population.loc[tot_population['year'] == projection_year_min1]
+
+            # get population growth for each polygon
+            population_growth_fo = os.path.join(root_dir, config.get('PROJ_data', 'population_growth'))
+            population_growth = pd.read_csv(population_growth_fo)
+            population_growth_last_year = population_growth.loc[population_growth['year'] == projection_year_min1]
+ 
+            # get the net migration for each polygon
+            migration_gdf = utils.get_geodataframe(config, root_dir)
+            migration_last_year = migration_gdf.loc[migration_gdf['year'] == projection_year_min1]
+            
+            # Merge population_total_last_year, population_growth_last_year, and migration_last_year DataFrames based on 'GID_2'
+            merged_df = pd.merge(population_total_last_year[['GID_2', 'population_total', 'year']], migration_last_year[['GID_2', 'net_migration']], on='GID_2', how='inner')
+            merged_df = pd.merge(merged_df, population_growth_last_year[['GID_2', 'population_growth']], on='GID_2', how='inner', suffixes=('_pop', '_growth'))
+            
+            # calculate new population per polygon based on the population in the former year, the population growth and the net migration
+            # !!! this is only correct if the migration input are absolute numbers, not %
+            merged_df['new_population_per_polygon'] = merged_df['population_total'] + (merged_df['population_total'] * merged_df['population_growth']) + (merged_df['population_total'] * (merged_df['net_migration'] / merged_df['population_total']))
+
+            merged_df.to_csv(os.path.join(out_dir_PROJ, 'population_for_{}_exgeo.csv'.format(projection_year_min1)))
+        
+    else:
+        merged_df = 1 # DUMMY!
+        #code to be developed 
+
+    #if config_REF.getboolean('general', 'verbose'): print('DEBUG: storing total population csv of year {} to file {}'.format(proj_year, os.path.join(out_dir, 'total_population_in_{}.csv'.format(sim_year))))
+    #population_per_poly.to_csv(os.path.join(out_dir, 'migration_in_{}.csv'.format(proj_year))) 
+
+        return merged_df 
+
+            
+        
+            
+
 
