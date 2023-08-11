@@ -22,9 +22,8 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
         # Reorganise GDF so that years can be selected 
         df = df.melt(id_vars=['GID_2'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
                                                               '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], 
-                                                              var_name='year', value_name='net_migration')
+                                                              var_name='time', value_name='net_migration')
 
-    
         df.year = df.year.astype(int)
 
         shapefile_path = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'migration_shapefile'))
@@ -59,7 +58,7 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
     # read file to geopandas dataframe
     click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
     
-    gdf.to_file(os.path.join(root_dir, 'gdf.gpkg'))
+    # gdf.to_file(os.path.join(root_dir, 'gdf.gpkg')) not necessary for now
 
     return gdf
 
@@ -264,34 +263,7 @@ def initiate_setup(settings_file, verbose=None):
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
     copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
-    # if specfied, download UCDP/PRIO data directly
-    # no option in copro-m config['migration']['migration_file'] == 'download':
-       # download_UCDP(config)
-
-    # if any other model than all_data is specified, set number of runs to 1
-    if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
-        config.set('machine_learning', 'n_runs', str(1))
-        click.echo('INFO: changed nr of runs to {}'.format(config.getint('machine_learning', 'n_runs')))
-
     return main_dict, root_dir
-
-# def create_artificial_Y(Y):
-    """Creates an array with identical net migration input array.
-
-    Args:
-        Y (array): original array containing integer migration data.
-
-    Returns:
-        array: array with reshuffled migration data.
-    """    
-
-    #arr_1 = np.ones(len(np.where(Y != 0)[0]))
-    #arr_0 = np.zeros(int(len(Y) - len(np.where(Y != 0)[0])))
-    #Y_r_1 = np.append(arr_1, arr_0)
-
-    #Y_r = utils.shuffle(Y_r_1, random_state=42)
-
-    #return Y_r
 
 def global_ID_geom_info(gdf):
     """Retrieves unique ID and geometry information from geo-dataframe for a global look-up dataframe. 
@@ -368,7 +340,7 @@ def determine_projection_period(config_REF, config_PROJ):
 
     Args:
         config_REF (ConfigParser-object): object containing the parsed configuration-settings of the model for the reference run.
-        config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run..
+        config_PROJ (ConfigParser-object): object containing the parsed configuration-settings of the model for a projection run.
 
     Returns:
         list: list containing all years of the projection period.

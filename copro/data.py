@@ -101,7 +101,7 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                 if key == 'net_migration':
                 
                     data_series = value
-                    data_list = migration.migration_in_year_int (root_dir, config, migration_data, polygon_gdf, sim_year, out_dir) 
+                    data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -279,9 +279,6 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         click.echo('DEBUG: all X-prediction data read')
 
     X = df_out.set_index('poly_ID').to_dict(orient='index')
-
-    df_out.to_csv(os.path.join(root_dir, 'DFX_out.csv'), index=False, header=True)
-    print('dfX_out.csv saved in output folder') # creates a csv to check if all went well, to be deleted when all runs well
     
     return X
 
@@ -299,7 +296,6 @@ def split_XY_data(XY, config):
 
     # convert array to dataframe for easier handling
     XY = pd.DataFrame(XY)
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: number of data points including missing values: {}'.format(len(XY))) # this is not correct now
 
     # fill all missing values with 0
     XY = XY.fillna(0)

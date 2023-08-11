@@ -25,75 +25,6 @@ def select_period(gdf, config):
     
     return gdf
 
-def define_extent(gdf, config, root_dir):
-
-  # get path to file with polygons for which analysis is carried out
-    shp_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('extent', 'shp'))
-    
-    # read file
-    if config.getboolean('general', 'verbose'): print('DEBUG: reading extent and spatial aggregation level from file {}'.format(shp_fo))
-    extent_gdf = gpd.read_file(shp_fo)
-    print(extent_gdf)
-
-    # fixing invalid geometries
-    if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')
-    extent_gdf.geometry = extent_gdf.buffer(0)
-
-    if (gdf.crs == extent_gdf.crs):
-        print("DEBUG: Both layers are in the same crs")
-
-    # clip the migration dataframe to the specified polygons
-    
-    #if config.getboolean('general', 'verbose'):
-        #print('DEBUG: clipping migration dataset to extent')
-    
-    # gdf.intersects(extent_gdf.unary_union) 
-
-    # Save extent_gdf as CSV to check
-    csv_output_path = os.path.join(root_dir, config.get('general', 'output_dir'), 'extent_data.csv')
-    print('Saving extent_gdf to:', csv_output_path)
-    extent_gdf.to_csv(csv_output_path, index=False)
-    print('saved')
-
-    return extent_gdf
-
-# def clip_to_extent(gdf, config, root_dir): I want to delete this completely from the model
-   
-    """As the original copro worked with a global extent, this function clips the database to those entries which have occured on a specified continent. 
-
-    Args:
-        gdf (geo-dataframe): geo-dataframe containing entries with migration.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        root_dir (str): path to location of cfg-file.
-
-    Returns:
-        geo-dataframe: geo-dataframe containing filtered entries.
-        geo-dataframe: geo-dataframe containing country polygons of selected continent.
-    """    
-
-    # get path to file with polygons for which analysis is carried out
-    #shp_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('extent', 'shp'))
-    
-    # read file
-    #if config.getboolean('general', 'verbose'): print('DEBUG: reading extent and spatial aggregation level from file {}'.format(shp_fo))
-    #extent_gdf = gpd.read_file(shp_fo)
-
-    # fixing invalid geometries
-    #if config.getboolean('general', 'verbose'): print('DEBUG: fixing invalid geometries')
-    #extent_gdf.geometry = extent_gdf.buffer(0)
-
-    #if (gdf.crs == extent_gdf.crs):
-    #print("DEBUG: Both layers are in the same crs")
-
-    # clip the migration dataframe to the specified polygons
-    
-    #if config.getboolean('general', 'verbose'):
-        #print('DEBUG: clipping migration dataset to extent')
-    
-    # gdf.intersects(extent_gdf.unary_union) 
-
-    #return gdf, extent_gdf
-
 def climate_zoning(gdf, config, root_dir): 
     """This function allows for selecting only those migration data and polygons falling in specified climate zones.
     Also, a global dataframe is returned containing the IDs and geometry of all polygons after selection procedure.
@@ -101,7 +32,6 @@ def climate_zoning(gdf, config, root_dir):
 
     Args:
         gdf (geo-dataframe): geo-dataframe containing migration data.
-        extent_gdf (geo-dataframe): all polygons of study area.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file.
 
@@ -171,19 +101,11 @@ def select(config, out_dir, root_dir):
     # get the migration data
     gdf = utils.get_geodataframe(config, root_dir)
 
-    # filter based on migration properties --> THIS CAN MOST LIKELY BE DELETED
-    # gdf = filter_migration_properties(gdf, config)
-
     # selected migration falling in a specified time period
     gdf = select_period(gdf, config)
 
-    # clip migration to a spatial extent defined as polygons
-    #gdf, extent_gdf = clip_to_extent(gdf, config, root_dir)
-
     # clip migration and polygons to specified climate zones
     gdf, polygon_gdf = climate_zoning(gdf, config, root_dir)
-
-    # extent_gdf = define_extent(gdf, config, root_dir)
 
     # get a dataframe containing the ID and geometry of all polygons after selecting for climate zones
     global_df = utils.global_ID_geom_info(polygon_gdf)

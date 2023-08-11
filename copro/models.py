@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 import os, sys
 
-def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
+def all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf):
     """Main model workflow when all XY-data is used. 
     The model workflow is executed for each model.
 
@@ -15,6 +15,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
         scaler (scaler): the specified scaling method instance.
         mdl (model): the specified model instance.
         out_dir (str): path to output folder.
+        root_dir (str): absolute path to location of configurations-file
 
     Returns:
         dataframe: containing the test-data X-array values.
@@ -31,7 +32,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
 
     # fit model and make prediction with test-set depending on model choice
     if config.get('machine_learning', 'model') == 'NuSVC' or ('machine_learning', 'model') == 'KNeighborsClassifier' or ('machine_learning', 'model') == 'RFClassifier':
-        y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr)
+        y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr, migration_gdf)
         y_prob_0 = y_prob[:, 0] # probability to predict 0
         y_prob_1 = y_prob[:, 1] # probability to predict 1 
         # evaluate prediction and save to dict  
@@ -40,7 +41,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, run_nr):
         y_df = migration.get_pred_migration_geometry_classifier(X_test_ID, y_test, y_pred, y_prob_0, y_prob_1) # deleted X_test_geom, 
     
     elif config.get('machine_learning', 'model') == 'RFRegression':
-        y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr) 
+        y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr, migration_gdf) 
         # evaluate prediction and save to dict
         eval_dict = evaluation.evaluate_prediction_regression(y_test, y_pred, X_test, mdl, config)
         # aggregate predictions per polygon

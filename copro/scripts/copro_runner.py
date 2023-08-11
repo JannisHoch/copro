@@ -18,7 +18,7 @@ def cli(cfg, make_plots=True, verbose=False):
     """Main command line script to execute the model. 
     All settings are read from cfg-file.
     One cfg-file is required argument to train, test, and evaluate the model.
-    Multiple classifiers are trained based on different train-test data combinations.
+    Multiple models can trained based on different train-test data combinations.
     Additional cfg-files for multiple projections can be provided as optional arguments, whereby each file corresponds to one projection to be made.
     Per projection, each classifiers is used to create separate projection outcomes per time step (year).
     All outcomes are combined after each time step to obtain the common projection outcome.
@@ -43,7 +43,7 @@ def cli(cfg, make_plots=True, verbose=False):
     click.echo(click.style('\nINFO: reference run started\n', fg='cyan'))
 
     #- selecting migration and getting area-of-interest and aggregation level
-    migration_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir)
+    migration_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir) # i am still not sure what the function of the extent_active_polys_gdf is 
 
     #- plot polygons:
     if make_plots:
@@ -82,7 +82,7 @@ def cli(cfg, make_plots=True, verbose=False):
         click.echo('INFO: run {} of {}'.format(n+1, config_REF.getint('machine_learning', 'n_runs')))
 
         #- run machine learning model and return outputs
-        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, config_REF, scaler, mdl , out_dir_REF, run_nr=n+1)
+        X_df, y_df, eval_dict = copro.pipeline.run_reference(X, Y, migration_gdf, config_REF, scaler, mdl , out_dir_REF, root_dir, run_nr=n+1)
         
         #- append per model execution
  
@@ -115,13 +115,13 @@ def cli(cfg, make_plots=True, verbose=False):
     #- create accuracy values per polygon and save to output folder if MLmodel = a classifier
     #- note only the dataframe is stored, not the geo-dataframe
 
-    #if config_REF.get('machine_learning', 'model') == 'NuSVC' or 'KNeighborsClassifier' or 'RFClassifier':
-    
-        #df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
-
-        #gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
-    #elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
-        #print ('no accuracy score per GID_2')
+    if config_REF.get('machine_learning', 'model') == 'NuSVC' or \
+        config_REF.get('machine_learning', 'model') == 'KNeighborsClassifier' or \
+        config_REF.get('machine_learning', 'model') == 'RFClassifier':
+        df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
+        gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
+    elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
+        print('no accuracy score per GID_2 because of the machine learning model type RFRegression')
 
         #- plot distribution of all evaluation metrics
         if make_plots:

@@ -12,8 +12,8 @@ from distutils import util
 import warnings
 warnings.filterwarnings("ignore")
 
-def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year):
+    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each unique polygon specified in migration_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
@@ -26,7 +26,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     Works only with nc-files with annual data.
 
     Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
@@ -37,7 +37,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         ValueError: raised if the extracted variable at a time step does not contain data.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+        list: list containing statistical value per polygon, i.e. with same length as number of unique polygons in migration_gdf.
     """   
 
     # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
@@ -45,16 +45,22 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
     # if not all of these three aspects are provided, raise error
     if len(data_fo) != 3:
-        raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
+            raise ValueError('ERROR: not all settings for input data set {} provided - it must contain of path, False/True, and statistical method'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name))))
     
     # if not, split the list into separate variables
     else:
-        nc_fo = data_fo[0]
-        ln_flag = bool(util.strtobool(data_fo[1]))
-        stat_method = str(data_fo[2])
+            nc_fo = data_fo[0]
+            ln_flag = bool(util.strtobool(data_fo[1]))
+            stat_method = str(data_fo[2])
 
-    lag_time = 0
-    click.echo('INFO: applying {} year lag time'.format(lag_time))
+    if config.getboolean('timelag', var_name): 
+            lag_time = 1
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    else:
+            lag_time =0
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+
+    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
@@ -65,72 +71,112 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
+
+     # If lon and lat are spatial dimensions, rename those to x and y to avoid errors
+    if 'lon' in nc_ds.dims:
+        nc_ds = nc_ds.rename({'lon': 'x'})
+    if 'lat' in nc_ds.dims:
+        nc_ds = nc_ds.rename({'lat': 'y'})
+
+    # if y-axis is flipped, flip it back
+    if nc_ds.rio.transform().e > 0:
+        nc_ds = nc_ds.reindex(y=list(reversed(nc_ds.y)))
+
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
-    if ln_flag:
-        nc_var = np.log(nc_var)
-        if config.getboolean('general', 'verbose'): click.echo('DEBUG: log-transform variable {}'.format(var_name))
+
+    # Ensure the variable values are in float32
+    if nc_var.values.dtype != np.float32:
+        nc_var = nc_var.astype(np.float32)
+
+    # MAYBE INCLUDE AGAIN LATER: 
+    # Replace -inf values with 0 before applying the logarithm
+    # nc_var = xr.where(nc_var == -math.inf, 0, nc_var)
+
+    # Get the non-zero and positive mask along the time dimension
+    non_zero_positive_mask = nc_var.values > 0
+
+    # Apply logarithm only to positive values using the mask along the time dimension
+    nc_var.values = xr.where(non_zero_positive_mask, np.log(nc_var.values), nc_var)
+
+    # Handle cases where log-transformed value results in -inf
+    nc_var = xr.where(nc_var.values == -math.inf, 0, nc_var)
+
     # open nc-file with rasterio to get affine information
-    affine = rio.open(nc_fo).transform
+    affine = nc_ds.rio.transform()
 
     # get values from data-array for specified year
-    nc_arr = nc_var.sel(time=sim_year)
-    nc_arr_vals = nc_arr.values
-    if nc_arr_vals.size == 0:
-        raise ValueError('ERROR: the data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
-  
-    # Initialize a set to store unique identifiers
-    unique_ids = set()
+    nc_arr_vals = nc_var.sel(time=sim_year)
 
-    # initialize output list
+    # Handle cases where nc_arr_vals is empty (i.e., no data found for the specified year)
+    if nc_arr_vals.size == 0:
+        print('WARNING: No data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
+        return []
+
+    # load crs from config file, if not specified, get crs from nc-file. If neither is specified, raise error
+    crs = config.get('crs', var_name) or nc_var.rio.crs
+    assert crs is not None, 'ERROR: no CRS found for variable {}'.format(var_name)
+
+    # convert migration_gdf to crs of nc-file
+    migration_gdf_crs_corrected = migration_gdf.to_crs(crs)
+
+    # initialize output list and a set to keep track of processed polygons
     list_out = []
+    processed_polygons = set()
+
+    # Extract the data values from the xarray DataArray
+    nc_arr_vals_data = nc_arr_vals.values
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf)):
+    for i in range(len(migration_gdf_crs_corrected)):
 
-        # polygon i
-        polygon = extent_gdf.iloc[i]
+        # province i
+        polygon = migration_gdf_crs_corrected.iloc[i]
 
-        # If this GID_2 has already been processed, skip to the next polygon
-        if polygon.GID_2 in unique_ids:
+        # Check if the polygon has already been processed, if yes, skip to the next iteration
+        if polygon.GID_2 in processed_polygons:
             continue
 
-        # Add the GID_2 of this polygon to the set of unique IDs
-        unique_ids.add(polygon.GID_2)
-         
-        # compute zonal stats for this province
-        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
-        # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(prov.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
-        val = zonal_stats[0][stat_method]
+        # Mark the current polygon as processed
+        processed_polygons.add(polygon.GID_2)
 
-        # # if specified, log-transform value
+        # compute zonal stats for this polygon
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals_data, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+        if not zonal_stats:
+            print("No valid statistics found for polygon:", polygon.GID_2)
+            # Decide whether to skip the polygon or assign a default value to val
+            # For example, assign np.nan or 0
+            val = 0  # or np.nan
+        else:
+            val = zonal_stats[0][stat_method]
+
+        # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
-            if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), prov.GID_2))
-        
-            # in case log-transformed value results in -inf, replace with None
-            if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), prov.GID_2))
-                val = np.log(val+1)
+            if val is not None:
+                val_ln = np.log(val)
             else:
-                val = val_ln
+                click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val + 1), polygon.GID_2))
+                val_ln = None
 
-        # click.echo a warning if result is None
-        if (val == None) and (config.getboolean('general', 'verbose')): 
-            click.echo('WARNING: NaN computed!')
+            # in case log-transformed value results in -inf, replace with 0, because several values must be 0 (e.g. days per year of t above 35 degrees)
+            if val_ln == -math.inf:
+                if config.getboolean('general', 'verbose'):
+                    val = np.log(val + 1)
+                else:
+                    val = val_ln
 
-        print(val) # out of curiosity
-            
-        # Append the GID_2 ID and the computed value as a tuple to the output list
-        list_out.append((polygon.GID_2, val))
-        print(val)
+        # print a warning if result is None
+        if (val is None or val == np.nan) and config.getboolean('general', 'verbose'):
+            click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
+
+        # Append the computed value to the output list
+        list_out.append(val)
 
     return list_out
 
-def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_name, sim_year):
+    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each unique polygon specified in migration_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
@@ -140,7 +186,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     Works only with nc-files with annual data.
 
     Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
@@ -168,8 +214,14 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
-    lag_time = 1
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    if config.getboolean('timelag', var_name): 
+            lag_time = 1
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    else:
+            lag_time =0
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    
+    #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
@@ -193,13 +245,14 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
+    if nc_var.values.dtype != np.float32:
+        nc_var = nc_var.astype(np.float32)
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     if sim_year not in years:
         click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
         click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
         sim_year = sim_year + 1
-        # raise ValueError('ERROR: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
     
     # get index which corresponds with sim_year in years in nc-file
     sim_year_idx = int(np.where(years == sim_year)[0])
@@ -217,32 +270,32 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     crs = config.get('crs', var_name) or nc_var.rio.crs
     assert crs is not None, 'ERROR: no CRS found for variable {}'.format(var_name)
 
-    # convert extent_gdf to crs of nc-file
-    extent_gdf_crs_corrected = extent_gdf.to_crs(crs)
+    # convert migration_gdf to crs of nc-file
+    migration_gdf_crs_corrected = migration_gdf.to_crs(crs)
 
-    # Initialize a set to store unique identifiers
-    unique_ids = set()
-
-    # initialize output list
+    # initialize output list and a set to keep track of processed polygons
     list_out = []
+    processed_polygons = set()
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf)):
+    for i in range(len(migration_gdf_crs_corrected)):
 
-        # polygon i
-        polygon = extent_gdf.iloc[i]
+        # province i
+        polygon = migration_gdf_crs_corrected.iloc[i]
 
-        # If this GID_2 has already been processed, skip to the next polygon
-        if polygon.GID_2 in unique_ids:
+        # Check if the polygon has already been processed, if yes, skip to the next iteration
+        if polygon.GID_2 in processed_polygons:
             continue
 
-        # Add the GID_2 of this polygon to the set of unique IDs
-        unique_ids.add(polygon.GID_2)
+        # Mark the current polygon as processed
+        processed_polygons.add(polygon.GID_2)
         
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True)
+
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+
         val = zonal_stats[0][stat_method]
 
         # # if specified, log-transform value
@@ -253,7 +306,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         
             # in case log-transformed value results in -inf, replace with None
             if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
+                # if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
                 val = np.log(val+1)
             else:
                 val = val_ln
@@ -262,15 +315,13 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
         if (val == None) or (val == np.nan) and (config.getboolean('general', 'verbose')): 
             click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
         
-        
-        # Append the GID_2 ID and the computed value as a tuple to the output list
-        list_out.append((polygon.GID_2, val))
-        print(val)
+        # Append the computed value to the output list
+        list_out.append(val)
 
     return list_out
 
-def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a value from a csv-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
+    """This function extracts a value from a csv-file (specified in the cfg-file) for each polygon specified in migration_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
@@ -280,7 +331,7 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     Works only with csv-files with annual data.
 
     Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in file, must also be the same under which path to csv-file is specified in cfg-file.
@@ -292,7 +343,7 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
         ValueError: raised if the extracted variable at a time step does not contain data.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+        list: list containing statistical value per polygon, i.e. with same length as number of unique polygons in migration_gdf.
     """   
 
     # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
@@ -307,10 +358,15 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     else:
         csv_fo = data_fo[0] 
         ln_flag = bool(util.strtobool(data_fo[1]))
-        stat_method = str(data_fo[2])
+        stat_method = str(data_fo[2]) # not needed, since the value per polygon is already given in the csv
 
-    lag_time = 0
-    if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    if config.getboolean('timelag', var_name): 
+            lag_time = 1
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    else:
+            lag_time =0
+            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+    #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     list_out = []
@@ -319,12 +375,12 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     csv_data = pd.read_csv(csv_fo)
 
     # select the polygons that must be selected
-    polygon_names = extent_gdf['GID_2'].unique().tolist()
+    polygon_names = migration_gdf['GID_2'].unique().tolist()
 
     selected_csv_data = csv_data[csv_data['GID_2'].isin(polygon_names)]
 
     selected_data = selected_csv_data.copy()
-    selected_data = selected_data.query(f'time == {sim_year}')
+    selected_data = selected_data.query(f'year == {sim_year}')
 
     if selected_data.size == 0:
         raise ValueError('ERROR: No data was found for this year in the CSV file {}, check if all is correct'.format(var_name))
@@ -337,8 +393,8 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
         values = np.log(values)
         if config.getboolean('general', 'verbose'):
             click.echo('DEBUG: Log-transform variable {}'.format(var_name))
-        else: 
-            click.echo('DEBUG: Not log-transforming {}'.format(var_name))
+    else: 
+        click.echo('DEBUG: Not log-transforming {}'.format(var_name))
         
     list_out.extend(zip(values, selected_data['GID_2'].values.tolist()))
     

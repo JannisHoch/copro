@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn import svm, neighbors, ensemble, preprocessing, model_selection, metrics
 from copro import migration, data 
+from scipy.stats.mstats import winsorize
 
 def define_scaling(config):
     """Defines scaling method based on model configurations.
@@ -89,15 +90,15 @@ def split_scale_train_test_split(X, Y, config, scaler):
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
                                                                         Y,
-                                                                        test_size=1-config.getfloat('machine_learning', 'train_fraction'))    
-
+                                                                        test_size=1-config.getfloat('machine_learning', 'train_fraction')) 
+    
     # for training-set and test-set, split in ID, geometry, and values
     X_train_ID, X_train_geom, X_train = migration.split_migration_geom_data(X_train)  
     X_test_ID, X_test_geom, X_test = migration.split_migration_geom_data(X_test) 
 
     return X_train, X_test, y_train, y_test, X_train_ID, X_test_ID, X_train_geom, X_test_geom 
 
-def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
+def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr, migration_gdf):
     """Fits model based on training-data and makes predictions.
     The fitted model is dumped to file with pickle to be used again during projections.
     Makes prediction with test-data including probabilities of those predictions.
@@ -114,9 +115,52 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     Returns:
         arrays: arrays including the predictions made and their probabilities
     """    
+        # fit the model with training data - 
+    if config.getboolean('general', 'weighting_Y_train'): # determine if Y_train should be weighted based on population per polygon 
+        # if Jannis or Jens could do the below calculation in a more elegant way, please go ahead, it was quite a struggle..
+        gid2_weights = migration.weight_migration(config, root_dir, migration_gdf)
+                
+        if config.getboolean('migration', 'migration_percentage'):
 
-    # fit the modl with training data
-    mdl.fit(X_train, y_train)
+            # Merge gid2_weights with migration_gdf based on common columns
+            merged_data = pd.merge(gid2_weights, migration_gdf[['GID_2', 'year', 'net_migration']], on=['GID_2', 'year'])
+            merged_data['migration_ratio'] = merged_data['net_migration'] / merged_data['population_total']
+
+            matching_rows_list = []
+            # tolerance = 1e-6 
+
+            for value in y_train:
+                # matching_row = merged_data[abs(merged_data['migration_ratio'] - value) < tolerance]
+                matching_row = merged_data[merged_data['migration_ratio'] == value]
+                # Concatenate all the individual DataFrames into a single DataFrame
+                matching_rows_list.append(matching_row)
+            
+            all_matching_rows = pd.concat(matching_rows_list, ignore_index=True) 
+            selected_weights = all_matching_rows['weight'].values
+            mdl.fit(X_train, y_train, sample_weight=selected_weights)
+            print('ratio Y_test data is winsorized')
+        
+        else:
+            matching_rows_list = []
+            for value in y_train:
+                matching_row = migration_gdf[migration_gdf['net_migration'] == value]
+                matching_rows_list.append(matching_row)  
+
+            # Concatenate all the individual DataFrames into a single DataFrame
+            all_matching_rows = pd.concat(matching_rows_list, ignore_index=True)  
+            print('print all_matching_rows')
+            print(all_matching_rows)
+
+            # Merge the 'gid2_weights' DataFrame to 'all_matching_rows'
+            all_matching_rows = all_matching_rows.merge(gid2_weights, on=['GID_2', 'year'], how='left')
+  
+            selected_weights = all_matching_rows['weight'].values
+            mdl.fit(X_train, y_train, sample_weight=selected_weights)
+            print('Y_test data is winsorized')
+    
+    else: # if no weighing is selected in the cfg-file
+        mdl.fit(X_train, y_train)
+        print('Y_test data is not winsorized')
 
     # create folder to store all model with pickle
     mdl_pickle_rep = os.path.join(out_dir, 'mdls')
@@ -132,7 +176,6 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, run_nr):
     y_pred = mdl.predict(X_test)
 
     # make prediction of probability
-
     if (config.get('machine_learning', 'model')) == 'NuSVC' or (config.get('machine_learning', 'model')) == 'KNeighborsClassifier' or (config.get('machine_learning', 'model')) == 'RFClassifier':
         y_prob = mdl.predict_proba(X_test)
     elif (config.get('machine_learning', 'model')) == 'RFRegression': 
