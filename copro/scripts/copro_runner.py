@@ -44,8 +44,6 @@ def cli(cfg, make_plots=True, verbose=False):
 
     #- selecting migration and getting area-of-interest and aggregation level
     migration_gdf, extent_active_polys_gdf, global_df = copro.selection.select(config_REF, out_dir_REF, root_dir) # i am still not sure what the function of the extent_active_polys_gdf is 
-    print('print extent active polyes gdf')
-    print(extent_active_polys_gdf)
 
     #- plot polygons:
     if make_plots:
@@ -117,13 +115,13 @@ def cli(cfg, make_plots=True, verbose=False):
     #- create accuracy values per polygon and save to output folder if MLmodel = a classifier
     #- note only the dataframe is stored, not the geo-dataframe
 
-    #if config_REF.get('machine_learning', 'model') == 'NuSVC' or 'KNeighborsClassifier' or 'RFClassifier':
-    
-        #df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
-
-        #gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
-    #elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
-        #print ('no accuracy score per GID_2')
+    if config_REF.get('machine_learning', 'model') == 'NuSVC' or \
+        config_REF.get('machine_learning', 'model') == 'KNeighborsClassifier' or \
+        config_REF.get('machine_learning', 'model') == 'RFClassifier':
+        df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
+        gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
+    elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
+        print('no accuracy score per GID_2 because of the machine learning model type RFRegression')
 
         #- plot distribution of all evaluation metrics
         if make_plots:

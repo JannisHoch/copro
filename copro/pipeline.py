@@ -17,7 +17,7 @@ def create_XY(config, out_dir, root_dir, polygon_gdf, migration_gdf):
         out_dir (str): path to output folder.
         root_dir (str): path to location of cfg-file.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        migration (geo-dataframe): geo-dataframe containing selected migration data.
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
 
     Returns:
         array: X-array containing variable values.
@@ -74,6 +74,7 @@ def run_reference(X, Y, migration_gdf, config, scaler, mdl, out_dir, root_dir, r
         scaler (scaler): the specified scaler instance.
         mdl (model): the specified model instance.
         out_dir (str): path to output folder.
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
 
     Raises:
         ValueError: raised if unsupported model is specified.
@@ -83,18 +84,7 @@ def run_reference(X, Y, migration_gdf, config, scaler, mdl, out_dir, root_dir, r
         datatrame: containing model output on polygon-basis.
         dict: dictionary containing evaluation metrics per simulation.
     """    
-
-    # depending on selection, run corresponding model with data
-    if config.getint('general', 'model') == 1:
-        X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf)
-    elif config.getint('general', 'model') == 2:
-        X_df, y_df, eval_dict = models.leave_one_out(X, Y, config, scaler, mdl, out_dir)
-    elif config.getint('general', 'model') == 3:
-        X_df, y_df, eval_dict = models.single_variables(X, Y, config, scaler, mdl, out_dir)
-    elif config.getint('general', 'model') == 4:
-        X_df, y_df, eval_dict = models.dubbelsteen(X, Y, config, scaler, mdl, out_dir)
-    else:
-        raise ValueError('the specified model type in the cfg-file is invalid - specify either 1, 2, 3 or 4.')
+    X_df, y_df, eval_dict = models.all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf)
 
     return X_df, y_df, eval_dict
 
@@ -121,9 +111,6 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
     out_dir_REF = main_dict['_REF'][1]
 
     mdls = machine_learning.load_mdls(config_REF, out_dir_REF)
-
-    if config_REF.getint('general', 'model') != 1:
-            raise ValueError('ERROR: making a prediction is only possible with model type 1, i.e. using all data')
 
     # initiate output dataframe
     all_y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])

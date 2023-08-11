@@ -263,11 +263,6 @@ def initiate_setup(settings_file, verbose=None):
     if config.getboolean('general', 'verbose'): click.echo('DEBUG: copying cfg-file {} to folder {}'.format(os.path.abspath(settings_file), main_dict['_REF'][1]))
     copyfile(os.path.abspath(settings_file), os.path.join(main_dict['_REF'][1], 'copy_of_{}'.format(os.path.basename(settings_file))))
 
-    # if any other model than all_data is specified, set number of runs to 1
-    if (config.getint('general', 'model') == 2) or (config.getint('general', 'model') == 3):
-        config.set('machine_learning', 'n_runs', str(1))
-        click.echo('INFO: changed nr of runs to {}'.format(config.getint('machine_learning', 'n_runs')))
-
     return main_dict, root_dir
 
 def global_ID_geom_info(gdf):

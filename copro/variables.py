@@ -393,8 +393,8 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
         values = np.log(values)
         if config.getboolean('general', 'verbose'):
             click.echo('DEBUG: Log-transform variable {}'.format(var_name))
-        else: 
-            click.echo('DEBUG: Not log-transforming {}'.format(var_name))
+    else: 
+        click.echo('DEBUG: Not log-transforming {}'.format(var_name))
         
     list_out.extend(zip(values, selected_data['GID_2'].values.tolist()))
     
