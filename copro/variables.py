@@ -12,8 +12,8 @@ from distutils import util
 import warnings
 warnings.filterwarnings("ignore")
 
-def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year):
+    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each unique polygon specified in migration_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
@@ -26,7 +26,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     Works only with nc-files with annual data.
 
     Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
@@ -37,7 +37,7 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
         ValueError: raised if the extracted variable at a time step does not contain data.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+        list: list containing statistical value per polygon, i.e. with same length as number of unique polygons in migration_gdf.
     """   
 
     # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
@@ -117,8 +117,8 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     crs = config.get('crs', var_name) or nc_var.rio.crs
     assert crs is not None, 'ERROR: no CRS found for variable {}'.format(var_name)
 
-    # convert extent_gdf to crs of nc-file
-    extent_gdf_crs_corrected = extent_gdf.to_crs(crs)
+    # convert migration_gdf to crs of nc-file
+    migration_gdf_crs_corrected = migration_gdf.to_crs(crs)
 
     # initialize output list and a set to keep track of processed polygons
     list_out = []
@@ -128,10 +128,10 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
     nc_arr_vals_data = nc_arr_vals.values
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf_crs_corrected)):
+    for i in range(len(migration_gdf_crs_corrected)):
 
         # province i
-        polygon = extent_gdf_crs_corrected.iloc[i]
+        polygon = migration_gdf_crs_corrected.iloc[i]
 
         # Check if the polygon has already been processed, if yes, skip to the next iteration
         if polygon.GID_2 in processed_polygons:
@@ -175,8 +175,8 @@ def nc_with_float_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
 
     return list_out
 
-def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_name, sim_year):
+    """This function extracts a value from a netCDF-file (specified in the cfg-file) for each unique polygon specified in migration_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
@@ -186,7 +186,7 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     Works only with nc-files with annual data.
 
     Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in nc-file, must also be the same under which path to nc-file is specified in cfg-file.
@@ -270,18 +270,18 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
     crs = config.get('crs', var_name) or nc_var.rio.crs
     assert crs is not None, 'ERROR: no CRS found for variable {}'.format(var_name)
 
-    # convert extent_gdf to crs of nc-file
-    extent_gdf_crs_corrected = extent_gdf.to_crs(crs)
+    # convert migration_gdf to crs of nc-file
+    migration_gdf_crs_corrected = migration_gdf.to_crs(crs)
 
     # initialize output list and a set to keep track of processed polygons
     list_out = []
     processed_polygons = set()
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf_crs_corrected)):
+    for i in range(len(migration_gdf_crs_corrected)):
 
         # province i
-        polygon = extent_gdf_crs_corrected.iloc[i]
+        polygon = migration_gdf_crs_corrected.iloc[i]
 
         # Check if the polygon has already been processed, if yes, skip to the next iteration
         if polygon.GID_2 in processed_polygons:
@@ -320,8 +320,8 @@ def nc_with_continous_datetime_timestamp(extent_gdf, config, root_dir, var_name,
 
     return list_out
 
-def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
-    """This function extracts a value from a csv-file (specified in the cfg-file) for each polygon specified in extent_gdf for a given year.
+def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
+    """This function extracts a value from a csv-file (specified in the cfg-file) for each polygon specified in migration_gdf for a given year.
     In the cfg-file, it must also be specified whether the value is log-transformed or not, and which statistical method is applied.
 
     NOTE:
@@ -331,7 +331,7 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     Works only with csv-files with annual data.
 
     Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
         config (config): parsed configuration settings of run.
         root_dir (str): path to location of cfg-file. 
         var_name (str): name of variable in file, must also be the same under which path to csv-file is specified in cfg-file.
@@ -343,7 +343,7 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
         ValueError: raised if the extracted variable at a time step does not contain data.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+        list: list containing statistical value per polygon, i.e. with same length as number of unique polygons in migration_gdf.
     """   
 
     # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
@@ -358,7 +358,7 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     else:
         csv_fo = data_fo[0] 
         ln_flag = bool(util.strtobool(data_fo[1]))
-        stat_method = str(data_fo[2])
+        stat_method = str(data_fo[2]) # not needed, since the value per polygon is already given in the csv
 
     if config.getboolean('timelag', var_name): 
             lag_time = 1
@@ -375,7 +375,7 @@ def csv_extract_value(extent_gdf, config, root_dir, var_name, sim_year):
     csv_data = pd.read_csv(csv_fo)
 
     # select the polygons that must be selected
-    polygon_names = extent_gdf['GID_2'].unique().tolist()
+    polygon_names = migration_gdf['GID_2'].unique().tolist()
 
     selected_csv_data = csv_data[csv_data['GID_2'].isin(polygon_names)]
 

@@ -9,14 +9,13 @@ from shapely.wkt import loads
 from scipy.stats.mstats import winsorize
 
 
-def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year, out_dir): 
+def migration_in_year_int(root_dir, config, migration_gdf, sim_year, out_dir): 
     """Creates a list for each timestep with integer information on migration in a polygon, or if indicated in the cfg file a weightened list based on the total population per polygon."
 
     Args: config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         root_dir (str): absolute path to location of configurations-file
         migration_gdf (geodataframe): geo-dataframe containing georeferenced information of migration.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
         sim_year (int): year for which data is extracted.
         out_dir (str): path to output folder. If 'None', no output is stored.
 
@@ -71,7 +70,7 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
     list_out = []
 
     # select the polygons that must be selected
-    polygon_names = extent_gdf['GID_2'].unique().tolist()
+    polygon_names = migration_gdf['GID_2'].unique().tolist()
 
     selected_migration_data = temp_sel_year[temp_sel_year['GID_2'].isin(polygon_names)]
 
@@ -81,37 +80,11 @@ def migration_in_year_int(root_dir, config, migration_gdf, extent_gdf, sim_year,
 
     return list_out
 
-def read_projected_migration(extent_gdf, net_migration):
-    """Creates a list for each timestep with integer information on migration per polygon.
-    Input migratation data (net_migration) must contain an index with IDs corresponding to the 'GID_2' values of the gdf. 
-
-    Args:
-        extent_gdf (geodataframe): geo-dataframe containing one or more polygons with geometry information for which values are extracted.
-        net_migration (dataframe): dataframe with integer values per polygon on net migration.
-
-    Returns:
-        list: containing net migration values for each polygon. # DELETE If check_neighbors=True, then 1 if neighboring polygon contains conflict and 0 is not.
-    """
-
-    # loop through all polygons and check if exists in sub-set
-    list_out = []
-    for i in range(len(extent_gdf)):
-        i_poly = extent_gdf.GID_2.iloc[i] 
-
-        if i_poly in net_migration.index.values:
-            list_out.append(1)  
-
-        else:
-            # if polygon not in list with conflict polygons, assign 0
-            list_out.append(0)
-
-    return list_out
-
-def get_poly_ID(extent_gdf): 
+def get_poly_ID(migration_gdf): 
     """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifier is in this version limited to 'GID_2', can be adapted to the identifier one has.
 
     Args:
-        extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons.
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
 
     Raises:
         AssertionError: error raised if length of output list does not match length of input geo-dataframe.
@@ -123,9 +96,9 @@ def get_poly_ID(extent_gdf):
     unique_ids = set()
 
     # loop through all polygons
-    for i in range(len(extent_gdf)):
+    for i in range(len(migration_gdf)):
         # get the identifier for the current polygon
-        identifier = extent_gdf.iloc[i]['GID_2']
+        identifier = migration_gdf.iloc[i]['GID_2']
 
         # check if the identifier has already been added to the set
         if identifier not in unique_ids:
@@ -137,11 +110,11 @@ def get_poly_ID(extent_gdf):
         
     return list_ID
 
-def get_poly_geometry(extent_gdf, config): 
+def get_poly_geometry(migration_gdf, config): 
     """Extracts geometry information for each polygon from geodataframe and saves to list. The geometry column in geodataframe must be named 'geometry'.
 
     Args:
-        extent_gdf (geo-dataframe): geo-dataframe containing one or more polygons with geometry information.
+        migration_gdf (geo-dataframe): geo-dataframe containing migration, polygon-geometry and polygon-ID information
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
     Raises:
@@ -157,9 +130,9 @@ def get_poly_geometry(extent_gdf, config):
     unique_geometries = set()
 
     # loop through all polygons
-    for i in range(len(extent_gdf)):
+    for i in range(len(migration_gdf)):
         # get the geometry of the current polygon
-        geometry = extent_gdf.iloc[i]['geometry']
+        geometry = migration_gdf.iloc[i]['geometry']
 
         # add the geometry's string representation to the set (it will only be added if it's unique)
         unique_geometries.add(str(geometry))

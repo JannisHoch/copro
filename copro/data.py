@@ -101,7 +101,7 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                 if key == 'net_migration':
                 
                     data_series = value
-                    data_list = migration.migration_in_year_int (root_dir, config, migration_data, polygon_gdf, sim_year, out_dir) 
+                    data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
