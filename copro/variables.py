@@ -89,10 +89,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     if nc_var.values.dtype != np.float32:
         nc_var = nc_var.astype(np.float32)
 
-    # MAYBE INCLUDE AGAIN LATER: 
-    # Replace -inf values with 0 before applying the logarithm
-    # nc_var = xr.where(nc_var == -math.inf, 0, nc_var)
-
     # Get the non-zero and positive mask along the time dimension
     non_zero_positive_mask = nc_var.values > 0
 
@@ -247,6 +243,7 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     nc_var = nc_ds[var_name]
     if nc_var.values.dtype != np.float32:
         nc_var = nc_var.astype(np.float32)
+
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     if sim_year not in years:
