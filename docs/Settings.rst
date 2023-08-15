@@ -14,9 +14,6 @@ This file looks like this.
     [general]
     input_dir=./path/to/input_data
     output_dir=./path/to/store/output
-    # 1: all data. 2: leave-one-out model. 3: single variable model. 4: dubbelsteenmodel
-    # Note that only 1 supports sensitivity_analysis
-    model=1
     verbose=True
 
     [settings]
@@ -89,17 +86,6 @@ Here, the different sections are explained briefly.
 ``output_dir``: (relative) path to the directory where output will be stored. 
 If the folder does not exist yet, it will be created. 
 CoPro will automatically create the sub-folders ``_REF`` for output for the reference run, and ``_PROJ`` for output from the (various) projection runs.
-
-``model``: the type of simulation to be run can be specified here. Currently, for different models are available:
-
-    1. 'all data': all variable values are used to fit the model and predict results.
-    2. 'leave one out': values of each variable are left out once, resulting in n-1 runs with n being the number of variables. This model can be used to identify the relative influence of one variable within the variable set/
-    3. 'single variables': each variable is used as sole predictor once. With this model, the explanatory power of each variable on its own can be assessed.
-    4. 'dubbelsteen': the relation between variables and conflict are abolished by shuffling the binary conflict data randomly. By doing so, the lower boundary of the model can be estimated.
-
-.. note::
-
-    All model types except 'all_data' will be deprecated in a future release.
 
 ``verbose``: if True, additional messages will be printed.
 

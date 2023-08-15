@@ -59,9 +59,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #- defining scaling and model algorithms
     scaler, mdl = copro.pipeline.prepare_ML(config_REF)
 
-    #- fit-transform on scaler to be used later during projections
     click.echo('INFO: fitting scaler to sample data')
-
     scaler_fitted = scaler.fit(X[: , 2:]) 
 
     #- initializing output variables
