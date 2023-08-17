@@ -1,4 +1,4 @@
-from copro import migration, variables, evaluation
+from copro import migration, variables, evaluation, variables_3year_average
 import click
 import numpy as np
 import xarray as xr
@@ -88,20 +88,35 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """    
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1) 
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
     click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) 
 
-    for sim_year in model_period:
+    if config.getboolean('general', 'one_year_migration_average'):
+        step = 1
+    elif config.getboolean('general', 'three_year_migration_average'):
+        step = 3
+    elif config.getboolean('general', 'five_year_migration_average'):
+        step = 5 
+    else:
+        raise ValueError('Invalid timestep configuration.')
+    print('print step')
+    print(step)
 
-            click.echo('INFO: entering year {}'.format(sim_year))
+    for sim_year in range(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, step):
+        click.echo('INFO: entering year {}'.format(sim_year))
 
-            # go through all keys in dictionary
-            for key, value in XY.items(): 
+        # go through all keys in dictionary
+        for key, value in XY.items(): 
 
                 if key == 'net_migration':
                 
                     data_series = value
-                    data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
+                    if config.getboolean('general', 'one_year_migration_average'):
+                        data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
+                    elif config.getboolean('general', 'three_year_migration_average'):
+                        data_list = migration.migration_in_three_years(root_dir, config, migration_data, sim_year, out_dir)
+                    elif config.getboolean('general', 'three_year_migration_average'):
+                        data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -125,7 +140,10 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     
                     if file_extension == '.csv':
                         data_series = value 
-                        data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        if config.getboolean('general', 'one_year_migration_average'):
+                            data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        elif config.getboolean('general', 'three_year_migration_average'):
+                            data_list = variables_3year_average.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
                         data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                         XY[key] = data_series
 

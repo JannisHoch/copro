@@ -80,6 +80,66 @@ def migration_in_year_int(root_dir, config, migration_gdf, sim_year, out_dir):
 
     return list_out
 
+def migration_in_three_years(root_dir, config, migration_gdf, sim_year, out_dir): 
+    """Creates a list for each timestep with integer information on migration in a polygon, or if indicated in the cfg file a weightened list based on the total population per polygon."
+
+    Args: config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        root_dir (str): absolute path to location of configurations-file
+        migration_gdf (geodataframe): geo-dataframe containing georeferenced information of migration.
+        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        sim_year (int): year for which data is extracted.
+        out_dir (str): path to output folder. If 'None', no output is stored.
+
+    Raises: AssertionError: raised if the length of output list does not match length of input geo-dataframe.
+    Returns:
+        list: list containing int per polygon depending on net migration.
+   """
+        
+    years_to_average = [sim_year, sim_year +1, sim_year + 2]
+
+    temp_sel_three_years = migration_gdf[migration_gdf['year'].isin(years_to_average)]
+
+    if len(temp_sel_three_years) == 0:
+        click.echo('WARNING: no migration occurred in sampled migration data set for years {}'.format(years_to_average))
+  
+    out_dir = os.path.join(out_dir, 'files')
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+
+    if config.getboolean('general', 'verbose'):
+        print('DEBUG: check if migration should be set to % based on population')
+
+    if config.getboolean('migration', 'migration_percentage'): 
+        total_population_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'population_total'))
+        total_population = pd.read_csv(total_population_fo)
+
+        population_total_sel_years = total_population[total_population['year'].isin(years_to_average)]
+        combined_migration_data = temp_sel_three_years.merge(population_total_sel_years, on=['GID_2', 'year'], how='left')
+
+        combined_migration_data['migration_perc'] = combined_migration_data['net_migration'] / combined_migration_data['population_total']
+        combined_migration_data.drop(columns=['net_migration', 'population_total'], inplace=True)
+        combined_migration_data.rename(columns={'migration_perc': 'net_migration'}, inplace=True)
+
+        temp_sel_three_years = combined_migration_data
+        print('print temp_sel_year')
+        print(temp_sel_three_years)
+
+    if sim_year == config.getint('settings', 'y_end'): # this isnot correct at the moment
+        int_per_poly = temp_sel_three_years.copy()
+
+        if config.getboolean('general', 'verbose'):
+            print('DEBUG: storing integer migration csv for years {} to file {}'.format(years_to_average, os.path.join(out_dir, 'migration_in_{}_to_{}.csv'.format(years_to_average[0], years_to_average[-1]))))
+
+        int_per_poly.to_csv(os.path.join(out_dir, 'migration_in_{}_to_{}.csv'.format(years_to_average[0], years_to_average[-1])))
+
+    sum_per_poly = temp_sel_three_years.groupby('GID_2')['net_migration'].sum().reset_index()
+
+    list_out = []
+    for _, row in sum_per_poly.iterrows():
+        list_out.append((row['net_migration'], row['GID_2']))
+
+    return list_out
+
 def get_poly_ID(migration_gdf): 
     """Extracts and returns a list with unique identifiers for each polygon used in the model. The identifier is in this version limited to 'GID_2', can be adapted to the identifier one has.
 
