@@ -99,8 +99,6 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
         step = 5 
     else:
         raise ValueError('Invalid timestep configuration.')
-    print('print step')
-    print(step)
 
     for sim_year in range(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, step):
         click.echo('INFO: entering year {}'.format(sim_year))

@@ -121,8 +121,6 @@ def migration_in_three_years(root_dir, config, migration_gdf, sim_year, out_dir)
         combined_migration_data.rename(columns={'migration_perc': 'net_migration'}, inplace=True)
 
         temp_sel_three_years = combined_migration_data
-        print('print temp_sel_year')
-        print(temp_sel_three_years)
 
     if sim_year == config.getint('settings', 'y_end'): # this isnot correct at the moment
         int_per_poly = temp_sel_three_years.copy()

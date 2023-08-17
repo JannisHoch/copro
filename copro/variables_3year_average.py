@@ -220,6 +220,9 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
+    # Calculate years_to_average based on the sim_year
+    years_to_average = [sim_year, sim_year + 1, sim_year + 2]
+
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
             click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
@@ -244,7 +247,7 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     if nc_var.values.dtype != np.float32:
         nc_var = nc_var.astype(np.float32)
 
-    # get years contained in nc-file as integer array to be compatible with sim_year
+    # get years contained in nc-file as integer array to be compatible with sim_year (+1, +2)
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     if sim_year not in years:
         click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
@@ -270,23 +273,19 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     # convert migration_gdf to crs of nc-file
     migration_gdf_crs_corrected = migration_gdf.to_crs(crs)
 
-    # initialize output list and a set to keep track of processed polygons
-    list_out = []
+    # initialize dictionary to store values for each year
+    values_per_year = {year: [] for year in years_to_average}
+
     processed_polygons = set()
 
-    # loop through all polygons in geo-dataframe and compute statistics, then append to output file
+    # Loop through all polygons in geo-dataframe and compute statistics
     for i in range(len(migration_gdf_crs_corrected)):
-
-        # province i
         polygon = migration_gdf_crs_corrected.iloc[i]
-
-        # Check if the polygon has already been processed, if yes, skip to the next iteration
+        
         if polygon.GID_2 in processed_polygons:
             continue
-
-        # Mark the current polygon as processed
         processed_polygons.add(polygon.GID_2)
-        
+
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
@@ -308,13 +307,23 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
             else:
                 val = val_ln
 
-        # print a warning if result is None
-        if (val == None) or (val == np.nan) and (config.getboolean('general', 'verbose')): 
-            click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
-        
-        # Append the computed value to the output list
-        list_out.append(val)
-
+        for year in years_to_average:
+            year_idx = int(np.where(years == year)[0])
+            nc_arr = nc_var.sel(time=nc_ds.time.values[year_idx])
+            nc_arr_vals = nc_arr.values
+            if nc_arr_vals.size == 0:
+                raise ValueError('ERROR: no data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
+            
+            # Append the computed value to the appropriate year's list
+            values_per_year[year].append(val)
+    
+    # Calculate the average value for each year and polygon
+    list_out = []
+    for year in years_to_average:
+        avg_values = values_per_year[year]
+        average_value = np.mean(avg_values)
+        list_out.append(average_value)
+    
     return list_out
 
 def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
@@ -363,6 +372,7 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
     else:
             lag_time =0
             click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
@@ -384,7 +394,10 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
 
         all_selected_data.append(selected_csv_data)
 
-      # Calculate the average for each polygon
+        
+        print('all_selected_data')
+        print(all_selected_data)
+
     avg_values = {}
     for selected_csv_data in all_selected_data:
         for _, row in selected_csv_data.iterrows():
@@ -398,9 +411,7 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
                 avg_values[GID_2] = []
             avg_values[GID_2].append(value)
 
-    list_out = []  
-    for GID_2, values_list in avg_values.items():
-        average_value = np.mean(values_list)
-        list_out.append(average_value)
+    # Create a list of tuples with average value and GID_2 ID
+    list_out = [(np.mean(values_list), GID_2) for GID_2, values_list in avg_values.items()]
 
     return list_out
