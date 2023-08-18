@@ -63,11 +63,14 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     # if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
+    # get years_to_average based on the sim_year
+    years_to_average = [sim_year, sim_year + 1, sim_year + 2]
+
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
-            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, years_to_average))
         else:
-            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating average {0} {1} per aggregation unit from file {2} for years {3}'.format(stat_method, var_name, nc_fo, years_to_average))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -101,8 +104,8 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     # open nc-file with rasterio to get affine information
     affine = nc_ds.rio.transform()
 
-    # get values from data-array for specified year
-    nc_arr_vals = nc_var.sel(time=sim_year)
+    # get values from data-array for specified years
+    nc_arr_vals = nc_var.sel(time=years_to_average)
 
     # Handle cases where nc_arr_vals is empty (i.e., no data found for the specified year)
     if nc_arr_vals.size == 0:
@@ -115,13 +118,14 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
 
     # convert migration_gdf to crs of nc-file
     migration_gdf_crs_corrected = migration_gdf.to_crs(crs)
+    
+    # Extract the data values from the xarray DataArray
+    nc_arr_vals_data = nc_arr_vals.values
+    print("nc_arr_vals_data.shape:", nc_arr_vals_data.shape)
 
     # initialize output list and a set to keep track of processed polygons
     list_out = []
     processed_polygons = set()
-
-    # Extract the data values from the xarray DataArray
-    nc_arr_vals_data = nc_arr_vals.values
 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(migration_gdf_crs_corrected)):
@@ -135,39 +139,50 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
 
         # Mark the current polygon as processed
         processed_polygons.add(polygon.GID_2)
-
+        
+        avg_values = []
+        
         # compute zonal stats for this polygon
-        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals_data, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
-        if not zonal_stats:
-            print("No valid statistics found for polygon:", polygon.GID_2)
-            # Decide whether to skip the polygon or assign a default value to val
-            # For example, assign np.nan or 0
-            val = 0  # or np.nan
-        else:
-            val = zonal_stats[0][stat_method]
+        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
+        # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
+        #zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
 
-        # if specified, log-transform value
-        if ln_flag:
-            # works only if zonal stats is not None, i.e. if it's None it stays None
-            if val is not None:
-                val_ln = np.log(val)
+        #val = zonal_stats[0][stat_method]
+
+        # Loop through years to average (sim_year, sim_year + 1, sim_year + 2)
+        for year in years_to_average:
+            time_values = nc_ds.time.values
+            year_idx = np.where(time_values == year)[0][0]
+            nc_arr = nc_var.sel(time=nc_ds.time.values[year_idx])
+            nc_arr_vals = nc_arr.values
+
+            if nc_arr_vals.size == 0:
+                raise ValueError('ERROR: no data was found for year {} in the nc-file {}, check if all is correct'.format(year, nc_fo))
+
+            zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+            if not zonal_stats:
+                print("No valid statistics found for polygon:", polygon.GID_2)
+                val = 0  # or np.nan
             else:
-                click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val + 1), polygon.GID_2))
-                val_ln = None
+                val = zonal_stats[0][stat_method]
+                # compute zonal stats for this polygon and this year 
+                zonal_stats_result = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+                val = zonal_stats_result[0][stat_method]
 
-            # in case log-transformed value results in -inf, replace with 0, because several values must be 0 (e.g. days per year of t above 35 degrees)
-            if val_ln == -math.inf:
-                if config.getboolean('general', 'verbose'):
-                    val = np.log(val + 1)
-                else:
-                    val = val_ln
+                # Apply log-transform if needed
+                if ln_flag:
+                    if val is not None:
+                        val = np.log(val)
+                    else:
+                        click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), polygon.GID_2))
 
-        # print a warning if result is None
-        if (val is None or val == np.nan) and config.getboolean('general', 'verbose'):
-            click.echo('WARNING: {} computed for ID {}!'.format(val, polygon.GID_2))
+            avg_values.append(val)  # Append the computed value for this year to avg_values
 
-        # Append the computed value to the output list
-        list_out.append(val)
+        # Calculate the average value over the three years for this polygon
+        average_value = np.mean(avg_values)
+
+        # Append the tuple (average value, GID_2) to list_out
+        list_out.append((average_value, polygon.GID_2))
 
     return list_out
 
@@ -219,15 +234,15 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
-
-    # Calculate years_to_average based on the sim_year
+  
+    # get years_to_average based on the sim_year
     years_to_average = [sim_year, sim_year + 1, sim_year + 2]
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
-            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, years_to_average))
         else:
-            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, years_to_average))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -247,7 +262,7 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     if nc_var.values.dtype != np.float32:
         nc_var = nc_var.astype(np.float32)
 
-    # get years contained in nc-file as integer array to be compatible with sim_year (+1, +2)
+    # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     if sim_year not in years:
         click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
@@ -273,57 +288,66 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     # convert migration_gdf to crs of nc-file
     migration_gdf_crs_corrected = migration_gdf.to_crs(crs)
 
-    # initialize dictionary to store values for each year
-    values_per_year = {year: [] for year in years_to_average}
-
+    # initialize output list and a set to keep track of processed polygons
+    list_out = []
     processed_polygons = set()
 
-    # Loop through all polygons in geo-dataframe and compute statistics
+    # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(migration_gdf_crs_corrected)):
+
+        # province i
         polygon = migration_gdf_crs_corrected.iloc[i]
-        
+
+        # Check if the polygon has already been processed, if yes, skip to the next iteration
         if polygon.GID_2 in processed_polygons:
             continue
-        processed_polygons.add(polygon.GID_2)
 
+        # Mark the current polygon as processed
+        processed_polygons.add(polygon.GID_2)
+        
+        avg_values = []
+        
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
+        #zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
 
-        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+        #val = zonal_stats[0][stat_method]
 
-        val = zonal_stats[0][stat_method]
-
-        # # if specified, log-transform value
-        if ln_flag:
-            # works only if zonal stats is not None, i.e. if it's None it stays None
-            if val != None: val_ln = np.log(val)
-            else: click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), polygon.GID_2))
-        
-            # in case log-transformed value results in -inf, replace with None
-            if val_ln == -math.inf:
-                # if config.getboolean('general', 'verbose'): click.echo('DEBUG: set -inf to {} for ID {}'.format(np.log(val+1), polygon.GID_2))
-                val = np.log(val+1)
-            else:
-                val = val_ln
-
+        # Loop through years to average (sim_year, sim_year + 1, sim_year + 2)
         for year in years_to_average:
             year_idx = int(np.where(years == year)[0])
             nc_arr = nc_var.sel(time=nc_ds.time.values[year_idx])
             nc_arr_vals = nc_arr.values
+
             if nc_arr_vals.size == 0:
-                raise ValueError('ERROR: no data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
-            
-            # Append the computed value to the appropriate year's list
-            values_per_year[year].append(val)
-    
-    # Calculate the average value for each year and polygon
-    list_out = []
-    for year in years_to_average:
-        avg_values = values_per_year[year]
+                raise ValueError('ERROR: no data was found for year {} in the nc-file {}, check if all is correct'.format(year, nc_fo))
+
+            zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+            if not zonal_stats:
+                print("No valid statistics found for polygon:", polygon.GID_2)
+                val = 0  # or np.nan
+            else:
+                val = zonal_stats[0][stat_method]
+                # compute zonal stats for this polygon and this year 
+                zonal_stats_result = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
+                val = zonal_stats_result[0][stat_method]
+
+                # Apply log-transform if needed
+                if ln_flag:
+                    if val is not None:
+                        val = np.log(val)
+                    else:
+                        click.echo('WARNING: a value of {} for ID {} was computed - no good!'.format(np.log(val+1), polygon.GID_2))
+
+            avg_values.append(val)  # Append the computed value for this year to avg_values
+
+        # Calculate the average value over the three years for this polygon
         average_value = np.mean(avg_values)
-        list_out.append(average_value)
-    
+
+        # Append the tuple (average value, GID_2) to list_out
+        list_out.append((average_value, polygon.GID_2))
+
     return list_out
 
 def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
@@ -393,10 +417,6 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
             raise ValueError(f'ERROR: No data was found for year {year} in the CSV file {var_name}, check if all is correct')
 
         all_selected_data.append(selected_csv_data)
-
-        
-        print('all_selected_data')
-        print(all_selected_data)
 
     avg_values = {}
     for selected_csv_data in all_selected_data:

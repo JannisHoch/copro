@@ -150,13 +150,19 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
 
                         if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                             data_series = value
-                            data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            if config.getboolean('general', 'one_year_migration_average'):
+                                data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'three_year_migration_average'):
+                                data_list = variables_3year_average.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
                 
                         elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                             data_series = value
-                            data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            if config.getboolean('general', 'one_year_migration_average'):
+                                data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'three_year_migration_average'):
+                                data_list = variables_3year_average.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
 
