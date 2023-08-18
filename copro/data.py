@@ -1,4 +1,4 @@
-from copro import migration, variables, evaluation, variables_3year_average
+from copro import migration, variables, evaluation, variables_multiple_years
 import click
 import numpy as np
 import xarray as xr
@@ -113,7 +113,7 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                         data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
                     elif config.getboolean('general', 'three_year_migration_average'):
                         data_list = migration.migration_in_three_years(root_dir, config, migration_data, sim_year, out_dir)
-                    elif config.getboolean('general', 'three_year_migration_average'):
+                    elif config.getboolean('general', 'five_year_migration_average'):
                         data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
@@ -141,7 +141,9 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                         if config.getboolean('general', 'one_year_migration_average'):
                             data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
                         elif config.getboolean('general', 'three_year_migration_average'):
-                            data_list = variables_3year_average.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                            data_list = variables_multiple_years.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        elif config.getboolean('general', 'five_year_migration_average'):
+                            data_list = variables_multiple_years.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
                         data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                         XY[key] = data_series
 
@@ -153,7 +155,9 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                             if config.getboolean('general', 'one_year_migration_average'):
                                 data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             elif config.getboolean('general', 'three_year_migration_average'):
-                                data_list = variables_3year_average.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                                data_list = variables_multiple_years.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'five_year_migration_average'):
+                                data_list = variables_multiple_years.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
                 
@@ -162,7 +166,9 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                             if config.getboolean('general', 'one_year_migration_average'):
                                 data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             elif config.getboolean('general', 'three_year_migration_average'):
-                                data_list = variables_3year_average.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                                data_list = variables_multiple_years.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'five_year_migration_average'):
+                                data_list = variables_multiple_years.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
 

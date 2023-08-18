@@ -168,8 +168,7 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
 
         # Append the computed value to the output list
         list_out.append(val)
-    print('list_out netcdf')
-    print(list_out)
+   
     return list_out
 
 def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_name, sim_year):

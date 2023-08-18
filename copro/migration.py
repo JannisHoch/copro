@@ -95,7 +95,12 @@ def migration_in_three_years(root_dir, config, migration_gdf, sim_year, out_dir)
         list: list containing int per polygon depending on net migration.
    """
         
-    years_to_average = [sim_year, sim_year +1, sim_year + 2]
+    # get years_to_average depending on the config settings
+    if config.getboolean('general', 'three_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2]                       
+    
+    elif config.getboolean('general', 'five_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2, sim_year + 3, sim_year + 4]
 
     temp_sel_three_years = migration_gdf[migration_gdf['year'].isin(years_to_average)]
 

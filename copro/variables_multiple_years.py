@@ -63,8 +63,15 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     # if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
-    # get years_to_average based on the sim_year
-    years_to_average = [sim_year, sim_year + 1, sim_year + 2]
+    # get years_to_average depending on the config settings
+    if config.getboolean('general', 'three_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2]                       
+    
+    elif config.getboolean('general', 'five_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2, sim_year + 3, sim_year + 4]
+
+    else:
+        raise ValueError('ERROR: please cheack cfg file regarding averaging years')
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
@@ -121,7 +128,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     
     # Extract the data values from the xarray DataArray
     nc_arr_vals_data = nc_arr_vals.values
-    print("nc_arr_vals_data.shape:", nc_arr_vals_data.shape)
 
     # initialize output list and a set to keep track of processed polygons
     list_out = []
@@ -235,8 +241,15 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
   
-    # get years_to_average based on the sim_year
-    years_to_average = [sim_year, sim_year + 1, sim_year + 2]
+    # get years_to_average depending on the config settings
+    if config.getboolean('general', 'three_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2]                       
+    
+    elif config.getboolean('general', 'five_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2, sim_year + 3, sim_year + 4]
+
+    else:
+        raise ValueError('ERROR: please cheack cfg file regarding averaging years')
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
@@ -400,7 +413,15 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
-    years_to_average = [sim_year, sim_year +1, sim_year + 2]
+    # get years_to_average depending on the config settings
+    if config.getboolean('general', 'three_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2]                       
+    
+    elif config.getboolean('general', 'five_year_migration_average'):
+        years_to_average = [sim_year, sim_year + 1, sim_year + 2, sim_year + 3, sim_year + 4]
+
+    else:
+        raise ValueError('ERROR: please cheack cfg file regarding averaging years')
 
     # Read the CSV file
     csv_data = pd.read_csv(csv_fo)
