@@ -20,8 +20,8 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
         df = pd.read_csv(migration_fo)
 
         # Reorganise GDF so that years can be selected 
-        df = df.melt(id_vars=['GID_2'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
-                                                              '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], 
+        df = df.melt(id_vars=['GID_2'], value_vars= ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', 
+                                                    '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019'], 
                                                               var_name='time', value_name='net_migration')
 
         df.year = df.year.astype(int)
@@ -41,13 +41,13 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
 
         # Rename year columns from yearX to year since column names have to start with a letter in arcgis
 
-        gdf.rename(columns = {'M2001':'2001', 'M2002':'2002', 'M2003':'2003', 'M2004':'2004', 
-                          'M2005':'2005', 'M2006':'2006', 'M2007':'2007', 'M2008':'2008', 
-                          'M2009':'2009', 'M2010':'2010', 'M2011':'2011', 'M2012':'2012', 'M2013':'2013', 'M2014':'2014', 'M2015':'2015'}, inplace = True)
+        gdf.rename(columns = {'M2000': '2000', 'M2001': '2001', 'M2002': '2002', 'M2003': '2003', 'M2004': '2004', 'M2005': '2005',
+    'M2006': '2006', 'M2007': '2007', 'M2008': '2008', 'M2009': '2009', 'M2010': '2010', 'M2011': '2011', 'M2012': '2012', 'M2013': '2013',
+    'M2014': '2014', 'M2015': '2015', 'M2016': '2016', 'M2017': '2017', 'M2018': '2018', 'M2019': '2019'}, inplace = True)
         
         # Reorganise GDF so that years can be selected 
-        gdf = gdf.melt(id_vars=['GID_2', 'geometry'], value_vars= ['2001', '2002', '2003', '2004', '2005', 
-                                                              '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015'], 
+        gdf = gdf.melt(id_vars=['GID_2', 'geometry'], value_vars= ['2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', 
+                                                                   '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019'], 
                                                               var_name='year', value_name='net_migration')
 
         gdf.year = gdf.year.astype(int)

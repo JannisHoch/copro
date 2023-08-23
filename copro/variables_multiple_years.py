@@ -75,7 +75,7 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
-            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, years_to_average))
+            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for years {3}'.format(stat_method, var_name, nc_fo, years_to_average))
         else:
             click.echo('DEBUG: calculating average {0} {1} per aggregation unit from file {2} for years {3}'.format(stat_method, var_name, nc_fo, years_to_average))
 
