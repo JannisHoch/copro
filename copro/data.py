@@ -178,7 +178,6 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                         raise ValueError('ERROR: the file extension of the input file is not supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
     # Sort the dictionary based on the 'poly_ID' key in the second element of the tuple columns
-
     sorted_XY = dict(sorted(XY.items(), key=lambda x: str(x[1][0])))
 
     # Delete the column named 'poly_ID' since somehow I cant fix it to het the right poly_ID in the correct row

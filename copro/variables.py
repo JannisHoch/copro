@@ -52,6 +52,9 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
             nc_fo = data_fo[0]
             ln_flag = bool(util.strtobool(data_fo[1]))
             stat_method = str(data_fo[2])
+    
+    if ln_flag:
+         print('YES LN_FLAG!')
 
     if config.getboolean('timelag', var_name): 
             lag_time = 1
@@ -60,7 +63,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
             lag_time =0
             click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
 
-    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
     if config.getboolean('general', 'verbose'): 
@@ -89,20 +91,17 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     if nc_var.values.dtype != np.float32:
         nc_var = nc_var.astype(np.float32)
 
-    # Get the non-zero and positive mask along the time dimension
-    non_zero_positive_mask = nc_var.values > 0
-
-    # Apply logarithm only to positive values using the mask along the time dimension
-    nc_var.values = xr.where(non_zero_positive_mask, np.log(nc_var.values), nc_var)
-
-    # Handle cases where log-transformed value results in -inf
-    nc_var = xr.where(nc_var.values == -math.inf, 0, nc_var)
-
     # open nc-file with rasterio to get affine information
     affine = nc_ds.rio.transform()
 
+    # Adjust sim_year to the nearest available year
+    years = nc_var['time'].values
+    nearest_year_idx = np.argmin(np.abs(years - sim_year))
+    sim_year = years[nearest_year_idx]
+    
     # get values from data-array for specified year
-    nc_arr_vals = nc_var.sel(time=sim_year)
+    #nc_arr_vals = nc_var.sel(time=sim_year)
+    nc_arr_vals = nc_var.interp(time=sim_year, method='nearest')
 
     # Handle cases where nc_arr_vals is empty (i.e., no data found for the specified year)
     if nc_arr_vals.size == 0:
@@ -123,6 +122,7 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     # Extract the data values from the xarray DataArray
     nc_arr_vals_data = nc_arr_vals.values
 
+ 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(migration_gdf_crs_corrected)):
 
@@ -141,7 +141,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
         if not zonal_stats:
             print("No valid statistics found for polygon:", polygon.GID_2)
             # Decide whether to skip the polygon or assign a default value to val
-            # For example, assign np.nan or 0
             val = 0  # or np.nan
         else:
             val = zonal_stats[0][stat_method]
@@ -246,12 +245,13 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
 
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
-    if sim_year not in years:
-        click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
-        click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
-        sim_year = sim_year + 1
+ 
+   # if sim_year not in years:
+     #   click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
+    #    click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
+     #   sim_year = sim_year + 1
     
-    # get index which corresponds with sim_year in years in nc-file
+    # # get index which corresponds with sim_year in years in nc-file
     sim_year_idx = int(np.where(years == sim_year)[0])
     # get values from data-array for specified year based on index
     nc_arr = nc_var.sel(time=nc_ds.time.values[sim_year_idx])
@@ -259,8 +259,19 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     if nc_arr_vals.size == 0:
         raise ValueError('ERROR: no data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
 
+    # Find the closest time step in the dataset
+    # years = nc_ds['time'].values
+    # closest_idx = np.argmin(np.abs(years - sim_year))
+
+    # Get the values from the data array for the closest year
+    # try:
+    #     nc_arr = nc_var.sel(time=years[closest_idx])
+    #     nc_arr_vals = nc_arr.values
+    # except IndexError:
+    #     # Handle the case where the index is out of bounds (e.g., closest year is beyond available data)
+    #      click.echo('WARNING: No year to substitute {}'.format(sim_year))
+
     # open nc-file with rasterio to get affine information
-    # get affine from xarray data-array
     affine = nc_ds.rio.transform()
 
     # load crs from config file, if not specified, get crs from nc-file. If neither is specified, raise error
@@ -294,7 +305,7 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
 
         val = zonal_stats[0][stat_method]
 
-        # # if specified, log-transform value
+        # if specified, log-transform value
         if ln_flag:
             # works only if zonal stats is not None, i.e. if it's None it stays None
             if val != None: val_ln = np.log(val)
