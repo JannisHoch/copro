@@ -52,9 +52,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
             nc_fo = data_fo[0]
             ln_flag = bool(util.strtobool(data_fo[1]))
             stat_method = str(data_fo[2])
-    
-    if ln_flag:
-         print('YES LN_FLAG!')
 
     if config.getboolean('timelag', var_name): 
             lag_time = 1
@@ -100,7 +97,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     sim_year = years[nearest_year_idx]
     
     # get values from data-array for specified year
-    #nc_arr_vals = nc_var.sel(time=sim_year)
     nc_arr_vals = nc_var.interp(time=sim_year, method='nearest')
 
     # Handle cases where nc_arr_vals is empty (i.e., no data found for the specified year)
@@ -122,7 +118,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     # Extract the data values from the xarray DataArray
     nc_arr_vals_data = nc_arr_vals.values
 
- 
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
     for i in range(len(migration_gdf_crs_corrected)):
 
@@ -245,13 +240,8 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
 
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
- 
-   # if sim_year not in years:
-     #   click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
-    #    click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
-     #   sim_year = sim_year + 1
     
-    # # get index which corresponds with sim_year in years in nc-file
+    # get index which corresponds with sim_year in years in nc-file
     sim_year_idx = int(np.where(years == sim_year)[0])
     # get values from data-array for specified year based on index
     nc_arr = nc_var.sel(time=nc_ds.time.values[sim_year_idx])
@@ -366,7 +356,7 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
     else:
         csv_fo = data_fo[0] 
         ln_flag = bool(util.strtobool(data_fo[1]))
-        stat_method = str(data_fo[2]) # not needed, since the value per polygon is already given in the csv
+        stat_method = str(data_fo[2]) # not needed, since the needed value per polygon is already given in the csv
 
     if config.getboolean('timelag', var_name): 
             lag_time = 1
@@ -396,7 +386,7 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
     if config.get('data', var_name).split(','):
         values = selected_data[var_name].values.tolist()
         
-    #log-transform the variable
+    #log-transform the variable if 
     if ln_flag:
         values = np.log(values)
         if config.getboolean('general', 'verbose'):

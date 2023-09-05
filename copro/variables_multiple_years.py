@@ -99,6 +99,15 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
     if nc_var.values.dtype != np.float32:
         nc_var = nc_var.astype(np.float32)
 
+    # Get the non-zero and positive mask along the time dimension
+    non_zero_positive_mask = nc_var.values > 0
+
+    # Apply logarithm only to positive values using the mask along the time dimension
+    nc_var.values = xr.where(non_zero_positive_mask, np.log(nc_var.values), nc_var)
+
+    # Handle cases where log-transformed value results in -inf
+    nc_var = xr.where(nc_var.values == -math.inf, 0, nc_var)
+
     # open nc-file with rasterio to get affine information
     affine = nc_ds.rio.transform()
 
@@ -310,13 +319,6 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
         processed_polygons.add(polygon.GID_2)
         
         avg_values = []
-        
-        # compute zonal stats for this polygon
-        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
-        # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        #zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
-
-        #val = zonal_stats[0][stat_method]
 
         # Loop through years to average (sim_year, sim_year + 1, sim_year + 2)
         for year in years_to_average:
@@ -381,7 +383,6 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
     """   
 
     # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
-
     data_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', var_name)).rsplit(',')
 
     # if not all of these three aspects are provided, raise error

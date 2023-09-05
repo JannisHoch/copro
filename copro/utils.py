@@ -12,6 +12,7 @@ import click
 import copro
 
 def get_geodataframe(config, root_dir, crs = 'WGS84'):
+    # open migration file 
     migration_fo = os.path.join(root_dir, config.get('general', 'input_dir'), config.get('migration', 'migration_file'))
 
     # Check if the input file is a CSV or a Shapefile
@@ -40,7 +41,6 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
         gdf = gpd.read_file(migration_fo)
 
         # Rename year columns from yearX to year since column names have to start with a letter in arcgis
-
         gdf.rename(columns = {'M2000': '2000', 'M2001': '2001', 'M2002': '2002', 'M2003': '2003', 'M2004': '2004', 'M2005': '2005',
     'M2006': '2006', 'M2007': '2007', 'M2008': '2008', 'M2009': '2009', 'M2010': '2010', 'M2011': '2011', 'M2012': '2012', 'M2013': '2013',
     'M2014': '2014', 'M2015': '2015', 'M2016': '2016', 'M2017': '2017', 'M2018': '2018', 'M2019': '2019'}, inplace = True)
@@ -57,8 +57,6 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
     
     # read file to geopandas dataframe
     click.echo('INFO: reading  file to dataframe {}'.format(migration_fo))
-    
-    # gdf.to_file(os.path.join(root_dir, 'gdf.gpkg')) not necessary for now
 
     return gdf
 
