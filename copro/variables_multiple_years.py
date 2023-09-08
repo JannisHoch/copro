@@ -52,35 +52,46 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
             nc_fo = data_fo[0]
             ln_flag = bool(util.strtobool(data_fo[1]))
             stat_method = str(data_fo[2])
+    # open nc-file with xarray as dataset
+    nc_ds = xr.open_dataset(nc_fo)
 
     if config.getboolean('timelag', var_name): 
-            lag_time = 1
-            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+        lag_time = 1
+        click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     else:
-            lag_time =0
-            click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
+        lag_time = 0
+        click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
 
-    # if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
-    sim_year = sim_year - lag_time
+    best_year = sim_year - lag_time
+
+    available_years = nc_ds.time.values.astype(int)
+    if best_year not in available_years:
+        nearest_year = min(available_years, key=lambda x: abs(x - best_year))
+        click.echo(f'WARNING: Year {best_year} not found in the NetCDF data. Using nearest year: {nearest_year}')
+        best_year = nearest_year
 
     # get years_to_average depending on the config settings
     if config.getboolean('general', 'three_year_migration_average'):
-        years_to_average = [sim_year, sim_year + 1, sim_year + 2]                       
+        years_to_average = [best_year, best_year + 1, best_year + 2]                       
     
     elif config.getboolean('general', 'five_year_migration_average'):
-        years_to_average = [sim_year, sim_year + 1, sim_year + 2, sim_year + 3, sim_year + 4]
+        years_to_average = [best_year, best_year + 1, best_year + 2, best_year + 3, best_year + 4]
 
     else:
-        raise ValueError('ERROR: please cheack cfg file regarding averaging years')
+        raise ValueError('ERROR: please check cfg file regarding averaging years')
+
+    for _ in range(1, len(years_to_average)):
+        next_year = years_to_average[-1] + 1
+    if next_year not in available_years:
+        nearest_year = min(available_years, key=lambda x: abs(x - next_year))
+        click.echo(f'WARNING: Year {next_year} not found in the NetCDF data. Using nearest year: {nearest_year}')
+    years_to_average.append(next_year)
 
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
             click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for years {3}'.format(stat_method, var_name, nc_fo, years_to_average))
         else:
             click.echo('DEBUG: calculating average {0} {1} per aggregation unit from file {2} for years {3}'.format(stat_method, var_name, nc_fo, years_to_average))
-
-    # open nc-file with xarray as dataset
-    nc_ds = xr.open_dataset(nc_fo)
 
      # If lon and lat are spatial dimensions, rename those to x and y to avoid errors
     if 'lon' in nc_ds.dims:
@@ -147,13 +158,6 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
         processed_polygons.add(polygon.GID_2)
         
         avg_values = []
-        
-        # compute zonal stats for this polygon
-        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
-        # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        #zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
-
-        #val = zonal_stats[0][stat_method]
 
         # Loop through years to average (sim_year, sim_year + 1, sim_year + 2)
         for year in years_to_average:
@@ -231,6 +235,9 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
 
+    # open nc-file with xarray as dataset
+    nc_ds = xr.open_dataset(nc_fo)
+
     if config.getboolean('timelag', var_name): 
             lag_time = 1
             click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
@@ -239,14 +246,23 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
             click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
-    sim_year = sim_year - lag_time
+    best_year = sim_year - lag_time
+ 
+    available_years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
+    if best_year not in available_years:
+        nearest_year = min(available_years, key=lambda x: abs(x - best_year))
+        click.echo(f'WARNING: Year {best_year} not found in the NetCDF data. Using nearest year: {nearest_year}')
+        best_year = nearest_year
+
+    else:
+        pass
   
     # get years_to_average depending on the config settings
     if config.getboolean('general', 'three_year_migration_average'):
-        years_to_average = [sim_year, sim_year + 1, sim_year + 2]                       
+        years_to_average = [best_year, best_year + 1, best_year + 2]                       
     
     elif config.getboolean('general', 'five_year_migration_average'):
-        years_to_average = [sim_year, sim_year + 1, sim_year + 2, sim_year + 3, sim_year + 4]
+        years_to_average = [best_year, best_year + 1, best_year + 2, best_year + 3, best_year + 4]
 
     else:
         raise ValueError('ERROR: please cheack cfg file regarding averaging years')
@@ -256,9 +272,6 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
             click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, years_to_average))
         else:
             click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, years_to_average))
-
-    # open nc-file with xarray as dataset
-    nc_ds = xr.open_dataset(nc_fo)
     
     # If lon and lat are spatial dimensions, rename those to x and y to avoid errors
     if 'lon' in nc_ds.dims:
@@ -275,15 +288,15 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     if nc_var.values.dtype != np.float32:
         nc_var = nc_var.astype(np.float32)
 
-    # get years contained in nc-file as integer array to be compatible with sim_year
+    # # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
-    if sim_year not in years:
-        click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
-        click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
-        sim_year = sim_year + 1
+    # if sim_year not in years:
+    #     click.echo('WARNING: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
+    #     click.echo('WARNING: using the next following year instead (yes that is an ugly solution...)')
+    #     sim_year = sim_year + 1
     
     # get index which corresponds with sim_year in years in nc-file
-    sim_year_idx = int(np.where(years == sim_year)[0])
+    sim_year_idx = int(np.where(years == best_year)[0])
     # get values from data-array for specified year based on index
     nc_arr = nc_var.sel(time=nc_ds.time.values[sim_year_idx])
     nc_arr_vals = nc_arr.values

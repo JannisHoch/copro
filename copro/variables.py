@@ -214,11 +214,21 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
 
+    available_years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
+    available_years = years  # Assuming you already have the list of available years
+    if sim_year not in available_years:
+        nearest_year = min(available_years, key=lambda x: abs(x - sim_year))
+        click.echo(f'WARNING: Year {sim_year} not found in the NetCDF data. Using nearest year: {nearest_year}')
+        best_year = nearest_year
+
+    else:
+        best_year = sim_year
+
     if config.getboolean('general', 'verbose'): 
         if ln_flag:
-            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, best_year))
         else:
-            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, sim_year))
+            click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, best_year))
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -241,25 +251,13 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     # get years contained in nc-file as integer array to be compatible with sim_year
     years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
     
-    # get index which corresponds with sim_year in years in nc-file
-    sim_year_idx = int(np.where(years == sim_year)[0])
+    # get index which corresponds with best_year in years in nc-file
+    sim_year_idx = int(np.where(years == best_year)[0])
     # get values from data-array for specified year based on index
     nc_arr = nc_var.sel(time=nc_ds.time.values[sim_year_idx])
     nc_arr_vals = nc_arr.values
     if nc_arr_vals.size == 0:
         raise ValueError('ERROR: no data was found for this year in the nc-file {}, check if all is correct'.format(nc_fo))
-
-    # Find the closest time step in the dataset
-    # years = nc_ds['time'].values
-    # closest_idx = np.argmin(np.abs(years - sim_year))
-
-    # Get the values from the data array for the closest year
-    # try:
-    #     nc_arr = nc_var.sel(time=years[closest_idx])
-    #     nc_arr_vals = nc_arr.values
-    # except IndexError:
-    #     # Handle the case where the index is out of bounds (e.g., closest year is beyond available data)
-    #      click.echo('WARNING: No year to substitute {}'.format(sim_year))
 
     # open nc-file with rasterio to get affine information
     affine = nc_ds.rio.transform()
