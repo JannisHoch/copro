@@ -203,6 +203,9 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
         nc_fo = data_fo[0]
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2])
+    
+    # open nc-file with xarray as dataset
+    nc_ds = xr.open_dataset(nc_fo)
 
     if config.getboolean('timelag', var_name): 
             lag_time = 1
@@ -215,7 +218,6 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
     sim_year = sim_year - lag_time
 
     available_years = pd.to_datetime(nc_ds.time.values).to_period(freq='Y').strftime('%Y').to_numpy(dtype=int)
-    available_years = years  # Assuming you already have the list of available years
     if sim_year not in available_years:
         nearest_year = min(available_years, key=lambda x: abs(x - sim_year))
         click.echo(f'WARNING: Year {sim_year} not found in the NetCDF data. Using nearest year: {nearest_year}')
@@ -229,9 +231,6 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
             click.echo('DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, best_year))
         else:
             click.echo('DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}'.format(stat_method, var_name, nc_fo, best_year))
-
-    # open nc-file with xarray as dataset
-    nc_ds = xr.open_dataset(nc_fo)
     
     # If lon and lat are spatial dimensions, rename those to x and y to avoid errors
     if 'lon' in nc_ds.dims:
