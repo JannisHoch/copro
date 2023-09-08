@@ -358,6 +358,10 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
         ln_flag = bool(util.strtobool(data_fo[1]))
         stat_method = str(data_fo[2]) # not needed, since the needed value per polygon is already given in the csv
 
+      # Read the CSV file
+    csv_data = pd.read_csv(csv_fo)
+
+
     if config.getboolean('timelag', var_name): 
             lag_time = 1
             click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
@@ -366,11 +370,18 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
             click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
     sim_year = sim_year - lag_time
+    
+    # Check if sim_year exists in available years or find the nearest year
+    available_years = csv_data['year'].unique()
+    if sim_year not in available_years:
+        nearest_year = min(available_years, key=lambda x: abs(x - sim_year))
+        click.echo(f'WARNING: Year {sim_year} not found in the CSV data. Using nearest year: {nearest_year}')
+        best_year = nearest_year
+
+    else: 
+        best_year = sim_year
 
     list_out = []
-
-    # Read the CSV file
-    csv_data = pd.read_csv(csv_fo)
 
     # select the polygons that must be selected
     polygon_names = migration_gdf['GID_2'].unique().tolist()
@@ -378,7 +389,7 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
     selected_csv_data = csv_data[csv_data['GID_2'].isin(polygon_names)]
 
     selected_data = selected_csv_data.copy()
-    selected_data = selected_data.query(f'year == {sim_year}')
+    selected_data = selected_data.query(f'year == {best_year}')
 
     if selected_data.size == 0:
         raise ValueError('ERROR: No data was found for this year in the CSV file {}, check if all is correct'.format(var_name))

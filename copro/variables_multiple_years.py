@@ -401,22 +401,31 @@ def csv_extract_value(migration_gdf, config, root_dir, var_name, sim_year):
     else:
             lag_time =0
             click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
-
-    #if config.getboolean('general', 'verbose'): click.echo('DEBUG: applying {} year lag time for variable {}'.format(lag_time, var_name))
-    sim_year = sim_year - lag_time
-
-    # get years_to_average depending on the config settings
-    if config.getboolean('general', 'three_year_migration_average'):
-        years_to_average = [sim_year, sim_year + 1, sim_year + 2]                       
     
-    elif config.getboolean('general', 'five_year_migration_average'):
-        years_to_average = [sim_year, sim_year + 1, sim_year + 2, sim_year + 3, sim_year + 4]
-
-    else:
-        raise ValueError('ERROR: please cheack cfg file regarding averaging years')
+    sim_year = sim_year - lag_time
 
     # Read the CSV file
     csv_data = pd.read_csv(csv_fo)
+
+    # Check if the specified year is in the available years, and if not, find the nearest year.
+    available_years = csv_data['year'].unique()
+    if sim_year not in available_years:
+        nearest_year = min(available_years, key=lambda x: abs(x - sim_year))
+        click.echo(f'WARNING: Year {sim_year} not found in the CSV data. Using nearest year: {nearest_year}')
+        best_year = nearest_year
+        click.echo('INFO: using {} year lag time for variable {}'.format(nearest_year, var_name))
+    else:
+        best_year = sim_year
+
+    # get years_to_average depending on the config settings
+    if config.getboolean('general', 'three_year_migration_average'):
+        years_to_average = [best_year, best_year + 1, best_year + 2]                       
+    
+    elif config.getboolean('general', 'five_year_migration_average'):
+        years_to_average = [best_year, best_year + 1, best_year + 2, best_year + 3, best_year + 4]
+
+    else:
+        raise ValueError('ERROR: please cheack cfg file regarding averaging years')
 
     # select the polygons that must be selected
     polygon_names = migration_gdf['GID_2'].unique().tolist()
