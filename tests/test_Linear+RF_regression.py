@@ -2,58 +2,60 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import RobustScaler
 from sklearn.metrics import mean_squared_error, r2_score
 
-data = pd.read_csv('C:/Users/Sophie/copro/tests/DF_out_exgeometry_totalmigration.csv')
+def train_and_evaluate_model(X_train, X_test, y_train, y_test, model):
+    scaler = RobustScaler()  # or MinMaxScaler
 
-X = data.drop('net_migration', axis=1)  # Replace 'target_column_name' with the actual column name
-y = data['net_migration']  # Replace 'target_column_name' with the actual column name
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model.fit(X_train_scaled, y_train)
 
-scaler = MinMaxScaler()
+    y_pred = model.predict(X_test_scaled)
 
-X_train_scaled = scaler.fit_transform(X_train)
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
 
-X_test_scaled = scaler.transform(X_test)
+    return mse, r2
 
-# model = LinearRegression()
+# Load the data
+data = pd.read_csv('C:/Users/Sophie/copro/example/OUT/_REF/DF_out_exgeometry.csv')
 
-# Initialize the Random Forest Regression model
-model = RandomForestRegressor(n_estimators=100, random_state=42)  # or linear regression: 
+X = data.drop(['net_migration', 'poly_ID'], axis=1)
+y = data['net_migration']
 
-model.fit(X_train_scaled, y_train)
+# Define model types
+model_types = [LinearRegression(), RandomForestRegressor(n_estimators=100)]
 
-y_pred = model.predict(X_test_scaled)
+# Initialize variables to track average R2
+total_r2_linear = 0.0
+total_r2_rf = 0.0
 
-mse = mean_squared_error(y_test, y_pred)
+# Loop for running with different train-test splits and model types
+NUMBER_OF_RUNS = 5  # Adjust as needed
+for _ in range(NUMBER_OF_RUNS):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)  # Remove random_state for different splits
+    
+    for model in model_types:
+        mse, r2 = train_and_evaluate_model(X_train, X_test, y_train, y_test, model)
+        print(f"Model: {model.__class__.__name__}")
+        print(f"Mean Squared Error: {mse}")
+        print(f"R-squared Score: {r2}")
+        print("=" * 40)  # Separate output for each model type
+        
+        if isinstance(model, LinearRegression):
+            total_r2_linear += r2
+        else:
+            total_r2_rf += r2
 
-# Calculate the R-squared score
-r2 = r2_score(y_test, y_pred)
+# Calculate average R2 scores
+average_r2_linear = total_r2_linear / NUMBER_OF_RUNS
+average_r2_rf = total_r2_rf / NUMBER_OF_RUNS
 
-print(f"Mean Squared Error: {mse}")
-print(f"R-squared Score: {r2}")
-
-# Get the coefficients of each feature
-if model == LinearRegression:
-    coefficients = model.coef_
-
-# Create a DataFrame to display the coefficients and their importance
-    coefficients_df = pd.DataFrame({'Feature': X.columns, 'Coefficient': coefficients})
-    coefficients_df = coefficients_df.sort_values(by='Coefficient', ascending=False)
-
-    print("Feature Importance:")
-    print(coefficients_df)
-
-else: 
-    # Get the feature importances from the Random Forest model
-    feature_importances = model.feature_importances_# Create a DataFrame to display the feature importances
-importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': feature_importances})
-importance_df = importance_df.sort_values(by='Importance', ascending=False)
-
-print("Feature Importance:")
-print(importance_df)
+print(f"Average R-squared (Linear Regression): {average_r2_linear}")
+print(f"Average R-squared (Random Forest): {average_r2_rf}")
 
 
 

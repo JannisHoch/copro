@@ -24,7 +24,7 @@ def test_split_conflict_geom_data():
 
     X_in = np.column_stack((X1, X2, X3))
 
-    X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X_in)
+    X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X_in) 
 
     X_out = np.column_stack((X_ID, X_geom, X_data))
 
