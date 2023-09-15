@@ -11,7 +11,7 @@ def initiate_XY_data(config):
     This is needed for the reference run.
     By default, the first column is for the polygon ID, the second for polygon geometry.
     # DELETE ALL FUNTIONS ON: 
-        The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
+        The antepenultimate column is for information about migratu at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
     The last column is for binary conflict data at t (i.e. the target data).
     
     Every column in between corresponds to the variables provided in the cfg-file.
@@ -283,7 +283,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     X[key] = data_series
                     
                 else:
-                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_ds))
 
     # Delete the column named 'poly_ID'
     del X['poly_ID']

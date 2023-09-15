@@ -105,7 +105,7 @@ def cli(cfg, make_plots=True, verbose=False):
     copro.utils.save_to_csv(out_dict, out_dir_REF, 'evaluation_metrics')
     copro.utils.save_to_npy(out_y_df, out_dir_REF, 'raw_output_data')
     
-    #- print mean values of all evaluation metrics
+    # print mean values of all evaluation metrics
     config_REF.getboolean('general', 'verbose')
     for key in out_dict:
         click.echo('DEBUG: average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config_REF.getint('machine_learning', 'n_runs'), np.mean(out_dict[key])))
@@ -119,7 +119,7 @@ def cli(cfg, make_plots=True, verbose=False):
         df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
         gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
     elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
-        print('no accuracy score per GID_2 because of the machine learning model type RFRegression')
+        print('INFO: no accuracy score per GID_2 because of the machine learning model type RFRegression')
 
         #- plot distribution of all evaluation metrics
         if make_plots:

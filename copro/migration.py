@@ -382,7 +382,6 @@ def make_projections_population(config, root_dir, proj_year, out_dir_PROJ, mdl):
             # get the total population for each polygon
             tot_population_path = os.path.join(out_dir_PROJ, 'population_for_{}_exgeo.csv'.format(proj_year_min1))
             population_total_last_year = pd.read_csv(tot_population_path)
-            print(population_total_last_year)
             
             # get population growth for each polygon
             population_growth_fo = os.path.join(root_dir, config.get('PROJ_data', 'population_growth'))

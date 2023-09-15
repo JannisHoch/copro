@@ -71,7 +71,7 @@ def predictive(X, mdl, scaler, config):
     X_ID, X_geom, X_data = migration.split_migration_geom_data(X.to_numpy()) 
     
     num_features = X_data.shape[1]
-    print("Number of features in X_data:", num_features)
+    print("INFO: Number of features in X_data:", num_features)
 
     # transforming the data
     # fitting is not needed as already happend before
