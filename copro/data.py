@@ -1,4 +1,4 @@
-from copro import migration, variables, evaluation
+from copro import migration, variables, evaluation, variables_multiple_years
 import click
 import numpy as np
 import xarray as xr
@@ -11,7 +11,7 @@ def initiate_XY_data(config):
     This is needed for the reference run.
     By default, the first column is for the polygon ID, the second for polygon geometry.
     # DELETE ALL FUNTIONS ON: 
-        The antepenultimate column is for boolean information about conflict at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
+        The antepenultimate column is for information about migratu at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
     The last column is for binary conflict data at t (i.e. the target data).
     
     Every column in between corresponds to the variables provided in the cfg-file.
@@ -88,20 +88,33 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     """    
 
     # go through all simulation years as specified in config-file
-    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1) 
+    model_period = np.arange(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, 1)
     click.echo('INFO: reading data for period from {} to {}'.format(model_period[0], model_period[-1])) 
 
-    for sim_year in model_period:
+    if config.getboolean('general', 'one_year_migration_average'):
+        step = 1
+    elif config.getboolean('general', 'three_year_migration_average'):
+        step = 3
+    elif config.getboolean('general', 'five_year_migration_average'):
+        step = 5 
+    else:
+        raise ValueError('Invalid timestep configuration.')
 
-            click.echo('INFO: entering year {}'.format(sim_year))
+    for sim_year in range(config.getint('settings', 'y_start'), config.getint('settings', 'y_end') + 1, step):
+        click.echo('INFO: entering year {}'.format(sim_year))
 
-            # go through all keys in dictionary
-            for key, value in XY.items(): 
+        # go through all keys in dictionary
+        for key, value in XY.items(): 
 
                 if key == 'net_migration':
                 
                     data_series = value
-                    data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
+                    if config.getboolean('general', 'one_year_migration_average'):
+                        data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
+                    elif config.getboolean('general', 'three_year_migration_average'):
+                        data_list = migration.migration_in_three_years(root_dir, config, migration_data, sim_year, out_dir)
+                    elif config.getboolean('general', 'five_year_migration_average'):
+                        data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -125,7 +138,12 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     
                     if file_extension == '.csv':
                         data_series = value 
-                        data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        if config.getboolean('general', 'one_year_migration_average'):
+                            data_list = variables.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        elif config.getboolean('general', 'three_year_migration_average'):
+                            data_list = variables_multiple_years.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
+                        elif config.getboolean('general', 'five_year_migration_average'):
+                            data_list = variables_multiple_years.csv_extract_value(polygon_gdf, config, root_dir, key, sim_year)
                         data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                         XY[key] = data_series
 
@@ -134,13 +152,23 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
 
                         if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
                             data_series = value
-                            data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            if config.getboolean('general', 'one_year_migration_average'):
+                                data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'three_year_migration_average'):
+                                data_list = variables_multiple_years.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'five_year_migration_average'):
+                                data_list = variables_multiple_years.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
                 
                         elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                             data_series = value
-                            data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            if config.getboolean('general', 'one_year_migration_average'):
+                                data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'three_year_migration_average'):
+                                data_list = variables_multiple_years.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
+                            elif config.getboolean('general', 'five_year_migration_average'):
+                                data_list = variables_multiple_years.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, sim_year)
                             data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                             XY[key] = data_series
 
@@ -150,7 +178,6 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                         raise ValueError('ERROR: the file extension of the input file is not supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
 
     # Sort the dictionary based on the 'poly_ID' key in the second element of the tuple columns
-
     sorted_XY = dict(sorted(XY.items(), key=lambda x: str(x[1][0])))
 
     # Delete the column named 'poly_ID' since somehow I cant fix it to het the right poly_ID in the correct row
@@ -256,7 +283,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     X[key] = data_series
                     
                 else:
-                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_fo))
+                    raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_ds))
 
     # Delete the column named 'poly_ID'
     del X['poly_ID']

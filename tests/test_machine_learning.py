@@ -28,6 +28,6 @@ def test_split_scale_train_test_split():
     config = create_fake_config()
     scaler = preprocessing.QuantileTransformer()
 
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler)
+    X_train, X_test, y_train, y_test, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler) # delete X_train_geom, X_test_geom
 
     assert (len(X_train) + len(X_test)) == len(X)
