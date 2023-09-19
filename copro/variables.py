@@ -298,7 +298,7 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
         # compute zonal stats for this polygon
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
          # if all_touched=False, only for raster cells with centre point in polygon are considered, but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=False, nodata=np.nan)
+        zonal_stats = rstats.zonal_stats(polygon.geometry, nc_arr_vals, affine=affine, stats=stat_method, all_touched=True, nodata=np.nan)
 
         val = zonal_stats[0][stat_method]
 

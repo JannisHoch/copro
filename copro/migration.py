@@ -83,7 +83,7 @@ def migration_in_year_int(root_dir, config, migration_gdf, sim_year, out_dir):
 
     return list_out
 
-def migration_in_three_years(root_dir, config, migration_gdf, sim_year, out_dir): 
+def migration_multiple_years(root_dir, config, migration_gdf, sim_year, out_dir): 
     """Creates a list for each timestep with integer information on migration in a polygon, or if indicated in the cfg file a weightened list based on the total population per polygon."
 
     Args: config (ConfigParser-object): object containing the parsed configuration-settings of the model.

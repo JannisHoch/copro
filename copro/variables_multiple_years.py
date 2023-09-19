@@ -335,8 +335,7 @@ def nc_with_continous_datetime_timestamp(migration_gdf, config, root_dir, var_na
 
         # Loop through years to average (sim_year, sim_year + 1, sim_year + 2)
         for year in years_to_average:
-            year_idx = int(np.where(years == year)[0])
-            nc_arr = nc_var.sel(time=nc_ds.time.values[year_idx])
+            nc_arr = nc_var.sel(time=nc_ds.time.values[sim_year_idx])
             nc_arr_vals = nc_arr.values
 
             if nc_arr_vals.size == 0:

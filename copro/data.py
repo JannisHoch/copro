@@ -112,9 +112,9 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     if config.getboolean('general', 'one_year_migration_average'):
                         data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
                     elif config.getboolean('general', 'three_year_migration_average'):
-                        data_list = migration.migration_in_three_years(root_dir, config, migration_data, sim_year, out_dir)
+                        data_list = migration.migration_multiple_years(root_dir, config, migration_data, sim_year, out_dir)
                     elif config.getboolean('general', 'five_year_migration_average'):
-                        data_list = migration.migration_in_year_int (root_dir, config, migration_data, sim_year, out_dir)
+                        data_list = migration.migration_multiple_years(root_dir, config, migration_data, sim_year, out_dir)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     XY[key] = data_series
 
@@ -292,12 +292,12 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     df_out = pd.DataFrame(X)
 
     # Insert a new column 'poly_ID' with the second element of the tuples
-    df_out.insert(0, 'poly_ID', df_out.iloc[:, 2].apply(lambda x: x[1]))
+    df_out.insert(0, 'poly_ID', df_out.iloc[:, 1].apply(lambda x: x[1]))
 
      # make sure the order of the columns is correct for later analysis: 
     df_out = df_out[['poly_ID', 'poly_geometry'] + list(df_out.columns.drop(['poly_ID', 'poly_geometry']))]
 
-    # Extract only the integer part from each tuple column
+    # Extract only the value of each tuple X-column
     for col in df_out.columns:
         if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
            df_out[col] = df_out[col].apply(lambda x: x[0]) 

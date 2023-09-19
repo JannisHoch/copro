@@ -88,8 +88,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
 
     ##- splitting in train and test samples based on user-specified fraction
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
-    X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs,
-                                                                        Y,
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs, Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction')) 
     
     # for training-set and test-set, split in ID, geometry, and values

@@ -205,7 +205,7 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
             proj_year = projection_period[i]
             click.echo('INFO: making projection of the total population per polygon for year {}'.format(proj_year))
-            merged_df = migration.make_projections_population(config_REF, root_dir, proj_year, out_dir_PROJ, mdl)  
+            merged_df = migration.make_projections_population(config_REF, root_dir, proj_year, out_dir_PROJ, mdl)
             if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing total population per polygon for year {} to output folder'.format(proj_year))
             
     return all_y_df, merged_df  

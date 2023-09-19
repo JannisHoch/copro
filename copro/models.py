@@ -62,7 +62,7 @@ def predictive(X, mdl, scaler, config):
     Returns:
         datatrame: containing model output on polygon-basis.
     """    
-     # Transpose the DataFrame - I dont see where this is now going wrong, but if i dont do this the x-projection data is not read properly
+     # Transpose the DataFrame =
     X = X.transpose()
     X.reset_index(inplace=True)
     X.rename(columns={'index': 'poly_ID'}, inplace=True)
@@ -78,6 +78,7 @@ def predictive(X, mdl, scaler, config):
     if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
     
     X_ft = scaler.transform(X_data) 
+    
 
     # make projection with transformed data
     if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
