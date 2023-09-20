@@ -31,10 +31,10 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 Model purpose
 --------------
 
-As primary model output, CoPro provides maps of conflict risk.
+As primary model output, CoPro-m provides maps of migration.
 
-To that end, it employs observed conflicts as target data together with (user-provided) socio-economic and environmental sample data to train different classifiers (RFClassifier, kNearestClassifier, and Support Vector Classifier).
-While the samples have the units of the data, the target value is converted to Boolean, where a 0 indicates no conflict occurrence and 1 indicates occurrence.
+To that end, it employs observed migration as target data together with (user-provided) socio-economic and environmental sample data to train different classifiers (RFClassifier, kNearestClassifier, Support Vector Classifier and RFRegression).
+While the samples have the units of the data, the target value can be converted to Boolean, where a 0 indicates no conflict occurrence and 1 indicates occurrence.
 To capture the geographical variability of conflict and socio-environmental drivers, the model is spatially explicit and calculates conflict risk at a (user-specified) aggregation level.
 This way, the model can also capture the relevant sub-national variability of conflict and conflict drivers.
 Model robustness is determined using a split-sample test where a part of the data is used to train the model, while the other part is used to evaluate the outcome. 

@@ -1,9 +1,9 @@
 # YAML 1.2
 ---
-cff-version: "1.1.0"
+cff-version: "2.0.0"
 message: "If you use this software, please cite it using these metadata."
 title: CoPro
-version: "v0.0.7b"
+version: "v2.0.0"
 authors: 
   -
     affiliation: "Utrecht University"
@@ -11,8 +11,8 @@ authors:
     given-names: Jannis
     orcid: "https://orcid.org/0000-0003-3570-6436"
   -
-    affiliation: "PBL Netherlands Environmental Assessment Agency"
-    family-names: "de Bruine"
+    affiliation: "Vrije Universiteit Amsterdam"
+    family-names: "de Bruin"
     given-names: Sophie
     orcid: "https://orcid.org/0000-0003-3429-349X"
   -
@@ -26,10 +26,12 @@ license: MIT
 repository-code: "https://github.com/JannisHoch/copro"
 keywords: 
   - conflict
+  - migration
   - "machine learning"
   - "climate change"
   - water
   - scenarios
   - projections
-  - "climate security"
+  - migration
+  - conflict
 ...
