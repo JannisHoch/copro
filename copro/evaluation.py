@@ -289,8 +289,6 @@ def get_feature_importance(clf, config, out_dir):
         dict_out = dict()
         for key, x in zip(config.items('data'), range(len(arr))):
             dict_out[key[0]] = arr[x]
-        dict_out['conflict_t_min_1'] = arr[-2]
-        dict_out['conflict_t_min_1_nb'] = arr[-1]
 
         # convert to dataframe
         df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
@@ -318,8 +316,6 @@ def get_feature_importance(clf, config, out_dir):
     else:
 
         raise Warning('WARNING: feature importance not supported for {}'.format(config.get('machine_learning', 'model')))
-
-        df = pd.DataFrame()
 
     return df
 

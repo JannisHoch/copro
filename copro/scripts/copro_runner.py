@@ -73,7 +73,7 @@ def cli(cfg, make_plots=True, verbose=False):
     fig, ax1 = plt.subplots(1, 1, figsize=(20,10))
 
     #- go through all n model executions
-    #- that is, create different classifiers based on different train-test data combinations
+    #- that is, create different trees based on different train-test data combinations
     click.echo('INFO: training and testing machine learning model')
     for n in range(config_REF.getint('machine_learning', 'n_runs')):
         
@@ -126,6 +126,9 @@ def cli(cfg, make_plots=True, verbose=False):
             fig, ax = plt.subplots(1, 1)
             copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
             plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
+
+        
+        #copro.plots.regression_tree_figure(mdl, config=config_REF, out_dir=out_dir_REF)
 
         df_feat_imp = copro.evaluation.get_feature_importance(mdl, config_REF, out_dir_REF) 
         df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
