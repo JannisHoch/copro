@@ -130,8 +130,8 @@ dmypy.json
 
 #output folders
 OUT*/
-runs_def*/
-results*/
+runs_final*/
+results_def*/
 
 #pictures
 *.png

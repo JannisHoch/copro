@@ -1,8 +1,8 @@
 # How to contribute
 
-This python-package is a first outcome of an interdisciplinary project aimed at understanding the complex interplay between conflict and climate and environment.
-As such, the presented code and functionalities can only be seen as a first step towards a fully-fledged model.
-We therefore strongly encourage other users to contribute to this project!
+This python-package is a second outcome of an interdisciplinary project aimed at understanding the complex interplay between migration, conflict and climate and environment as well as socioeconomic factors.
+
+We strongly encourage other users to contribute to this project!
 
 ## General notes
 
@@ -18,11 +18,11 @@ Please note we have a code of conduct, please follow it in all your interactions
 ## Making Changes
 
 * Create a topic branch from where you want to base your work.
-  * This is usually the dev branch.
+  * This is usually the dev branch. But if you want to use the RF regression functionality, you can use this specific branch.
   * Only target release branches if you are certain your fix must be on that
     branch.
-  * To quickly create a topic branch based on master, run `git checkout -b
-    fix/dev/my_contribution master`. Please avoid working directly on the
+  * To quickly create a topic branch based on a specific branch, run `git checkout -b
+    fix/dev/my_contribution [name of branch]`. Please avoid working directly on the
     `dev` (or `master`) branch.
 * Make commits of logical and atomic units. Write a [good commit message][commit]!
 * Make sure you have added the necessary tests for your changes.
