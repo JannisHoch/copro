@@ -2,7 +2,8 @@
 CoPro
 ===============
 
-Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
+Welcome to CoPro. This branch is an alteration of the machine-learning Copro developed for conflict risk projections based on climate, environmental, and societal drivers. 
+With this version, it is also possible to perform a Random Forest Regression, rather than solely classification models. 
 
 .. image:: https://travis-ci.com/JannisHoch/copro.svg?branch=dev
     :target: https://travis-ci.com/JannisHoch/copro
@@ -31,18 +32,17 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 Model purpose
 --------------
 
-As primary model output, CoPro-m provides maps of migration.
+As primary model output, this CoPro version provides the R2 of the training set, the feature importance of the X variables and projections for the given year.
 
-To that end, it employs observed migration as target data together with (user-provided) socio-economic and environmental sample data to train different classifiers (RFClassifier, kNearestClassifier, Support Vector Classifier and RFRegression).
-While the samples have the units of the data, the target value can be converted to Boolean, where a 0 indicates no conflict occurrence and 1 indicates occurrence.
-To capture the geographical variability of conflict and socio-environmental drivers, the model is spatially explicit and calculates conflict risk at a (user-specified) aggregation level.
-This way, the model can also capture the relevant sub-national variability of conflict and conflict drivers.
+To that end, it employs observed migration as target data together with (user-provided) socio-economic and environmental sample data to train different models (RFClassifier and RFRegression).
+
+To capture the geographical variability of conflict or migration and socio-environmental drivers, the model is spatially explicit. This way, the model can also capture the relevant sub-national variability of drivers.
 Model robustness is determined using a split-sample test where a part of the data is used to train the model, while the other part is used to evaluate the outcome. 
-Throughout this process, the geographical unit is tracked to be able to map the resulting conflict risk to the correct areas.
+Throughout this process, the geographical unit is tracked to be able to map the resulting conflict risk or migration projections to the correct areas.
 
-In addition to the calculation of conflict risk, can the model, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
+In addition to the calculation of conflict risk or migration ratio, can the model, for instance, be used to make scenario projections, evaluate the relative feature importances, or benchmark different datasets.
 
-All in all, CoPro supports the mapping of current and future areas at risk of conflict, while also facilitating obtaining a better understanding of the underlying processes.
+All in all, CoPro supports the mapping of current and future areas at risk of conflict or in- or out migration, while also facilitating obtaining a better understanding of the underlying processes.
 
 Installation
 ----------------
@@ -114,15 +114,6 @@ In case issues occur, updating ``setuptools`` may be required.
 
     $ pip3 install --upgrade pip setuptools
 
-Example data
-----------------
-
-Example data for demonstration purposes can be downloaded from `Zenodo <https://zenodo.org/record/4297295>`_.
-To facilitate this process, the bash-script ``download_example_data.sh`` can be called in the example folder under `/_scripts`.
-
-With this (or other) data, the provided configuration-files (cfg-files) can be used to perform a reference run or a projection run. 
-All output is stored in the output directory specified in the cfg-files. 
-In the output directory, two folders are created: one name `_REF` for output from the reference run, and `_PROJ` for output for projections.
 
 Jupyter notebooks
 ^^^^^^^^^^^^^^^^^^
@@ -158,23 +149,15 @@ Alternatively, the same commands can be executed using a bash-file.
 Validation
 ^^^^^^^^^^^^^^^^^^
 
-The reference model makes use of the `UCDP Georeferenced Event Dataset <https://ucdp.uu.se/downloads/index.html#ged_global>`_ for observed conflict. 
-The selected classifier is trained and validated against this data.
-
-Main validation metrics are the ROC-AUC score as well as accuracy, precision, and recall. 
+For the classification model, the main validation metrics are the ROC-AUC score as well as accuracy, precision, and recall. 
+For the regression model, the main validation metrics are the mean absolute error, mean squared error and the R2. 
 All metrics are reported and written to file per model evaluation.
 
-With the example data downloadable from `Zenodo <https://zenodo.org/record/4297295>`_, a ROC-AUC score of above 0.8 can be obtained. 
-Note that with additional and more explanatory sample data, the score will most likely increase.
-
-.. figure:: docs/_static/roc_curve.png
-
-Additional ways to validate the model are showcased in the `Workflow <https://copro.readthedocs.io/en/latest/examples/index.html>`_.
 
 Documentation
 ---------------
 
-Extensive model documentation including full model API description can be found at http://copro.rtfd.io/
+Extensive model documentation of the first Copro version including full model API description can be found at http://copro.rtfd.io/
 
 Code of conduct and Contributing
 ---------------------------------
@@ -191,7 +174,7 @@ Authors
 ----------------
 
 * Jannis M. Hoch (Utrecht University)
-* Sophie de Bruin (Utrecht University, PBL)
+* Sophie de Bruin (Vrije Universiteit Amsterdam)
 * Niko Wanders (Utrecht University)
 
-Corresponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
+Corresponding author for this specific branch: Sophie de Bruin (s.p.de.bruin@vu.nl). For general questions about the development of the overall model please contact: Jannis M. Hoch (j.m.hoch@uu.nl)
