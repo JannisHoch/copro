@@ -5,9 +5,11 @@ import geopandas as gpd
 import seaborn as sns
 sns.set_palette('colorblind')
 import numpy as np
-import os, sys
+import os
 from sklearn import metrics
 from copro import evaluation
+import numpy as np
+from sklearn.tree import plot_tree
 
 
 def selected_polygons(polygon_gdf, **kwargs):
@@ -125,24 +127,6 @@ def plot_ROC_curve_n_mean(ax, tprs, aucs, mean_fpr, **kwargs):
         tprs (list): list with false positive rates.
         aucs (list): list with area-under-curve values.
         mean_fpr (array): array with mean false positive rate.
-    """    
 
-    # raise DeprecationWarning('Plotting API in sklearn is changed, function needs updating.')
-    
-    # mean_tpr = np.mean(tprs, axis=0)
-    # mean_tpr[-1] = 1.0
-    # mean_auc = metrics.auc(mean_fpr, mean_tpr)
-    # std_auc = np.std(aucs)
-    # ax.plot(mean_fpr, mean_tpr, color='r',
-    #         label=r'Mean ROC (AUC = %0.2f $\pm$ %0.2f)' % (mean_auc, std_auc),
-    #         lw=2, alpha=.8, **kwargs)
-
-    # std_tpr = np.std(tprs, axis=0)
-    # tprs_upper = np.minimum(mean_tpr + std_tpr, 1)
-    # tprs_lower = np.maximum(mean_tpr - std_tpr, 0)
-    # ax.fill_between(mean_fpr, tprs_lower, tprs_upper, color='grey', alpha=.2, label=None, **kwargs)
-
-    # ax.set(xlim=[-0.05, 1.05], ylim=[-0.05, 1.05], **kwargs)
-
-    # ax.legend(loc="lower right")
-    
+            """    
+ 
