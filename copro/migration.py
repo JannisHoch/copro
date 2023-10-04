@@ -331,7 +331,7 @@ def weight_migration(config, root_dir, migration_gdf):
 
         return gid2_weights
 
-def make_projections_population(config, root_dir, proj_year, out_dir_PROJ, mdl):
+def make_projections_population(config, config_REF, root_dir, proj_year, out_dir_PROJ, mdl):
     """ Args:
     config (ConfigParser-object): object containing the parsed configuration-settings of the model. 
     root_dir (str): absolute path to location of configurations-file.
@@ -350,12 +350,12 @@ def make_projections_population(config, root_dir, proj_year, out_dir_PROJ, mdl):
             print('DEBUG: calculating and storing total population per polygon for the first projection year')
             
             # get the total population for each polygon
-            tot_population_path = os.path.join(root_dir, config.get('PROJ_data', 'population_total'))
+            tot_population_path = os.path.join(root_dir, config_REF.get('POP_data', 'population_total'))
             tot_population = pd.read_csv(tot_population_path)
             population_total_last_year = tot_population.loc[tot_population['year'] == projection_year_min1]
 
             # get population growth for each polygon
-            population_growth_fo = os.path.join(root_dir, config.get('PROJ_data', 'population_growth'))
+            population_growth_fo = os.path.join(root_dir, config_REF.get('POP_data', 'population_growth'))
             population_growth = pd.read_csv(population_growth_fo)
             population_growth_last_year = population_growth.loc[population_growth['year'] == projection_year_min1]
 
@@ -384,7 +384,7 @@ def make_projections_population(config, root_dir, proj_year, out_dir_PROJ, mdl):
             population_total_last_year = pd.read_csv(tot_population_path)
             
             # get population growth for each polygon
-            population_growth_fo = os.path.join(root_dir, config.get('PROJ_data', 'population_growth'))
+            population_growth_fo = os.path.join(root_dir, config_REF.get('POP_data', 'population_growth'))
             population_growth = pd.read_csv(population_growth_fo)
             population_growth_last_year = population_growth.loc[population_growth['year'] == proj_year_min1]
     
