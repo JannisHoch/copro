@@ -205,7 +205,25 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     for col in df_out.columns:
         if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
            df_out[col] = df_out[col].apply(lambda x: x[0]) 
-      
+    
+    if config.getboolean('settings', 'migration_all'):
+        # Filter rows where net_migration is between -0.2 and 0.2
+        df_out = df_out[(df_out['net_migration'] >= -0.2) & (df_out['net_migration'] <= 0.2)]
+        print('INFO: in and out migration are included in the calculation')
+    
+    elif config.getboolean('settings', 'migration_in'):
+        # Filter rows where net_migration is between 0 and 0.2
+        df_out = df_out[(df_out['net_migration'] >= 0) & (df_out['net_migration'] <= 0.2)]
+        print('INFO: in migration is included in the calculation')
+
+    elif config.getboolean('settings', 'migration_out'):
+        # Filter rows where net_migration is between 0 and 0.2
+        df_out = df_out[(df_out['net_migration'] <= 0) & (df_out['net_migration'] >= -0.2)]
+        print('INFO: out migration is included in the calculation')
+
+    else:
+         raise Warning('WARNING: settings incorrect regarding in, out, all migration. Choose one.')   
+     
     if config.getboolean('general', 'verbose'):
         click.echo('DEBUG: all data read')
 
@@ -219,8 +237,7 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
 
     return df_out.to_numpy()
 
-
-def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
+def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):
     """Fills the X-dictionary with the sample data besides the migration data for each polygon and each year.
     Used during the projection runs as the sample and migration data need to be treated separately there.
 
@@ -275,12 +292,14 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     X[key] = data_series
+                    print(X)
                     
                 elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                     data_series = value
                     data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     X[key] = data_series
+                    print(X)
                     
                 else:
                     raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_ds))
@@ -290,6 +309,8 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
 
     #df_out = pd.DataFrame(sorted_X)
     df_out = pd.DataFrame(X)
+
+    print(df_out)
 
     # Insert a new column 'poly_ID' with the second element of the tuples
     df_out.insert(0, 'poly_ID', df_out.iloc[:, 1].apply(lambda x: x[1]))
@@ -306,7 +327,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         click.echo('DEBUG: all X-prediction data read')
 
     X = df_out.set_index('poly_ID').to_dict(orient='index')
-    
+
     return X
 
 def split_XY_data(XY, config):

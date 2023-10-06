@@ -52,9 +52,6 @@ def migration_in_year_int(root_dir, config, migration_gdf, sim_year, out_dir):
         # Rename the column 'weighted_migration' to 'net_migration'
         combined_migration_data.rename(columns={'migration_perc': 'net_migration'}, inplace=True)
 
-        # Multiply the 'net_migration' column by 1000
-        #combined_migration_data['net_migration'] *= 1000
-
         temp_sel_year = combined_migration_data
 
     else:

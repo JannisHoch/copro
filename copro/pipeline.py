@@ -145,7 +145,13 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
             X = data.initiate_X_data(config_PROJ)
 
-            X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year)              
+            X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year, out_dir_PROJ)      
+
+            # Convert the dictionary to a pandas DataFrame
+            X_df = pd.DataFrame(X)
+
+            # Save the DataFrame to a CSV file
+            X_df.to_csv(os.path.join(out_dir_PROJ, 'X_data_for_{}.csv'.format(proj_year)), index=False)        
 
             # initiating dataframe containing all projections from all models for this timestep
             y_df = pd.DataFrame(columns=['ID', 'geometry', 'y_pred'])
@@ -207,5 +213,6 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             click.echo('INFO: making projection of the total population per polygon for year {}'.format(proj_year))
             merged_df = migration.make_projections_population(config_REF, config_PROJ, root_dir, proj_year, out_dir_PROJ, mdl)
             if config_REF.getboolean('general', 'verbose'): click.echo('DEBUG: storing total population per polygon for year {} to output folder'.format(proj_year))
-            
+
+
     return all_y_df, merged_df  

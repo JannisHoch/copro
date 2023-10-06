@@ -90,13 +90,13 @@ def nc_with_float_timestamp(migration_gdf, config, root_dir, var_name, sim_year)
         nc_var = nc_var.astype(np.float32)
 
     # Get the non-zero and positive mask along the time dimension
-    non_zero_positive_mask = nc_var.values > 0
+    #non_zero_positive_mask = nc_var.values > 0
 
     # Apply logarithm only to positive values using the mask along the time dimension
-    nc_var.values = xr.where(non_zero_positive_mask, np.log(nc_var.values), nc_var)
+    #nc_var.values = xr.where(non_zero_positive_mask, np.log(nc_var.values), nc_var)
 
     # Handle cases where log-transformed value results in -inf
-    nc_var = xr.where(nc_var.values == -math.inf, 0, nc_var)
+    #nc_var = xr.where(nc_var.values == -math.inf, 0, nc_var)
 
     # open nc-file with rasterio to get affine information
     affine = nc_ds.rio.transform()
