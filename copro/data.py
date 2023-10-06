@@ -310,8 +310,6 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):
     #df_out = pd.DataFrame(sorted_X)
     df_out = pd.DataFrame(X)
 
-    print(df_out)
-
     # Insert a new column 'poly_ID' with the second element of the tuples
     df_out.insert(0, 'poly_ID', df_out.iloc[:, 1].apply(lambda x: x[1]))
 

@@ -337,8 +337,15 @@ def get_permutation_importance(clf, X_ft, Y, df_feat_imp, out_dir):
     result = inspection.permutation_importance(clf, X_ft, Y, n_repeats=10, random_state=42)   
 
     df = pd.DataFrame(result.importances_mean, columns=['permutation_importance'], index=df_feat_imp.index.values)
+    df['feature'] = df_feat_imp.index.values
+
+    # Sort the DataFrame by Permutation Importance in descending order
+    perm_importance_df = df.sort_values(by='permutation_importance', ascending=False)
+    
+    # Calculate relative permutation importances
+    perm_importance_df['Relative Permutation Importance'] = perm_importance_df['permutation_importance'] / perm_importance_df['permutation_importance'].max()
 
     if (out_dir != None) and isinstance(out_dir, str):
-        df.to_csv(os.path.join(out_dir, 'permutation_importances.csv'))
+        perm_importance_df.to_csv(os.path.join(out_dir, 'permutation_importances.csv'))
 
-    return df 
+    return perm_importance_df 
