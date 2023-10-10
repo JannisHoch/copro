@@ -292,14 +292,12 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):
                     data_list = variables.nc_with_float_timestamp(polygon_gdf, config, root_dir, key, proj_year)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     X[key] = data_series
-                    print(X)
                     
                 elif np.dtype(nc_ds.time) == 'datetime64[ns]':
                     data_series = value
                     data_list = variables.nc_with_continous_datetime_timestamp(polygon_gdf, config, root_dir, key, proj_year)
                     data_series = pd.concat([data_series, pd.Series(data_list)], axis=0, ignore_index=True)
                     X[key] = data_series
-                    print(X)
                     
                 else:
                     raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(nc_ds))
