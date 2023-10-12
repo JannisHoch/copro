@@ -254,12 +254,12 @@ def calc_correlation_matrix(df, out_dir=None):
 
     return df_corr
 
-def get_feature_importance(clf, config, out_dir):
+def get_feature_importance(mdl, config, out_dir):
     """Determines relative importance of each feature (i.e. variable) used. Must be used after model/classifier is fit.
     Returns dataframe and saves it to csv too.
 
     Args:
-        clf (classifier): sklearn-classifier used in the simulation.
+        mdl (model): sklearn-model used in the simulation.
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         out_dir (str): path to output folder. If 'None', no output is stored.
 
@@ -273,7 +273,7 @@ def get_feature_importance(clf, config, out_dir):
     if config.get('machine_learning', 'model') == 'RFClassifier':
 
         # get feature importances
-        arr = clf.feature_importances_
+        arr = mdl.feature_importances_
 
         # initialize dictionary and add importance value per indicator
         dict_out = dict()
@@ -289,7 +289,7 @@ def get_feature_importance(clf, config, out_dir):
 
     elif config.get('machine_learning', 'model') == 'RFRegression':
         # Get feature importances
-        arr = clf.feature_importances_
+        arr = mdl.feature_importances_
 
         # Initialize dictionary and add importance value per feature
         dict_out = dict()
@@ -304,17 +304,16 @@ def get_feature_importance(clf, config, out_dir):
             df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
 
     else:
-
         raise Warning('WARNING: feature importance not supported for {}'.format(config.get('machine_learning', 'model')))
 
     return df
 
-def get_permutation_importance(clf, X_ft, Y, df_feat_imp, out_dir):
+def get_permutation_importance(mdl, X_ft, Y, df_feat_imp, out_dir):
     """Returns a dataframe with the mean permutation importance of the features used to train a RF tree model.
     Dataframe is stored to output directory as csv-file.
 
     Args:
-        clf (classifier): sklearn-classifier used in the simulation.
+        mdl (model): sklearn-model used in the simulation.
         X_ft (array): X-array containing variable values after scaling.
         Y (array): Y-array containing in-migration data.
         df_feat_imp (dataframe): dataframe containing feature importances to align names across outputs.
@@ -324,7 +323,7 @@ def get_permutation_importance(clf, X_ft, Y, df_feat_imp, out_dir):
         dataframe: contains mean permutation importance for each feature.
     """    
 
-    result = inspection.permutation_importance(clf, X_ft, Y, n_repeats=10, random_state=42)   
+    result = inspection.permutation_importance(mdl, X_ft, Y, n_repeats=10, random_state=42)   
 
     df = pd.DataFrame(result.importances_mean, columns=['permutation_importance'], index=df_feat_imp.index.values)
     df['feature'] = df_feat_imp.index.values

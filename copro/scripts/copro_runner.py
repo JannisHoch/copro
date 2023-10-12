@@ -116,6 +116,9 @@ def cli(cfg, make_plots=True, verbose=False):
     if config_REF.get('machine_learning', 'model') == 'RFClassifier':
         df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
         gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
+        
+        print('INFO: saving evaluation metrics and permutation & feature importance')
+
     elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
         print('INFO: no accuracy score per GID_2 because of the machine learning model type RFRegression')
 
@@ -125,11 +128,8 @@ def cli(cfg, make_plots=True, verbose=False):
             copro.plots.metrics_distribution(out_dict, figsize=(20, 10))
             plt.savefig(os.path.join(out_dir_REF, 'metrics_distribution.png'), dpi=300, bbox_inches='tight')
 
-        
-        #copro.plots.regression_tree_figure(mdl, config=config_REF, out_dir=out_dir_REF)
-
-        df_feat_imp = copro.evaluation.get_feature_importance(mdl, config_REF, out_dir_REF) 
-        df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
+    df_feat_imp = copro.evaluation.get_feature_importance(mdl, config_REF, out_dir_REF) 
+    #df_perm_imp = copro.evaluation.get_permutation_importance(mdl, scaler.fit_transform(X[:,2:]), Y, df_feat_imp, out_dir_REF)
 
     click.echo(click.style('\nINFO: reference run succesfully finished\n', fg='cyan'))
 
