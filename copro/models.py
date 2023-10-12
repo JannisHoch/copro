@@ -31,7 +31,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf
     X_df = pd.DataFrame(X_test)
 
     # fit model and make prediction with test-set depending on model choice
-    if config.get('machine_learning', 'model') == 'NuSVC' or ('machine_learning', 'model') == 'KNeighborsClassifier' or ('machine_learning', 'model') == 'RFClassifier':
+    if config.get('machine_learning', 'model') == 'RFClassifier':
         y_pred, y_prob = machine_learning.fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr, migration_gdf)
         y_prob_0 = y_prob[:, 0] # probability to predict 0
         y_prob_1 = y_prob[:, 1] # probability to predict 1 

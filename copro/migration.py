@@ -53,9 +53,11 @@ def migration_in_year_int(root_dir, config, migration_gdf, sim_year, out_dir):
         combined_migration_data.rename(columns={'migration_perc': 'net_migration'}, inplace=True)
 
         temp_sel_year = combined_migration_data
+        print('INFO: migration share used')
 
     else:
         pass
+        print('INFO: absolute migration used')
 
     if sim_year == config.getint('settings', 'y_end'):
     
@@ -127,7 +129,7 @@ def migration_multiple_years(root_dir, config, migration_gdf, sim_year, out_dir)
 
         temp_sel_three_years = combined_migration_data
 
-    if sim_year == config.getint('settings', 'y_end'): # this isnot correct at the moment
+    if sim_year == config.getint('settings', 'y_end'): 
         int_per_poly = temp_sel_three_years.copy()
 
         if config.getboolean('general', 'verbose'):

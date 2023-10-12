@@ -59,7 +59,7 @@ This file looks like this.
     [machine_learning]
     # choose from: MinMaxScaler, StandardScaler, RobustScaler, QuantileTransformer
     scaler=QuantileTransformer
-    # choose from: NuSVC, KNeighborsClassifier, RFClassifier
+    # choose from: RFClassifier or RFRegression
     model=RFClassifier
     train_fraction=0.7
     # number of repetitions

@@ -47,16 +47,12 @@ def define_model(config):
         model: the specified model instance.
     """    
     
-    if config.get('machine_learning', 'model') == 'NuSVC':
-        mdl = svm.NuSVC(nu=0.1, kernel='rbf', class_weight={1: 100}, probability=True, degree=10, gamma=10, random_state=42)
-    elif config.get('machine_learning', 'model') == 'KNeighborsClassifier':
-        mdl = neighbors.KNeighborsClassifier(n_neighbors=10, weights='distance')
-    elif config.get('machine_learning', 'model') == 'RFClassifier':
+    if config.get('machine_learning', 'model') == 'RFClassifier':
         mdl = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)
     elif config.get('machine_learning', 'model')== 'RFRegression':
         mdl = ensemble.RandomForestRegressor()
     else:
-        raise ValueError('no supported ML model selected - choose between NuSVC, KNeighborsClassifier or RFClassifier')
+        raise ValueError('no supported ML model selected - choose between RFRegression or RFClassifier')
 
     if config.getboolean('general', 'verbose'): print('DEBUG: chosen ML model is {}'.format(mdl))
 
@@ -116,9 +112,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
     """    
         # fit the model with training data - 
     if config.getboolean('general', 'weighting_Y_train'): # determine if Y_train should be weighted based on population per polygon 
-        # if Jannis or Jens could do the below calculation in a more elegant way, please go ahead, it was quite a struggle..
         gid2_weights = migration.weight_migration(config, root_dir, migration_gdf)
-
                 
         if config.getboolean('migration', 'migration_percentage'):
 
@@ -152,11 +146,13 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
   
             selected_weights = all_matching_rows['weight'].values
             mdl.fit(X_train, y_train, sample_weight=selected_weights)
-            print('INFO: Y_test data is winsorized')
+            print('INFO: Y_train data is winsorized')
     
     else: # if no weighing is selected in the cfg-file
+        
+        print(type(y_train))
         mdl.fit(X_train, y_train)
-        print('INFO: Y_test data is not winsorized')
+        print('INFO: Y_train data is not winsorized')
 
     # create folder to store all model with pickle
     mdl_pickle_rep = os.path.join(out_dir, 'mdls')

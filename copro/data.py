@@ -206,24 +206,29 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
         if df_out[col].apply(lambda x: isinstance(x, tuple)).all():
            df_out[col] = df_out[col].apply(lambda x: x[0]) 
     
-    if config.getboolean('settings', 'migration_all'):
-        # Filter rows where net_migration is between -0.2 and 0.2
-        df_out = df_out[(df_out['net_migration'] >= -0.2) & (df_out['net_migration'] <= 0.2)]
-        print('INFO: in and out migration are included in the calculation')
+    if config.getboolean('migration', 'migration_percentage'):
     
-    elif config.getboolean('settings', 'migration_in'):
-        # Filter rows where net_migration is between 0 and 0.2
-        df_out = df_out[(df_out['net_migration'] >= 0) & (df_out['net_migration'] <= 0.2)]
-        print('INFO: in migration is included in the calculation')
+        if config.getboolean('settings', 'migration_all'):
+        # Filter rows where net_migration is between -0.2 and 0.2
+            df_out = df_out[(df_out['net_migration'] >= -0.2) & (df_out['net_migration'] <= 0.2)]
+            print('INFO: in and out migration are included in the calculation')
+    
+        elif config.getboolean('settings', 'migration_in'):
+            # Filter rows where net_migration is between 0 and 0.2
+            df_out = df_out[(df_out['net_migration'] >= 0) & (df_out['net_migration'] <= 0.2)]
+            print('INFO: in migration is included in the calculation')
 
-    elif config.getboolean('settings', 'migration_out'):
-        # Filter rows where net_migration is between 0 and 0.2
-        df_out = df_out[(df_out['net_migration'] <= 0) & (df_out['net_migration'] >= -0.2)]
-        print('INFO: out migration is included in the calculation')
+        elif config.getboolean('settings', 'migration_out'):
+            # Filter rows where net_migration is between 0 and 0.2
+            df_out = df_out[(df_out['net_migration'] <= 0) & (df_out['net_migration'] >= -0.2)]
+            print('INFO: out migration is included in the calculation')
 
-    else:
-         raise Warning('WARNING: settings incorrect regarding in, out, all migration. Choose one.')   
+        else:
+            raise Warning('WARNING: settings incorrect regarding in, out, all migration. Choose one.')   
      
+    else:
+        pass
+
     if config.getboolean('general', 'verbose'):
         click.echo('DEBUG: all data read')
 

@@ -113,9 +113,7 @@ def cli(cfg, make_plots=True, verbose=False):
     #- create accuracy values per polygon and save to output folder if MLmodel = a classifier
     #- note only the dataframe is stored, not the geo-dataframe
 
-    if config_REF.get('machine_learning', 'model') == 'NuSVC' or \
-        config_REF.get('machine_learning', 'model') == 'KNeighborsClassifier' or \
-        config_REF.get('machine_learning', 'model') == 'RFClassifier':
+    if config_REF.get('machine_learning', 'model') == 'RFClassifier':
         df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
         gdf_hit.to_file(os.path.join(out_dir_REF, 'output_for_REF.geojson'), driver='GeoJSON')
     elif config_REF.get('machine_learning', 'model') == 'RFRegression': 

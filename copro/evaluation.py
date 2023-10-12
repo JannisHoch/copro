@@ -17,10 +17,7 @@ def init_out_dict(config):
     Returns:
         dict: empty dictionary with metrics as keys.
     """  
-    if config.get('machine_learning', 'model') == 'NuSVC':
-       scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
-    if config.get('machine_learning', 'model') == 'KNeighborsClassifier':
-       scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
+
     if config.get('machine_learning', 'model') == 'RFClassifier':
        scores = ['Accuracy', 'Precision', 'Recall', 'F1 score', 'Cohen-Kappa score', 'Brier loss score', 'ROC AUC score', 'AP score']
          
@@ -32,11 +29,6 @@ def init_out_dict(config):
     out_dict = {}
     for score in scores:
         out_dict[score] = list()
-
-    
-    #elif config.get('machine_learning', 'model') == 'RFRegression':
-        #scores = ['Mean Squared Error', 'Mean Squared Error', 'R2 Score']
-
 
     return out_dict
 

@@ -13,4 +13,4 @@ from . import plots
 
 __author__ = """Jannis M. Hoch, Sophie de Bruin, Niko Wanders"""
 __email__ = 'j.m.hoch@uu.nl, s.p.de.bruin@vu.nl'
-__version__ = '1.0.2'
+__version__ = '2.0.0'
