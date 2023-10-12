@@ -87,6 +87,10 @@ def split_scale_train_test_split(X, Y, config, scaler):
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs, Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction')) 
     
+    if config.get('machine_learning', 'model') == 'RFClassifier':
+        y_train = y_train.astype(bool)
+        y_test = y_test.astype(bool)
+    
     # for training-set and test-set, split in ID, geometry, and values
     X_train_ID, X_train_geom, X_train = migration.split_migration_geom_data(X_train)  
     X_test_ID, X_test_geom, X_test = migration.split_migration_geom_data(X_test) 
@@ -149,8 +153,6 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
             print('INFO: Y_train data is winsorized')
     
     else: # if no weighing is selected in the cfg-file
-        
-        print(type(y_train))
         mdl.fit(X_train, y_train)
         print('INFO: Y_train data is not winsorized')
 
@@ -168,7 +170,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
     y_pred = mdl.predict(X_test)
 
     # make prediction of probability
-    if (config.get('machine_learning', 'model')) == 'NuSVC' or (config.get('machine_learning', 'model')) == 'KNeighborsClassifier' or (config.get('machine_learning', 'model')) == 'RFClassifier':
+    if (config.get('machine_learning', 'model')) == 'RFClassifier':
         y_prob = mdl.predict_proba(X_test)
     elif (config.get('machine_learning', 'model')) == 'RFRegression': 
         y_prob = 1 # TEMP fix, is this the right way? mdl.predict_proba(X_test)

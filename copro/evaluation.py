@@ -161,7 +161,7 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     """    
 
     #- create a dataframe containing the number of occurence per ID
-    ID_count = df.ID.value_counts().to_frame().rename(columns={'ID':'nr_predictions'})
+    ID_count = df.ID.value_counts().to_frame().rename(columns={'count':'nr_predictions'})
     ID_count['ID'] = ID_count.index.values
     #- set index with index named ID now
     ID_count.set_index(ID_count.ID, inplace=True)
@@ -173,15 +173,13 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     #- per polygon ID, compute sum of overall correct predictions and rename column name
     if not make_proj: df_count['nr_correct_predictions'] = df.correct_pred.groupby(df.ID).sum()
 
-    #- per polygon ID, compute sum of all conflict data points and add to dataframe
-
+    #- per polygon ID, compute sum of all in-migration data and add to dataframe
     if not make_proj: df_count['nr_observed_conflicts'] = df.y_test.groupby(df.ID).sum()
 
-    #- per polygon ID, compute sum of all conflict data points and add to dataframe
-  
+    #- per polygon ID, compute sum of all 1 (in migration) data points and add to dataframe  
     df_count['nr_predicted_conflicts'] = df.y_pred.groupby(df.ID).sum()
 
-    #- per polygon ID, compute average probability that conflict occurs
+    #- per polygon ID, compute average probability that in-migration occurs
     df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
     df_count['probability_of_conflict'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
     df_count['max_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
@@ -318,7 +316,7 @@ def get_permutation_importance(clf, X_ft, Y, df_feat_imp, out_dir):
     Args:
         clf (classifier): sklearn-classifier used in the simulation.
         X_ft (array): X-array containing variable values after scaling.
-        Y (array): Y-array containing conflict data.
+        Y (array): Y-array containing in-migration data.
         df_feat_imp (dataframe): dataframe containing feature importances to align names across outputs.
         out_dir (str): path to output folder. If 'None', no output is stored.
 

@@ -25,7 +25,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf
     if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
 
     # split X into training-set and test-set, scale training-set data
-    X_train, X_test, y_train, y_test, X_train_geom, X_test_geom, X_train_ID, X_test_ID = machine_learning.split_scale_train_test_split(X, Y, config, scaler) 
+    X_train, X_test, y_train, y_test, X_train_ID, X_test_ID, X_train_geom, X_test_geom = machine_learning.split_scale_train_test_split(X, Y, config, scaler) 
 
     # convert to dataframe
     X_df = pd.DataFrame(X_test)
@@ -78,14 +78,21 @@ def predictive(X, mdl, scaler, config):
     if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
     
     X_ft = scaler.transform(X_data) 
-    
-
     # make projection with transformed data
     if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
     y_pred = mdl.predict(X_ft)
 
-    # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
-    arr = np.column_stack((X_ID, X_geom, y_pred)) 
-    y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred']) # (Deleted y_prob_0, y_prob_1) maybe also deleted 'geometry' 
+    # predict probabilites of outcomes
+    y_prob = mdl.predict_proba(X_ft)
+    y_prob_0 = y_prob[:, 0] # probability to predict 0
+    y_prob_1 = y_prob[:, 1] # probability to predict 1 
+    
+    if config.get('machine_learning', 'model') == 'RFRegression':
+        arr = np.column_stack((X_ID, X_geom, y_pred)) 
+        y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])
+    
+    if config.get('machine_learning', 'model') == 'RFClassifier':
+        arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1))
+        y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred', 'y_prob_0', 'y_prob_1']) 
     
     return y_df

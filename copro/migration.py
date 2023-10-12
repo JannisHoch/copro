@@ -243,7 +243,7 @@ def get_pred_migration_geometry_classifier(X_test_ID, y_test, y_pred, y_prob_0, 
     arr = np.column_stack((X_test_ID, y_test, y_pred, y_prob_0, y_prob_1)) # deleted X_test_geom
 
     # convert array to dataframe
-    df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_test', 'y_pred', 'y_prob_0', 'y_prob_1'])
+    df = pd.DataFrame(arr, columns=['ID', 'y_test', 'y_pred', 'y_prob_0', 'y_prob_1'])
 
     # compute whether a prediction is correct
     # if so, assign 1; otherwise, assign 0

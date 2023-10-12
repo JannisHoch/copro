@@ -1,7 +1,7 @@
 CoPro
 =========================
 
-This is the documentation of CoPro, a machine-learning tool for conflict risk projections.
+This is the documentation of CoPro-m, a machine-learning tool for conflict risk and migration projections.
 
 A software description paper was published in `JOSS <https://doi.org/10.21105/joss.02855>`_.
 
@@ -32,9 +32,9 @@ A software description paper was published in `JOSS <https://doi.org/10.21105/jo
 Main goal
 ---------------
 With CoPro it is possible to apply machine-learning techniques to make projections of future areas at risk. CoPro was developed with a rather clear
-application in mind, unravelling the interplay of socio-economic development, climate change, and conflict occurrence. 
+application in mind, unravelling the interplay of socio-economic development, hydroclimatic, and migration occurrence. 
 Nevertheless, we put a lot of emphasis on making it flexible. 
-We hope that other, related questions about climate and conflict can be tackled as well, and that process understanding is deepened further.
+We hope that other, related questions about climate and migration can be tackled as well, and that process understanding is deepened further.
 
 Contents
 ---------------

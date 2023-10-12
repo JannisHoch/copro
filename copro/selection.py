@@ -3,7 +3,6 @@ import geopandas as gpd
 import os
 from copro import utils
 
-
 def select_period(gdf, config):
     """Reducing the geo-dataframe to those entries falling into a specified time period.
 

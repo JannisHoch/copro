@@ -10,11 +10,9 @@ def initiate_XY_data(config):
     """Initiates an empty dictionary to contain the XY-data for each polygon, ie. both sample data and target data. 
     This is needed for the reference run.
     By default, the first column is for the polygon ID, the second for polygon geometry.
-    # DELETE ALL FUNTIONS ON: 
-        The antepenultimate column is for information about migratu at t-1 while the penultimate column is for boolean information about conflict at t-1 in neighboring polygons.
-    The last column is for binary conflict data at t (i.e. the target data).
+    The last column is for he target data.
     
-    Every column in between corresponds to the variables provided in the cfg-file.
+    Every other column in between corresponds to the variables provided in the cfg-file.
 
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
@@ -43,7 +41,7 @@ def initiate_X_data(config):
     """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data. 
     This is needed for each time step of each projection run.
     By default, the first column is for the polygon ID and the second for polygon geometry.
-    # DELETE CODE CONSIDERING: The penultimate column is for boolean information about conflict at t-1 while the last column is for boolean information about conflict at t-1 in neighboring polygons.
+    The last column is for the target data, in this release net_migration.
     All remaining columns correspond to the variables provided in the cfg-file.
 
     Args:
@@ -358,9 +356,5 @@ def split_XY_data(XY, config):
 
     # get Y data 
     Y = XY[:, -1]
-
-    if config.getboolean('general', 'verbose'): 
-        fraction_Y_1 = 100*len(np.where(Y != 0)[0])/len(Y)
-        click.echo('DEBUG: a fraction of {} percent in the data corresponds to migration.'.format(round(fraction_Y_1, 2)))
 
     return X, Y
