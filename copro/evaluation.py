@@ -177,14 +177,14 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     if not make_proj: df_count['nr_correct_predictions'] = df.correct_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all in-migration data and add to dataframe
-    if not make_proj: df_count['nr_observed_conflicts'] = df.y_test.groupby(df.ID).sum()
+    if not make_proj: df_count['nr_observations'] = df.y_test.groupby(df.ID).sum()
 
     #- per polygon ID, compute sum of all 1 (in migration) data points and add to dataframe  
-    df_count['nr_predicted_conflicts'] = df.y_pred.groupby(df.ID).sum()
+    df_count['predicted_in_migration'] = df.y_pred.groupby(df.ID).sum()
 
     #- per polygon ID, compute average probability that in-migration occurs
     df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
-    df_count['probability_of_conflict'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
+    df_count['probability_of_in_migration'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
     df_count['max_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
 
     #- merge the two dataframes with ID as key
@@ -194,7 +194,7 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     if not make_proj: df_temp['fraction_correct_predictions'] = df_temp.nr_correct_predictions / df_temp.nr_predictions
 
     #- compute average correct prediction rate by dividing sum of correct predictions with number of all predicionts
-    df_temp['chance_of_conflict'] = df_temp.nr_predicted_conflicts / df_temp.nr_predictions
+    df_temp['chance_of_in_migration'] = df_temp.predicted_in_migration / df_temp.nr_predictions
 
     #- merge with global dataframe containing IDs and geometry, and keep only those polygons occuring in test sample
     df_hit = pd.merge(df_temp, global_df, on='ID', how='left')
