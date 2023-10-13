@@ -196,6 +196,8 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
             if config_REF.get('machine_learning', 'model') != 'RFRegression':
                 df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
+                # Drop the 'GEOMETRY' column
+                df_hit = df_hit.drop(columns=['geometry'])
                 df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
                 gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
                  # create one major output dataframe containing all output for all projections with all classifiers

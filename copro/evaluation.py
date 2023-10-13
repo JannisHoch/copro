@@ -5,6 +5,9 @@ from sklearn import metrics, inspection
 import pandas as pd
 import geopandas as gpd
 import numpy as np
+from sklearn.datasets import load_iris
+import pickle
+import matplotlib.pyplot as plt
 
 def init_out_dict(config):
     """Initiates the main model evaluation dictionary for a range of model metric scores. 
@@ -232,8 +235,6 @@ def save_out_ROC_curve(tprs, aucs, out_dir):
 
     print('INFO: saving ROC data to {}'.format(os.path.join(out_dir, 'ROC_data.csv')))
 
-    #return
-
 def calc_correlation_matrix(df, out_dir=None):
     """Computes the correlation matrix for a dataframe. 
     The dataframe should only contain numeric values.
@@ -275,17 +276,23 @@ def get_feature_importance(mdl, config, out_dir):
         # get feature importances
         arr = mdl.feature_importances_
 
-        # initialize dictionary and add importance value per indicator
+        # Initialize dictionary and add importance value per feature
         dict_out = dict()
-        for key, x in zip(config.items('data'), range(len(arr))):
-            dict_out[key[0]] = arr[x]
+        for key, importance in zip(config.items('data'), arr):
+            dict_out[key[0]] = importance
 
-        # convert to dataframe
+        # Convert to dataframe
         df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
 
-        # save to file if specified
+        # Sort the DataFrame by Permutation Importance in descending order
+        feat_importance_df = df.sort_values(by='feature_importance', ascending=False)
+    
+        # Calculate relative permutation importances
+        feat_importance_df['Relative Feature Importance'] = feat_importance_df['feature_importance'] / feat_importance_df['feature_importance'].max()
+
         if (out_dir != None) and isinstance(out_dir, str):
-            df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
+            feat_importance_df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
+
 
     elif config.get('machine_learning', 'model') == 'RFRegression':
         # Get feature importances
@@ -299,9 +306,14 @@ def get_feature_importance(mdl, config, out_dir):
         # Convert to dataframe
         df = pd.DataFrame.from_dict(dict_out, orient='index', columns=['feature_importance'])
 
-        # Save to file if specified
-        if (out_dir is not None) and isinstance(out_dir, str):
-            df.to_csv(os.path.join(out_dir, 'feature_importances.csv'))
+        # Sort the DataFrame by Permutation Importance in descending order
+        feat_importance_df = df.sort_values(by='feature_importance', ascending=False)
+    
+        # Calculate relative permutation importances
+        feat_importance_df['Relative Feature Importance'] = feat_importance_df['feature_importance'] / feat_importance_df['feature_importance'].max()
+
+        if (out_dir != None) and isinstance(out_dir, str):
+            feat_importance_df.to_csv(os.path.join(out_dir, 'feature_importance.csv'))
 
     else:
         raise Warning('WARNING: feature importance not supported for {}'.format(config.get('machine_learning', 'model')))
@@ -322,7 +334,9 @@ def get_permutation_importance(mdl, X_ft, Y, df_feat_imp, out_dir):
     Returns:
         dataframe: contains mean permutation importance for each feature.
     """    
-
+    print(Y)
+    print(X_ft)
+    
     result = inspection.permutation_importance(mdl, X_ft, Y, n_repeats=10, random_state=42)   
 
     df = pd.DataFrame(result.importances_mean, columns=['permutation_importance'], index=df_feat_imp.index.values)
@@ -338,3 +352,20 @@ def get_permutation_importance(mdl, X_ft, Y, df_feat_imp, out_dir):
         perm_importance_df.to_csv(os.path.join(out_dir, 'permutation_importances.csv'))
 
     return perm_importance_df 
+
+def make_average_tree(config_REF, out_dir_REF, mdl):
+    # Load the pickled object
+    with open(os.path.join(out_dir_REF, 'mdls'), 'rb') as f:
+        mdl_obj = pickle.load(f)
+                  
+    # Extract the individual decision trees
+    individual_trees = mdl_obj.estimators_
+
+    # Calculate the average decision tree
+    average_tree = np.mean([tree.tree_ for tree in individual_trees], axis=0)
+               
+    # Create a figure to visualize the average tree
+    fig, ax = plt.subplots(figsize=(10, 10))
+
+    figure_filename = os.path.join(out_dir_REF, 'average_tree.png')
+    fig.savefig(figure_filename)
