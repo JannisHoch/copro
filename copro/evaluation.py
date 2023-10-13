@@ -172,7 +172,7 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     ID_count = ID_count.drop('ID', axis=1)
 
     df_count = pd.DataFrame()
-    
+   
     #- per polygon ID, compute sum of overall correct predictions and rename column name
     if not make_proj: df_count['nr_correct_predictions'] = df.correct_pred.groupby(df.ID).sum()
 
@@ -181,6 +181,9 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
 
     #- per polygon ID, compute sum of all 1 (in migration) data points and add to dataframe  
     df_count['predicted_in_migration'] = df.y_pred.groupby(df.ID).sum()
+
+    print('print df')
+    print(df)
 
     #- per polygon ID, compute average probability that in-migration occurs
     df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
