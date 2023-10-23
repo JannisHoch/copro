@@ -60,7 +60,7 @@ def cli(cfg, make_plots=True, verbose=False):
     scaler, mdl = copro.pipeline.prepare_ML(config_REF)
 
     click.echo('INFO: fitting scaler to sample data')
-    scaler_fitted = scaler.fit(X[: , 2:]) 
+    scaler_fitted = scaler.fit(X[: , 1:]) # check if polygon is gone
 
     #- initializing output variables
 

@@ -25,7 +25,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf
     if config.getboolean('general', 'verbose'): print('DEBUG: using all data')
 
     # split X into training-set and test-set, scale training-set data
-    X_train, X_test, y_train, y_test, X_train_ID, X_test_ID, X_train_geom, X_test_geom = machine_learning.split_scale_train_test_split(X, Y, config, scaler) 
+    X_train, X_test, y_train, y_test, X_train_ID, X_test_ID  = machine_learning.split_scale_train_test_split(X, Y, config, scaler) # X_train_geom, X_test_geom
 
     # convert to dataframe
     X_df = pd.DataFrame(X_test)
@@ -49,7 +49,7 @@ def all_data(X, Y, config, scaler, mdl, out_dir, root_dir, run_nr, migration_gdf
 
     return X_df, y_df, eval_dict
 
-def predictive(X, mdl, scaler, config):
+def predictive(X, mdl, scaler, config, out_dir):
     """Predictive model to use the already fitted model to make annual projections for the projection period.
     As other models, it reads data which are then scaled and used in conjuction with the model to project net migration.
 
@@ -62,37 +62,41 @@ def predictive(X, mdl, scaler, config):
     Returns:
         datatrame: containing model output on polygon-basis.
     """    
-     # Transpose the DataFrame =
+     # Transpose the DataFrame 
+    
+    X.to_csv(os.path.join(out_dir, 'X_before_transposing.csv'), index=False, header=True)
     X = X.transpose()
+    X.to_csv(os.path.join(out_dir, 'X_after_transposing1.csv'), index=False, header=True)
+    # Set the vertical index to 'poly_ID'
     X.reset_index(inplace=True)
     X.rename(columns={'index': 'poly_ID'}, inplace=True)
     
+
+    X.to_csv(os.path.join(out_dir, 'X_after_transposing2.csv'), index=False, header=True)
+    
     # splitting the data from the ID and geometry part of X
-    X_ID, X_geom, X_data = migration.split_migration_geom_data(X.to_numpy()) 
+    X_ID, X_data = migration.split_migration_geom_data(X.to_numpy()) # X_geom
     
     num_features = X_data.shape[1]
     print("INFO: Number of features in X_data:", num_features)
 
-    # transforming the data
-    # fitting is not needed as already happend before
+    # transforming the data, fitting is not needed as already happend before
     if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
-    
-    X_ft = scaler.transform(X_data) 
+   
     # make projection with transformed data
     if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
-    y_pred = mdl.predict(X_ft)
-
-    # predict probabilites of outcomes
-    y_prob = mdl.predict_proba(X_ft)
-    y_prob_0 = y_prob[:, 0] # probability to predict 0
-    y_prob_1 = y_prob[:, 1] # probability to predict 1 
-    
+         
     if config.get('machine_learning', 'model') == 'RFRegression':
-        arr = np.column_stack((X_ID, X_geom, y_pred)) 
-        y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred'])
+        y_pred = mdl.predict(X_data)
+        arr = np.column_stack((X_ID, y_pred)) #X_geom, 
+        y_df = pd.DataFrame(arr, columns=['ID', 'y_pred']) # 'geometry'
     
     if config.get('machine_learning', 'model') == 'RFClassifier':
-        arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1))
-        y_df = pd.DataFrame(arr, columns=['ID', 'geometry', 'y_pred', 'y_prob_0', 'y_prob_1']) 
+        y_pred = mdl.predict(X_data)
+        y_prob = mdl.predict_proba(X_data)
+        y_prob_0 = y_prob[:, 0] # probability to predict 0
+        y_prob_1 = y_prob[:, 1] # probability to predict 1 
+        arr = np.column_stack((X_ID, y_pred, y_prob_0, y_prob_1)) #, X_geom
+        y_df = pd.DataFrame(arr, columns=['ID', 'y_pred', 'y_prob_0', 'y_prob_1']) #'geometry', 
     
     return y_df

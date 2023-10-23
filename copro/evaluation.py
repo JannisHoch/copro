@@ -182,13 +182,10 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     #- per polygon ID, compute sum of all 1 (in migration) data points and add to dataframe  
     df_count['predicted_in_migration'] = df.y_pred.groupby(df.ID).sum()
 
-    print('print df')
-    print(df)
-
     #- per polygon ID, compute average probability that in-migration occurs
-    df_count['min_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
-    df_count['probability_of_in_migration'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).mean()
-    df_count['max_prob_1'] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
+    df_count['min_prob_1'] = pd.to_numeric(df['y_prob_1']).groupby(df.ID).min()
+    df_count['probability_of_in_migration'] = pd.to_numeric(df['y_prob_1']).groupby(df.ID).mean()
+    df_count['max_prob_1'] = pd.to_numeric(df['y_prob_1']).groupby(df.ID).max()
 
     #- merge the two dataframes with ID as key
     df_temp = pd.merge(ID_count, df_count, on='ID')
@@ -204,6 +201,9 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
 
     #- convert to geodataframe
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
+
+    print('print df_hit')
+    print(df_hit)
 
     return df_hit, gdf_hit
 

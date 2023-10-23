@@ -73,14 +73,14 @@ def split_scale_train_test_split(X, Y, config, scaler):
         arrays: arrays containing training-set and test-set for X-data and Y-data as well as IDs and geometry.
     """ 
     ## separate arrays for ID, geometry, and variable values
-    X_ID, X_geom, X_data = migration.split_migration_geom_data(X)  
+    X_ID, X_data = migration.split_migration_geom_data(X)  # X_geom
 
     ##- scaling only the variable values
     if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     X_ft = scaler.fit_transform(X_data)
 
     ##- combining ID, geometry and scaled sample values per polygon
-    X_cs = np.column_stack((X_ID, X_geom, X_ft)) 
+    X_cs = np.column_stack((X_ID, X_ft)) # X_geom
 
     ##- splitting in train and test samples based on user-specified fraction
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
@@ -92,10 +92,10 @@ def split_scale_train_test_split(X, Y, config, scaler):
         y_test = y_test.astype(bool)
     
     # for training-set and test-set, split in ID, geometry, and values
-    X_train_ID, X_train_geom, X_train = migration.split_migration_geom_data(X_train)  
-    X_test_ID, X_test_geom, X_test = migration.split_migration_geom_data(X_test) 
+    X_train_ID, X_train = migration.split_migration_geom_data(X_train)  # X_train_geom, 
+    X_test_ID, X_test = migration.split_migration_geom_data(X_test) #X_test_geom, 
 
-    return X_train, X_test, y_train, y_test, X_train_ID, X_test_ID, X_train_geom, X_test_geom 
+    return X_train, X_test, y_train, y_test, X_train_ID, X_test_ID # X_train_geom, X_test_geom 
 
 def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr, migration_gdf):
     """Fits model based on training-data and makes predictions.
@@ -114,7 +114,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
     Returns:
         arrays: arrays including the predictions made and their probabilities
     """    
-        # fit the model with training data - 
+        # fit the model with training data  
     if config.getboolean('general', 'weighting_Y_train'): # determine if Y_train should be weighted based on population per polygon 
         gid2_weights = migration.weight_migration(config, root_dir, migration_gdf)
                 

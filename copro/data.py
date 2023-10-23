@@ -25,7 +25,7 @@ def initiate_XY_data(config):
     # some entries are set by default, besides the ones corresponding to input data variables
     XY = {}
     XY['poly_ID'] = pd.Series()
-    XY['poly_geometry'] = pd.Series()
+    #XY['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         XY[str(key[0])] = pd.Series(dtype=float)
     XY['net_migration'] = pd.Series(dtype=int)
@@ -55,7 +55,7 @@ def initiate_X_data(config):
     # some entries are set by default, besides the ones corresponding to input data variables
     X = {}
     X['poly_ID'] = pd.Series()
-    X['poly_geometry'] = pd.Series()
+    #X['poly_geometry'] = pd.Series()
     for key in config.items('data'):
         X[str(key[0])] = pd.Series(dtype=float)
     if config.getboolean('general', 'verbose'): 
@@ -197,7 +197,8 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
             df_out[col] = df_out[col].apply(lambda x: x[0]) 
 
     # make sure the order of the columns is correct for later analysis: 
-    df_out = df_out[['poly_ID', 'poly_geometry'] + list(df_out.columns.drop(['poly_ID', 'poly_geometry', 'net_migration'])) + ['net_migration']]
+    #df_out = df_out[['poly_ID', 'poly_geometry'] + list(df_out.columns.drop(['poly_ID', 'poly_geometry', 'net_migration'])) + ['net_migration']]
+    df_out = df_out[['poly_ID'] + list(df_out.columns.drop(['poly_ID', 'net_migration'])) + ['net_migration']]
 
     # Extract only the integer part from each tuple column
     for col in df_out.columns:
@@ -232,10 +233,10 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
 
 
     # Drop the 'poly_geometry' column from the DataFrame temporarily for saving to CSV
-    df_out_to_save = df_out.drop(columns=['poly_geometry'])
+    #df_out_to_save = df_out.drop(columns=['poly_geometry'])
 
     # Save the temporary DataFrame to a CSV file
-    df_out_to_save.to_csv(os.path.join(out_dir, 'DF_out_exgeometry.csv'), index=False, header=True)
+    df_out.to_csv(os.path.join(out_dir, 'DF_out_exgeometry.csv'), index=False, header=True)
     print('df_out_exgeometry.csv saved in the output folder')
 
     return df_out.to_numpy()
@@ -315,7 +316,7 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):
     df_out.insert(0, 'poly_ID', df_out.iloc[:, 1].apply(lambda x: x[1]))
 
      # make sure the order of the columns is correct for later analysis: 
-    df_out = df_out[['poly_ID', 'poly_geometry'] + list(df_out.columns.drop(['poly_ID', 'poly_geometry']))]
+    df_out = df_out[['poly_ID'] + list(df_out.columns.drop(['poly_ID']))]
 
     # Extract only the value of each tuple X-column
     for col in df_out.columns:
