@@ -60,7 +60,7 @@ def cli(cfg, make_plots=True, verbose=False):
     scaler, mdl = copro.pipeline.prepare_ML(config_REF)
 
     click.echo('INFO: fitting scaler to sample data')
-    scaler_fitted = scaler.fit(X[: , 1:]) # check if polygon is gone
+    #scaler_fitted = scaler.fit(X[: , 1:]) # check if polygon is gone
 
     #- initializing output variables
 
@@ -135,7 +135,7 @@ def cli(cfg, make_plots=True, verbose=False):
     click.echo(click.style('INFO: starting projections\n', fg='cyan'))
 
     #- running prediction runs
-    copro.pipeline.run_prediction(scaler_fitted, main_dict, root_dir, extent_active_polys_gdf)
+    copro.pipeline.run_prediction(X, main_dict, root_dir, extent_active_polys_gdf)
 
     click.echo(click.style('\nINFO: all projections succesfully finished\n', fg='cyan'))
 

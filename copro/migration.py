@@ -53,7 +53,6 @@ def migration_in_year_int(root_dir, config, migration_gdf, sim_year, out_dir):
 
         temp_sel_year = combined_migration_data
 
-
     else:
         pass
         print('INFO: absolute migration used')

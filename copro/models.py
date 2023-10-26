@@ -66,34 +66,34 @@ def predictive(X, mdl, scaler, config, out_dir):
     
     X.to_csv(os.path.join(out_dir, 'X_before_transposing.csv'), index=False, header=True)
     X = X.transpose()
-    X.to_csv(os.path.join(out_dir, 'X_after_transposing1.csv'), index=False, header=True)
+
     # Set the vertical index to 'poly_ID'
     X.reset_index(inplace=True)
     X.rename(columns={'index': 'poly_ID'}, inplace=True)
     
-
     X.to_csv(os.path.join(out_dir, 'X_after_transposing2.csv'), index=False, header=True)
     
     # splitting the data from the ID and geometry part of X
-    X_ID, X_data = migration.split_migration_geom_data(X.to_numpy()) # X_geom
+    X_ID, X_data = migration.split_migration_geom_data(X) # X_geom # .to_numpy
     
     num_features = X_data.shape[1]
     print("INFO: Number of features in X_data:", num_features)
 
     # transforming the data, fitting is not needed as already happend before
     if config.getboolean('general', 'verbose'): print('DEBUG: transforming the data from projection period')
-   
+    X_ft = scaler.transform(X_data)
     # make projection with transformed data
     if config.getboolean('general', 'verbose'): print('DEBUG: making the projections')    
-         
+   
     if config.get('machine_learning', 'model') == 'RFRegression':
-        y_pred = mdl.predict(X_data)
+        
+        y_pred = mdl.predict(X_ft)
         arr = np.column_stack((X_ID, y_pred)) #X_geom, 
         y_df = pd.DataFrame(arr, columns=['ID', 'y_pred']) # 'geometry'
     
     if config.get('machine_learning', 'model') == 'RFClassifier':
-        y_pred = mdl.predict(X_data)
-        y_prob = mdl.predict_proba(X_data)
+        y_pred = mdl.predict(X_ft)
+        y_prob = mdl.predict_proba(X_ft)
         y_prob_0 = y_prob[:, 0] # probability to predict 0
         y_prob_1 = y_prob[:, 1] # probability to predict 1 
         arr = np.column_stack((X_ID, y_pred, y_prob_0, y_prob_1)) #, X_geom

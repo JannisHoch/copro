@@ -202,9 +202,6 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     #- convert to geodataframe
     gdf_hit = gpd.GeoDataFrame(df_hit, geometry=df_hit.geometry)
 
-    print('print df_hit')
-    print(df_hit)
-
     return df_hit, gdf_hit
 
 def init_out_ROC_curve():
@@ -337,10 +334,8 @@ def get_permutation_importance(mdl, X_ft, Y, df_feat_imp, out_dir):
     Returns:
         dataframe: contains mean permutation importance for each feature.
     """    
-    print(Y)
-    print(X_ft)
     
-    result = inspection.permutation_importance(mdl, X_ft, Y, n_repeats=10, random_state=42)   
+    result = inspection.permutation_importance(mdl, X_ft, Y, n_repeats=10, random_state=0)   
 
     df = pd.DataFrame(result.importances_mean, columns=['permutation_importance'], index=df_feat_imp.index.values)
     df['feature'] = df_feat_imp.index.values

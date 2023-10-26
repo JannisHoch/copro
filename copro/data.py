@@ -174,14 +174,14 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                             raise Warning('WARNING: this nc-file does have a different dtype for the time variable than currently supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
                     else:
                         raise ValueError('ERROR: the file extension of the input file is not supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
-
+    
     # Sort the dictionary based on the 'poly_ID' key in the second element of the tuple columns
-    sorted_XY = dict(sorted(XY.items(), key=lambda x: str(x[1][0])))
+    # sorted_XY = dict(sorted(XY.items(), key=lambda x: str(x[1][0])))
 
     # Delete the column named 'poly_ID' since somehow I cant fix it to het the right poly_ID in the correct row
-    del sorted_XY['poly_ID']
+    del XY['poly_ID']
 
-    df_out = pd.DataFrame(sorted_XY)
+    df_out = pd.DataFrame(XY)
 
     # Find the correct 'poly_ID' column and add it (again)
     poly_ID_column = next(col for col in df_out.columns if isinstance(df_out[col][0], tuple))
@@ -231,14 +231,13 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     if config.getboolean('general', 'verbose'):
         click.echo('DEBUG: all data read')
 
-
     # Drop the 'poly_geometry' column from the DataFrame temporarily for saving to CSV
     #df_out_to_save = df_out.drop(columns=['poly_geometry'])
 
     # Save the temporary DataFrame to a CSV file
     df_out.to_csv(os.path.join(out_dir, 'DF_out_exgeometry.csv'), index=False, header=True)
     print('df_out_exgeometry.csv saved in the output folder')
-
+    # hoeft niet meer naar numpy, kan een df blijven met de naam van de x variabele
     return df_out.to_numpy()
 
 def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):

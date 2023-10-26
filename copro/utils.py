@@ -55,7 +55,7 @@ def get_geodataframe(config, root_dir, crs = 'WGS84'):
 
         if config.getboolean('settings', 'classification'):
             gdf['net_migration'] = gdf['net_migration'].apply(lambda x: 0 if x < 0 else 1)
-            print('INFO: Migration data set to 0 (-) and 1 (+)')
+            print('INFO: Migration data set to classification values: 0 (-) and 1 (+)')
         else:
             pass
     

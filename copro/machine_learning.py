@@ -26,7 +26,7 @@ def define_scaling(config):
     elif config.get('machine_learning', 'scaler') == 'RobustScaler':
         scaler = preprocessing.RobustScaler()
     elif config.get('machine_learning', 'scaler') == 'QuantileTransformer':
-        scaler = preprocessing.QuantileTransformer(random_state=42)
+        scaler = preprocessing.QuantileTransformer(random_state=0)
     else:
         raise ValueError('no supported scaling-algorithm selected - choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer')
 
@@ -48,7 +48,7 @@ def define_model(config):
     """    
     
     if config.get('machine_learning', 'model') == 'RFClassifier':
-        mdl = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=42)
+        mdl = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=0)
     elif config.get('machine_learning', 'model')== 'RFRegression':
         mdl = ensemble.RandomForestRegressor()
     else:
@@ -75,7 +75,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
     ## separate arrays for ID, geometry, and variable values
     X_ID, X_data = migration.split_migration_geom_data(X)  # X_geom
 
-    ##- scaling only the variable values
+    # scaling only the variable values
     if config.getboolean('general', 'verbose'): print('DEBUG: fitting and transforming X')
     X_ft = scaler.fit_transform(X_data)
 
@@ -153,6 +153,8 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
             print('INFO: Y_train data is winsorized')
     
     else: # if no weighing is selected in the cfg-file
+        print('x_train and x_test used to fit and predict')
+        print(X_train)
         mdl.fit(X_train, y_train)
         print('INFO: Y_train data is not winsorized')
 
@@ -162,7 +164,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
         os.makedirs(mdl_pickle_rep)
 
     # save the fitted model to file via pickle.dump()
-    if config.getboolean('general', 'verbose'): print('DEBUG: dumping classifier to {}'.format(mdl_pickle_rep))
+    if config.getboolean('general', 'verbose'): print('DEBUG: dumping model to {}'.format(mdl_pickle_rep))
     with open(os.path.join(mdl_pickle_rep, 'mdl_{}.pkl'.format(run_nr)), 'wb') as f:
         pickle.dump(mdl, f)
 
