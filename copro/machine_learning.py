@@ -134,7 +134,7 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
             all_matching_rows = pd.concat(matching_rows_list, ignore_index=True) 
             selected_weights = all_matching_rows['weight'].values
             mdl.fit(X_train, y_train, sample_weight=selected_weights)
-            print('INFO: ratio Y_test data is winsorized')
+            print('INFO: ratio Y_test data is weighted')
         
         else:
             matching_rows_list = []
@@ -150,13 +150,12 @@ def fit_predict(X_train, y_train, X_test, mdl, config, out_dir, root_dir, run_nr
   
             selected_weights = all_matching_rows['weight'].values
             mdl.fit(X_train, y_train, sample_weight=selected_weights)
-            print('INFO: Y_train data is winsorized')
+            print('INFO: Y_train data is weighted')
     
     else: # if no weighing is selected in the cfg-file
-        print('x_train and x_test used to fit and predict')
-        print(X_train)
+
         mdl.fit(X_train, y_train)
-        print('INFO: Y_train data is not winsorized')
+        print('INFO: Y_train data is not weighted')
 
     # create folder to store all model with pickle
     mdl_pickle_rep = os.path.join(out_dir, 'mdls')

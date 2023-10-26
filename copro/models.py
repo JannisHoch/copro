@@ -62,19 +62,15 @@ def predictive(X, mdl, scaler, config, out_dir):
     Returns:
         datatrame: containing model output on polygon-basis.
     """    
-     # Transpose the DataFrame 
-    
-    X.to_csv(os.path.join(out_dir, 'X_before_transposing.csv'), index=False, header=True)
+    # Transpose the DataFrame 
     X = X.transpose()
 
     # Set the vertical index to 'poly_ID'
     X.reset_index(inplace=True)
     X.rename(columns={'index': 'poly_ID'}, inplace=True)
     
-    X.to_csv(os.path.join(out_dir, 'X_after_transposing2.csv'), index=False, header=True)
-    
     # splitting the data from the ID and geometry part of X
-    X_ID, X_data = migration.split_migration_geom_data(X) # X_geom # .to_numpy
+    X_ID, X_data = migration.split_migration_geom_data(X.to_numpy()) # X_geom # 
     
     num_features = X_data.shape[1]
     print("INFO: Number of features in X_data:", num_features)
