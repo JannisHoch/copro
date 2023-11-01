@@ -176,13 +176,16 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
             # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
+            global_df = global_df[:selected_polygons_gdf.GID_2.nunique()]
 
             if config_REF.get('machine_learning', 'model') == 'RFClassifier':
                 df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
                 df_hit = df_hit.drop(columns=['geometry'])
                 print('print df_hit')
                 print(df_hit)
+                import pdb; pdb.set_trace()
                 df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
+                gdf_hit = gdf_hit.to_crs('epsg:3626')
                 gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
                 # create one major output dataframe containing all output for all projections with all classifiers
                 all_y_df = pd.concat([y_df], ignore_index=True)
