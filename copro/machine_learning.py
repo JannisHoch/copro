@@ -82,7 +82,7 @@ def split_scale_train_test_split(X, Y, config, scaler):
     ##- combining ID, geometry and scaled sample values per polygon
     X_cs = np.column_stack((X_ID, X_ft)) # X_geom
 
-    ##- splitting in train and test samples based on user-specified fraction
+    # splitting in train and test samples based on user-specified fraction
     if config.getboolean('general', 'verbose'): print('DEBUG: splitting both X and Y in train and test data')
     X_train, X_test, y_train, y_test = model_selection.train_test_split(X_cs, Y,
                                                                         test_size=1-config.getfloat('machine_learning', 'train_fraction')) 

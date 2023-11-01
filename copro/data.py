@@ -175,8 +175,7 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
                     else:
                         raise ValueError('ERROR: the file extension of the input file is not supported: {}'.format(os.path.join(root_dir, config.get('general', 'input_dir'), config.get('data', key))))
     
-    # Sort the dictionary based on the 'poly_ID' key in the second element of the tuple columns
-    # sorted_XY = dict(sorted(XY.items(), key=lambda x: str(x[1][0])))
+
 
     # Delete the column named 'poly_ID' since somehow I cant fix it to het the right poly_ID in the correct row
     del XY['poly_ID']
@@ -231,13 +230,10 @@ def fill_XY(XY, config, root_dir, migration_data, polygon_gdf, out_dir):
     if config.getboolean('general', 'verbose'):
         click.echo('DEBUG: all data read')
 
-    # Drop the 'poly_geometry' column from the DataFrame temporarily for saving to CSV
-    #df_out_to_save = df_out.drop(columns=['poly_geometry'])
-
     # Save the temporary DataFrame to a CSV file
     df_out.to_csv(os.path.join(out_dir, 'DF_out_exgeometry.csv'), index=False, header=True)
     print('df_out_exgeometry.csv saved in the output folder')
-    # hoeft niet meer naar numpy, kan een df blijven met de naam van de x variabele
+   
     return df_out.to_numpy()
 
 def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):
@@ -308,7 +304,6 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):
     # Delete the column named 'poly_ID'
     del X['poly_ID']
 
-    #df_out = pd.DataFrame(sorted_X)
     df_out = pd.DataFrame(X)
 
     # Insert a new column 'poly_ID' with the second element of the tuples
@@ -324,9 +319,9 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year, out_dir_PROJ):
       
     if config.getboolean('general', 'verbose'):
         click.echo('DEBUG: all X-prediction data read')
-
+    df_out.to_csv(os.path.join(out_dir_PROJ, 'X_data_for_{}.csv'.format(proj_year)))
     X = df_out.set_index('poly_ID').to_dict(orient='index')
-
+   
     return X
 
 def split_XY_data(XY, config):

@@ -109,11 +109,10 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
 
     config_REF = main_dict['_REF'][0]
     out_dir_REF = main_dict['_REF'][1]
-
     mdls = machine_learning.load_mdls(config_REF, out_dir_REF)
 
     # initiate output dataframe
-    all_y_df = pd.DataFrame(columns=['ID', 'y_pred']) # 'geometry', 
+    all_y_df = pd.DataFrame(columns=['ID', 'y_pred']) # 'geometry' 
 
     # going through each projection specified
     for (each_key, each_val) in config_REF.items('PROJ_files'):
@@ -146,11 +145,8 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             X = data.fill_X_sample(X, config_PROJ, root_dir, selected_polygons_gdf, proj_year, out_dir_PROJ)      
 
             # Convert the dictionary to a pandas DataFrame
-            X_df = pd.DataFrame(X)
-
-            # Save the DataFrame to a CSV file to check
-            X_df.to_csv(os.path.join(out_dir_PROJ, 'X_data_for_{}.csv'.format(proj_year)), index=False)        
-
+            X_df = pd.DataFrame(X)      
+            
             # initiating dataframe containing all projections from all models for this timestep
             y_df = pd.DataFrame(columns=['ID', 'y_pred'])
 
@@ -167,12 +163,10 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
                     mdl_obj = pickle.load(f)
                
                 X = pd.DataFrame(X)
-
                 X = X.fillna(0)
                 
                 # put all the data into the machine learning algo to return the prediction
                 y_df_mdl = models.predictive(X, mdl_obj, scaler, config_PROJ, out_dir_PROJ)
-                print(y_df_mdl)
                 # storing the projection per mdl to be used in the following timestep
                 y_df_mdl.to_csv(os.path.join(out_dir_PROJ, 'mdls', str(mdl).rsplit('.')[0], 'projection_for_{}.csv'.format(proj_year)))
 
@@ -182,15 +176,18 @@ def run_prediction(scaler, main_dict, root_dir, selected_polygons_gdf):
             # get look-up dataframe to assign geometry to polygons via unique ID
             global_df = utils.global_ID_geom_info(selected_polygons_gdf)
 
-        if config_REF.get('machine_learning', 'model') == 'RFClassifier':
+            if config_REF.get('machine_learning', 'model') == 'RFClassifier':
                 for i in range(len(projection_period)):
+                    proj_year = projection_period[i]
                     df_hit, gdf_hit = evaluation.polygon_model_accuracy(y_df, global_df, make_proj=True)
                     df_hit = df_hit.drop(columns=['geometry'])
+                    print('print df_hit')
+                    print(df_hit)
                     df_hit.to_csv(os.path.join(out_dir_PROJ, 'output_in_{}.csv'.format(proj_year)))
                     gdf_hit.to_file(os.path.join(out_dir_PROJ, 'output_in_{}.geojson'.format(proj_year)), driver='GeoJSON')
                     # create one major output dataframe containing all output for all projections with all classifiers
                 all_y_df = pd.concat([y_df], ignore_index=True)
-        if config_REF.get('machine_learning', 'model') == 'RFRegression':  
+            if config_REF.get('machine_learning', 'model') == 'RFRegression':  
                 # for this projection, go through all years
                 for i in range(len(projection_period)):
                     proj_year = projection_period[i]

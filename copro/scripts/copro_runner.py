@@ -60,10 +60,9 @@ def cli(cfg, make_plots=True, verbose=False):
     scaler, mdl = copro.pipeline.prepare_ML(config_REF)
 
     click.echo('INFO: fitting scaler to sample data')
-    scaler_fitted = scaler.fit(X[: , 1:]) # check if polygon is gone
+    scaler_fitted = scaler.fit(X[: , 1:]) 
 
     #- initializing output variables
-
     out_X_df = copro.evaluation.init_out_df()
     out_y_df = copro.evaluation.init_out_df()
     out_dict = copro.evaluation.init_out_dict(config_REF)
@@ -110,7 +109,6 @@ def cli(cfg, make_plots=True, verbose=False):
     for key in out_dict:
         click.echo('DEBUG: average {0} of run with {1} repetitions is {2:0.3f}'.format(key, config_REF.getint('machine_learning', 'n_runs'), np.mean(out_dict[key])))
 
-    #- create accuracy values per polygon and save to output folder if MLmodel = a classifier
     #- note only the dataframe is stored, not the geo-dataframe
     if config_REF.get('machine_learning', 'model') == 'RFClassifier':
         df_hit, gdf_hit = copro.evaluation.polygon_model_accuracy(out_y_df, global_df)
@@ -119,8 +117,6 @@ def cli(cfg, make_plots=True, verbose=False):
         print('INFO: saving evaluation metrics and permutation & feature importance')
 
     elif config_REF.get('machine_learning', 'model') == 'RFRegression': 
-        print('INFO: no accuracy score per GID_2 because of the machine learning model type RFRegression')
-
         #- plot distribution of all evaluation metrics
         if make_plots:
             fig, ax = plt.subplots(1, 1)

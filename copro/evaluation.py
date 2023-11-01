@@ -162,7 +162,8 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     Returns:
         (geo-)dataframe: dataframe and geo-dataframe with data per polygon.
     """    
-
+    print('print df')
+    print(df)
     #- create a dataframe containing the number of occurence per ID
     ID_count = df.ID.value_counts().to_frame().rename(columns={'count':'nr_predictions'})
     ID_count['ID'] = ID_count.index.values
@@ -170,7 +171,6 @@ def polygon_model_accuracy(df, global_df, make_proj=False):
     ID_count.set_index(ID_count.ID, inplace=True)
     #- remove column ID
     ID_count = ID_count.drop('ID', axis=1)
-
     df_count = pd.DataFrame()
    
     #- per polygon ID, compute sum of overall correct predictions and rename column name
