@@ -48,7 +48,12 @@ def define_model(config):
     """    
     
     if config.get('machine_learning', 'model') == 'RFClassifier':
-        mdl = ensemble.RandomForestClassifier(n_estimators=1000, class_weight={1: 100}, random_state=0)
+        mdl = ensemble.RandomForestClassifier(
+            n_estimators=1000, 
+            # class_weight={1: 100},
+            class_weight='balanced_subsample', 
+            random_state=0
+        )
     elif config.get('machine_learning', 'model')== 'RFRegression':
         mdl = ensemble.RandomForestRegressor()
     else:
