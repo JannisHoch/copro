@@ -12,5 +12,5 @@ from . import models
 from . import plots
 
 __author__ = """Jannis M. Hoch, Sophie de Bruin, Niko Wanders"""
-__email__ = 'j.m.hoch@uu.nl'
-__version__ = '0.1.2'
+__email__ = 'j.hoch@fathom.global'
+__version__ = '2.0.0'
