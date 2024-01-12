@@ -19,7 +19,7 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
     """Quick and dirty function to plot the develoment of a column in the outputted geojson-files over time.
     The script uses all geoJSON-files located in input-dir and retrieves values from them.
     Possible to plot obtain development for multiple polygons (indicated via their ID) or entire study area.
-    If the latter, then different statistics can be chosen (mean, max, min, std).
+    If the latter, then different statistics can be chosen (mean, max, min, std, median, 'q05', 'q10', 'q90', 'q95').
 
     Args:
         input-dir (str): path to input directory with geoJSON-files located per projection year.
@@ -44,18 +44,23 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
         polygon_id = 'all'
         click.echo('INFO: selected statistcal method is {}'.format(statistics))
         # create a suffix to be used for output files
-        suffix = '_all_{}'.format(statistics)
+        suffix = 'all_{}'.format(statistics)
+        # check if supported statistical function is selected
+        if statistics not in ['mean', 'max', 'min', 'std', 'median', 'q05', 'q10', 'q90', 'q95']:
+            raise ValueError('ERROR: {} is not a supported statistical method'.format(statistics))
+
+    else:
+        click.echo('INFO: sampling from IDs'.format(polygon_id))
+        # for IDs, no statistical function can be applied as it's only one value...
+        if statistics != None:
+            raise Warning('WARNING: if one or more IDs are provided, the statistical function is neglected.')
 
     # absolute path to input_dir
     input_dir = os.path.abspath(input_dir)
     click.echo('INFO: getting geojson-files from {}'.format(input_dir))
 
     # collect all files in input_dir
-    all_files = glob.glob(os.path.join(input_dir, '*.geojson'))
-    
-    if verbose: 
-        if polygon_id != 'all': 
-            click.echo('DEBUG: sampling from IDs'.format(polygon_id))
+    all_files = glob.glob(os.path.join(input_dir, '*.geojson'))            
 
     # create dictionary with list for areas (either IDs or entire study area) to be sampled from
     out_dict = dict()
@@ -103,9 +108,14 @@ def main(input_dir=None, statistics=None, polygon_id=None, column=None, title=No
         else:
             # compute mean value over column
             if statistics == 'mean': vals = df[column].mean()
+            if statistics == 'median': vals = df[column].median()
             if statistics == 'max': vals = df[column].max()
             if statistics == 'min': vals = df[column].min()
             if statistics == 'std': vals = df[column].std()
+            if statistics == 'q05': vals = df[column].quantile(.05)
+            if statistics == 'q10': vals = df[column].quantile(.1)
+            if statistics == 'q90': vals = df[column].quantile(.9)
+            if statistics == 'q95': vals = df[column].quantile(.95)
             # append this value to list in dict
             idx_list = out_dict[polygon_id]
             idx_list.append(vals)
