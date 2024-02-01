@@ -7,16 +7,16 @@ from setuptools import setup, find_packages
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-requirements = ['Click>=7.0', 
-                'xarray>=0.15.1',
-                'pandas>=1.0.3',
-                'rasterio>=1.1.0',
-                'rioxarray>=0.0.26',
-                'rasterstats>=0.14',
-                'geopandas>=0.8.0',
-                'numpy>=1.21.0',
-                'scikit-learn>=0.22.1',
-                'seaborn>=0.11',
+requirements = ['click==8.1.7', 
+                'xarray==2023.12.0',
+                'pandas==2.1.4',
+                'rasterio==1.2.10',
+                'rioxarray==0.15.0',
+                'rasterstats==0.19.0',
+                'geopandas==0.14.2',
+                'numpy==1.26.3',
+                'scikit-learn==1.3.2',
+                'netcdf4==1.6.0',
                 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -53,6 +53,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://copro.readthedocs.io/',
-    version='0.1.2',
+    version='2.0.0',
     zip_safe=False,
 )

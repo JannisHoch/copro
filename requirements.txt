@@ -1,0 +1,10 @@
+# local package
+
+# external requirements
+
+# testing, mypy and linting requirements
+flake8
+mypy
+pre-commit
+prospector>=1.9.0
+pylint

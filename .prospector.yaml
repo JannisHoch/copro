@@ -1,0 +1,10 @@
+pylint:
+  disable:
+    - too-many-locals
+    - too-many-arguments
+    - unsubscriptable-object
+    - consider-using-f-string
+    - too-many-nested-blocks
+    # - dangerous-default-value
+    - cell-var-from-loop # activate later again
+    - simplifiable-if-statement # activate later again
