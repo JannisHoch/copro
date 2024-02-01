@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from configparser import RawConfigParser
 from sklearn import ensemble, preprocessing, model_selection
-from copro import conflict
 from typing import Union, Tuple
 
 
@@ -34,7 +33,7 @@ class MachineLearning:
         """
 
         ##- separate arrays for ID, geometry, and variable values
-        X_ID, X_geom, X_data = conflict.split_conflict_geom_data(X)
+        X_ID, X_geom, X_data = _split_conflict_geom_data(X)
 
         ##- scaling only the variable values
         if self.config.getboolean("general", "verbose"):
@@ -47,8 +46,6 @@ class MachineLearning:
         ##- splitting in train and test samples based on user-specified fraction
         if self.config.getboolean("general", "verbose"):
             print("DEBUG: splitting both X and Y in train and test data")
-        # TODO: model_selection.train_test_split() function name is misleading,
-        # there is the same function in sklearn.model_selection
         X_train, X_test, y_train, y_test = model_selection.train_test_split(
             X_cs,
             Y,
@@ -56,8 +53,8 @@ class MachineLearning:
         )
 
         # for training-set and test-set, split in ID, geometry, and values
-        X_train_ID, X_train_geom, X_train = conflict.split_conflict_geom_data(X_train)
-        X_test_ID, X_test_geom, X_test = conflict.split_conflict_geom_data(X_test)
+        X_train_ID, X_train_geom, X_train = _split_conflict_geom_data(X_train)
+        X_test_ID, X_test_geom, X_test = _split_conflict_geom_data(X_test)
 
         return (
             X_train,
@@ -135,6 +132,30 @@ def load_clfs(config: RawConfigParser, out_dir: str) -> list[str]:
     )
 
     return clfs
+
+
+def _split_conflict_geom_data(
+    X: Union[np.ndarray, pd.DataFrame]
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Separates the unique identifier, geometry information, and data from the variable-containing X-array.
+
+    Args:
+        X (np.ndarray, pd.DataFrame): variable-containing X-array.
+
+    Returns:
+        arrays: seperate arrays with ID, geometry, and actual data
+    """
+
+    if isinstance(X, pd.DataFrame):
+        X = X.to_numpy()
+
+    # first column corresponds to ID, second to geometry
+    # all remaining columns are actual data
+    X_ID = X[:, 0]
+    X_geom = X[:, 1]
+    X_data = X[:, 2:]
+
+    return X_ID, X_geom, X_data
 
 
 def _define_scaling(
