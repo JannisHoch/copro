@@ -1,4 +1,4 @@
-from copro import data, utils
+from copro import utils
 import geopandas as gpd
 import pandas as pd
 import numpy as np
@@ -264,7 +264,7 @@ def calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly):
     """
 
     # find neighbors of this polygon
-    nb = data.find_neighbors(i_poly, neighboring_matrix)
+    nb = _find_neighbors(i_poly, neighboring_matrix)
 
     # initiate list
     nb_count = []
@@ -385,3 +385,25 @@ def get_pred_conflict_geometry(
     df["correct_pred"] = np.where(df["y_test"] == df["y_pred"], 1, 0)
 
     return df
+
+
+def _find_neighbors(ID: int, neighboring_matrix: pd.DataFrame) -> np.ndarray:
+    """Filters all polygons which are actually neighbors to given polygon.
+
+    Args:
+        ID (int): ID of specific polygon under consideration.
+        neighboring_matrix (dataframe): output from neighboring_polys().
+
+    Returns:
+        dataframe: dataframe containig IDs of all polygons that are actual neighbors.
+    """
+
+    # locaties entry for polygon under consideration
+    neighbours = neighboring_matrix.loc[neighboring_matrix.index == ID].T
+
+    # filters all actual neighbors defined as neighboring polygons with True statement
+    actual_neighbours = neighbours.loc[  # noqa: C0121
+        neighbours[ID] == True  # noqa: C0121
+    ].index.values  # noqa: C0121
+
+    return actual_neighbours

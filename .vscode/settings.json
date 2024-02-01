@@ -1,5 +1,5 @@
 {
-  "esbonio.sphinx.confDir": "",
+  "esbonio.sphinx.confDir": "${workspaceFolder}\\docs",
   "python.pythonPath": "C:\\Users\\hoch0001\\AppData\\Local\\Continuum\\anaconda3\\envs\\copro\\python.exe",
   "restructuredtext.confPath": "${workspaceFolder}\\docs"
 }
