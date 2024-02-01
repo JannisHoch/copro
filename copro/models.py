@@ -6,7 +6,7 @@ import numpy as np
 from typing import Union
 
 
-class Model:
+class MainModel:
     def __init__(
         self,
         X: Union[np.ndarray, pd.DataFrame],
@@ -22,6 +22,17 @@ class Model:
         out_dir: str,
         run_nr: int,
     ):
+        """Constructor for the MainModel class.
+
+        Args:
+            X (np.ndarray, pd.DataFrame): array containing the variable values plus IDs and geometry information.
+            Y (np.ndarray): array containing merely the binary conflict classifier data.
+            config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+            scaler (scaler): the specified scaling method instance.
+            clf (classifier): the specified model instance.
+            out_dir (str): path to output folder.
+            run_nr (int): number of the current run.
+        """
         self.X = X
         self.Y = Y
         self.config = config
@@ -34,14 +45,6 @@ class Model:
         """Main model workflow when all XY-data is used.
         The model workflow is executed for each classifier.
 
-        Args:
-            X (array): array containing the variable values plus IDs and geometry information.
-            Y (array): array containing merely the binary conflict classifier data.
-            config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-            scaler (scaler): the specified scaling method instance.
-            clf (classifier): the specified model instance.
-            out_dir (str): path to output folder.
-
         Returns:
             dataframe: containing the test-data X-array values.
             datatrame: containing model output on polygon-basis.
@@ -49,6 +52,10 @@ class Model:
         """
         if self.config.getboolean("general", "verbose"):
             print("DEBUG: using all data")
+
+        MLmodel = machine_learning.MachineLearning(
+            self.config,
+        )
 
         # split X into training-set and test-set, scale training-set data
         (
@@ -60,16 +67,14 @@ class Model:
             X_test_geom,
             _,
             X_test_ID,
-        ) = machine_learning.split_scale_train_test_split(
-            self.X, self.Y, self.config, self.scaler
-        )
+        ) = MLmodel.split_scale_train_test_split(self.X, self.Y)
 
         # convert to dataframe
         X_df = pd.DataFrame(X_test)
 
         # fit classifier and make prediction with test-set
-        y_pred, y_prob = machine_learning.fit_predict(
-            X_train, y_train, X_test, self.clf, self.config, self.out_dir, self.run_nr
+        y_pred, y_prob = MLmodel.fit_predict(
+            X_train, y_train, X_test, self.out_dir, self.run_nr
         )
         y_prob_0 = y_prob[:, 0]  # probability to predict 0
         y_prob_1 = y_prob[:, 1]  # probability to predict 1
