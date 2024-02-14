@@ -38,7 +38,7 @@ def initiate_setup(settings_file: click.Path) -> Tuple[dict, str]:
     config_dict = _collect_simulation_settings(config, root_dir)
 
     # get dictionary with all config-objects and all out-dirs
-    main_dict = io.make_output_dir(config, root_dir, config_dict)
+    main_dict = io.make_and_collect_output_dirs(config, root_dir, config_dict)
 
     # copy cfg-file of reference run to out-dir of reference run
     # for documentation and debugging purposes
