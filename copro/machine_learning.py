@@ -5,6 +5,8 @@ import numpy as np
 from configparser import RawConfigParser
 from sklearn import ensemble, preprocessing, model_selection
 from typing import Union, Tuple
+import click
+from pathlib import Path
 
 
 class MachineLearning:
@@ -36,16 +38,14 @@ class MachineLearning:
         X_ID, X_geom, X_data = _split_conflict_geom_data(X)
 
         ##- scaling only the variable values
-        if self.config.getboolean("general", "verbose"):
-            print("DEBUG: fitting and transforming X")
+        click.echo("Fitting and transforming X")
         X_ft = self.scaler.fit_transform(X_data)
 
         ##- combining ID, geometry and scaled sample values per polygon
         X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
         ##- splitting in train and test samples based on user-specified fraction
-        if self.config.getboolean("general", "verbose"):
-            print("DEBUG: splitting both X and Y in train and test data")
+        click.echo("Splitting both X and Y in train and test data")
         X_train, X_test, y_train, y_test = model_selection.train_test_split(
             X_cs,
             Y,
@@ -95,12 +95,10 @@ class MachineLearning:
 
         # create folder to store all classifiers with pickle
         clf_pickle_rep = os.path.join(out_dir, "clfs")
-        if not os.path.isdir(clf_pickle_rep):
-            os.makedirs(clf_pickle_rep)
+        Path.mkdir(Path(clf_pickle_rep), parents=True, exist_ok=True)
 
         # save the fitted classifier to file via pickle.dump()
-        if self.config.getboolean("general", "verbose"):
-            print("DEBUG: dumping classifier to {}".format(clf_pickle_rep))
+        click.echo(f"Dumping classifier to {clf_pickle_rep}.")
         with open(os.path.join(clf_pickle_rep, "clf_{}.pkl".format(run_nr)), "wb") as f:
             pickle.dump(self.clf, f)
 
@@ -127,9 +125,10 @@ def load_clfs(config: RawConfigParser, out_dir: str) -> list[str]:
 
     clfs = os.listdir(os.path.join(out_dir, "clfs"))
 
-    assert len(clfs) == config.getint("machine_learning", "n_runs"), AssertionError(
-        "ERROR: number of loaded classifiers does not match the specified number of runs in cfg-file!"
-    )
+    if len(clfs) != config.getint("machine_learning", "n_runs"):
+        raise ValueError(
+            "Number of loaded classifiers does not match the specified number of runs in cfg-file!"
+        )
 
     return clfs
 
@@ -192,7 +191,6 @@ def _define_scaling(
                 choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer"
         )
 
-    if config.getboolean("general", "verbose"):
-        print("DEBUG: chosen scaling method is {}".format(scaler))
+    click.echo(f"Chosen scaling method is {scaler}.")
 
     return scaler
