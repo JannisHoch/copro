@@ -46,9 +46,53 @@ def get_conflict_geodataframe(
     return gdf
 
 
+def get_poly_ID(extent_gdf: gpd.GeoDataFrame) -> list:
+    """Extracts and returns a list with unique identifiers for each polygon used in the model.
+
+    .. note::
+        The identifiers are currently limited to `watprovID`.
+
+    Args:
+        extent_gdf (gpd.GeoDataFrame): all polygons considered in model.
+
+    Returns:
+        list: list with ID of each polygons.
+    """
+
+    # initiatie empty list
+    list_ID = []
+    # loop through all polygons
+    for i in range(len(extent_gdf)):
+        # append geometry of each polygon to list
+        list_ID.append(extent_gdf.iloc[i]["watprovID"])
+
+    return list_ID
+
+
+def get_poly_geometry(extent_gdf: gpd.GeoDataFrame) -> list:
+    """Extracts geometry information for each polygon from geodataframe and saves to list.
+    The geometry column in geodataframe must be named `geometry`.
+
+    Args:
+        extent_gdf (gpd.GeoDataFrame): all polygons considered in model.
+
+    Returns:
+        list: list with geometry of each polygons.
+    """
+
+    # initiatie empty list
+    list_geometry = []
+    # loop through all polygons
+    for i in range(len(extent_gdf)):
+        # append geometry of each polygon to list
+        list_geometry.append(extent_gdf.iloc[i]["geometry"])
+
+    return list_geometry
+
+
 def get_ID_geometry_lookup(
     gdf: gpd.GeoDataFrame,
-) -> pd.DataFrame:  # get_ID_geometry_lookup
+) -> pd.DataFrame:
     """Retrieves unique ID and geometry information from geo-dataframe for a global look-up dataframe.
     The IDs currently supported are 'name' or 'watprovID'.
 
