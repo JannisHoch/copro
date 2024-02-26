@@ -2,16 +2,18 @@ import pytest
 import configparser
 import numpy as np
 import pandas as pd
-from copro import data
+from copro import xydata
+
 
 def create_fake_config():
 
     config = configparser.ConfigParser()
 
-    config.add_section('general')
-    config.set('general', 'verbose', str(False))
+    config.add_section("general")
+    config.set("general", "verbose", str(False))
 
     return config
+
 
 def test_split_XY_data():
 
@@ -21,8 +23,8 @@ def test_split_XY_data():
     y_arr = [1, 0, 0, 1]
 
     XY_in = np.column_stack((X_arr, y_arr))
-    
-    X, Y = data.split_XY_data(XY_in, config)
+
+    X, Y = xydata.split_XY_data(XY_in, config)
 
     XY_out = np.column_stack((X, Y))
 

@@ -1,4 +1,4 @@
-from copro import utils
+from copro import utils, nb
 from configparser import RawConfigParser
 from pathlib import Path
 from typing import Union, Literal
@@ -196,12 +196,12 @@ def calc_conflicts_nb(
     """
 
     # find neighbors of this polygon
-    nb = _find_neighbors(i_poly, neighboring_matrix)
+    nbs = nb.find_neighbors(i_poly, neighboring_matrix)
 
     # initiate list
     nb_count = []
     # loop through neighbors
-    for k in nb:
+    for k in nbs:
         # check if there was conflict at t-1
         if k in conflicts_per_poly.index.values:
             nb_count.append(1)
@@ -290,25 +290,3 @@ def _store_boolean_conflict_data_to_csv(
     data_stored = data_stored.drop("geometry", axis=1)
     data_stored = data_stored.astype(int)
     data_stored.to_csv(os.path.join(out_dir, f"conflicts_in_{sim_year}.csv"))
-
-
-def _find_neighbors(ID: int, neighboring_matrix: pd.DataFrame) -> np.ndarray:
-    """Filters all polygons which are actually neighbors to given polygon.
-
-    Args:
-        ID (int): ID of specific polygon under consideration.
-        neighboring_matrix (pd.DataFrame): output from neighboring_polys().
-
-    Returns:
-        np.ndarray: IDs of all polygons that are actual neighbors.
-    """
-
-    # locaties entry for polygon under consideration
-    neighbours = neighboring_matrix.loc[neighboring_matrix.index == ID].T
-
-    # filters all actual neighbors defined as neighboring polygons with True statement
-    actual_neighbours = neighbours.loc[  # noqa: C0121
-        neighbours[ID] == True  # noqa: C0121
-    ].index.values  # noqa: C0121
-
-    return actual_neighbours
