@@ -12,7 +12,7 @@ from pathlib import Path
 class MachineLearning:
     def __init__(self, config: RawConfigParser) -> None:
         self.config = config
-        self.scaler = _define_scaling(config)
+        self.scaler = define_scaling(config)
         self.clf = ensemble.RandomForestClassifier(
             n_estimators=1000, class_weight={1: 100}, random_state=42
         )
@@ -157,7 +157,7 @@ def _split_conflict_geom_data(
     return X_ID, X_geom, X_data
 
 
-def _define_scaling(
+def define_scaling(
     config: RawConfigParser,
 ) -> Union[
     preprocessing.MinMaxScaler,

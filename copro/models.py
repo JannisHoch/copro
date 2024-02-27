@@ -1,6 +1,6 @@
 from copro import machine_learning, conflict, evaluation, utils, xydata
 from configparser import RawConfigParser
-from sklearn import preprocessing, ensemble
+from sklearn import ensemble
 import pandas as pd
 import numpy as np
 from typing import Union
@@ -16,15 +16,7 @@ class MainModel:
         X: Union[np.ndarray, pd.DataFrame],
         Y: np.ndarray,
         config: RawConfigParser,
-        scaler: Union[
-            preprocessing.MinMaxScaler,
-            preprocessing.StandardScaler,
-            preprocessing.RobustScaler,
-            preprocessing.QuantileTransformer,
-        ],
-        clf: ensemble.RandomForestClassifier,
         out_dir: str,
-        run_nr: int,
     ):
         """Constructor for the MainModel class.
 
@@ -40,12 +32,14 @@ class MainModel:
         self.X = X
         self.Y = Y
         self.config = config
-        self.scaler = scaler
-        self.clf = clf
+        # TODO: scaler and clf settings need to be aligned with machine_learning.py class
+        self.scaler = machine_learning.define_scaling(config)
+        self.clf = ensemble.RandomForestClassifier(
+            n_estimators=1000, class_weight={1: 100}, random_state=42
+        )
         self.out_dir = out_dir
-        self.run_nr = run_nr
 
-    def run(self) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    def run(self, run_nr) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
         """Main model workflow when all XY-data is used.
         The model workflow is executed for each classifier.
 
@@ -78,7 +72,7 @@ class MainModel:
 
         # fit classifier and make prediction with test-set
         y_pred, y_prob = MLmodel.fit_predict(
-            X_train, y_train, X_test, self.out_dir, self.run_nr
+            X_train, y_train, X_test, self.out_dir, run_nr
         )
         y_prob_0 = y_prob[:, 0]  # probability to predict 0
         y_prob_1 = y_prob[:, 1]  # probability to predict 1
