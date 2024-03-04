@@ -64,7 +64,7 @@ class XYData:
         """
 
         # if nothing is specified in cfg-file, then initiate and fill XY data from scratch
-        if self.config.get("pre_calc", "XY") != "":
+        if self.config.get("pre_calc", "XY") != " ":
             self._initiate_XY_data()
             # fill the dictionary and get array
             XY_arr = _fill_XY(
@@ -305,35 +305,34 @@ def _fill_XY(  # noqa: R0912
                     data_list = conflict.conflict_in_year_bool(
                         config, conflict_data, polygon_gdf, sim_year, out_dir
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
                 elif key == "conflict_t_min_1":
 
                     data_series = value
-                    data_list = conflict.conflict_in_previous_year(
-                        config, conflict_data, polygon_gdf, sim_year
+                    data_list = conflict.conflict_in_previous_year_bool(
+                        conflict_data, polygon_gdf, sim_year
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
                 elif key == "conflict_t_min_1_nb":
 
                     data_series = value
-                    data_list = conflict.conflict_in_previous_year(
-                        config,
+                    data_list = conflict.conflict_in_previous_year_bool(
                         conflict_data,
                         polygon_gdf,
                         sim_year,
                         check_neighbors=True,
                         neighboring_matrix=neighboring_matrix,
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
@@ -341,8 +340,8 @@ def _fill_XY(  # noqa: R0912
 
                     data_series = value
                     data_list = utils.get_poly_ID(polygon_gdf)
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
@@ -350,8 +349,8 @@ def _fill_XY(  # noqa: R0912
 
                     data_series = value
                     data_list = utils.get_poly_geometry(polygon_gdf)
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
@@ -372,8 +371,10 @@ def _fill_XY(  # noqa: R0912
                         data_list = variables.nc_with_float_timestamp(
                             polygon_gdf, config, root_dir, key, sim_year
                         )
-                        data_series = data_series.append(
-                            pd.Series(data_list), ignore_index=True
+                        data_series = pd.concat(
+                            [data_series, pd.Series(data_list)],
+                            axis=0,
+                            ignore_index=True,
                         )
                         XY[key] = data_series
 
@@ -382,8 +383,10 @@ def _fill_XY(  # noqa: R0912
                         data_list = variables.nc_with_continous_datetime_timestamp(
                             polygon_gdf, config, root_dir, key, sim_year
                         )
-                        data_series = data_series.append(
-                            pd.Series(data_list), ignore_index=True
+                        data_series = pd.concat(
+                            [data_series, pd.Series(data_list)],
+                            axis=0,
+                            ignore_index=True,
                         )
                         XY[key] = data_series
 

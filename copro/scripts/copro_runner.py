@@ -41,11 +41,21 @@ def cli(cfg):
         config_REF, out_dir_REF, root_dir
     )
 
+    XY_class = xydata.XYData(config_REF)
+    X, Y = XY_class.create_XY(
+        out_dir=out_dir_REF,
+        root_dir=root_dir,
+        polygon_gdf=extent_active_polys_gdf,
+        conflict_gdf=conflict_gdf,
+    )
+
+    # NOTE: script works until here
+
     # - create X and Y arrays by reading conflict and variable files for reference run
     # - or by loading a pre-computed array (npy-file) if specified in cfg-file
-    X, Y = xydata.create_XY(
-        config_REF, out_dir_REF, root_dir, extent_active_polys_gdf, conflict_gdf
-    )
+    # X, Y = xydata.create_XY(
+    #     config_REF, out_dir_REF, root_dir, extent_active_polys_gdf, conflict_gdf
+    # )
 
     # - defining scaling and model algorithms
     MachineLearning = models.MainModel(
