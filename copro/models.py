@@ -76,7 +76,7 @@ class MainModel:
         y_prob_1 = y_prob[:, 1]  # probability to predict 1
 
         # evaluate prediction and save to dict
-        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, self.config)
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob)
 
         # aggregate predictions per polygon
         y_df = conflict.check_for_correct_prediction(

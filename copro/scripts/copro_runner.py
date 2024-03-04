@@ -76,22 +76,19 @@ def cli(cfg):
 
     # - go through all n model executions
     # - that is, create different classifiers based on different train-test data combinations
+    # TODO: this loop should be part of MachineLearning class
     click.echo("Training and testing machine learning model")
     for n in range(config_REF.getint("machine_learning", "n_runs")):
 
         click.echo(f"Run {n+1} of {config_REF.getint('machine_learning', 'n_runs')}.")
 
         # - run machine learning model and return outputs
-        # TODO: check if both function calls are doing the same
-        # copro.pipeline.run_reference(X, Y, config_REF, scaler, clf, out_dir_REF, run_nr=n+1)
-        X_df, y_df, out_dict = MachineLearning.run(run_nr=n)
+        X_df, y_df, eval_dict = MachineLearning.run(run_nr=n)
 
         # - append per model execution
         out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
         out_y_df = pd.concat([out_y_df, y_df], axis=0, ignore_index=True)
-        out_dict = evaluation.fill_out_dict(
-            out_dict=out_dict, y_pred=None, y_prob=None, y_test=None, config=config_REF
-        )
+        out_dict = evaluation.fill_out_dict(out_dict, eval_dict)
 
     # - save output dictionary to csv-file
     io.save_to_csv(out_dict, out_dir_REF, "evaluation_metrics")
@@ -108,21 +105,9 @@ def cli(cfg):
         )
 
     # - create accuracy values per polygon and save to output folder
-    # - note only the dataframe is stored, not the geo-dataframe
-    _, gdf_hit = evaluation.polygon_model_accuracy(out_y_df, global_df)
+    gdf_hit = evaluation.polygon_model_accuracy(out_y_df, global_df)
     gdf_hit.to_file(
         os.path.join(out_dir_REF, "output_for_REF.geojson"), driver="GeoJSON"
-    )
-
-    df_feat_imp = evaluation.get_feature_importance(
-        MachineLearning.clf, config_REF, out_dir_REF
-    )
-    _ = evaluation.get_permutation_importance(
-        MachineLearning.clf,
-        MachineLearning.scaler.fit_transform(X[:, 2:]),
-        Y,
-        df_feat_imp,
-        out_dir_REF,
     )
 
     click.echo(click.style("\nINFO: reference run succesfully finished\n", fg="cyan"))
