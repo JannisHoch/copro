@@ -48,8 +48,6 @@ class MainModel:
             datatrame: containing model output on polygon-basis.
             dict: dictionary containing evaluation metrics per simulation.
         """
-        if self.config.getboolean("general", "verbose"):
-            print("DEBUG: using all data")
 
         MLmodel = machine_learning.MachineLearning(
             self.config,
@@ -78,12 +76,10 @@ class MainModel:
         y_prob_1 = y_prob[:, 1]  # probability to predict 1
 
         # evaluate prediction and save to dict
-        eval_dict = evaluation.evaluate_prediction(
-            y_test, y_pred, y_prob, X_test, self.clf, self.config
-        )
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob, self.config)
 
         # aggregate predictions per polygon
-        y_df = conflict.get_pred_conflict_geometry(
+        y_df = conflict.check_for_correct_prediction(
             X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1
         )
 

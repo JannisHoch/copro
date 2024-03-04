@@ -2,6 +2,7 @@ from copro import settings, selection, evaluation, io, models, xydata
 
 import click
 import numpy as np
+import pandas as pd
 import os
 
 import warnings
@@ -49,8 +50,6 @@ def cli(cfg):
         conflict_gdf=conflict_gdf,
     )
 
-    # NOTE: script works until here
-
     # - create X and Y arrays by reading conflict and variable files for reference run
     # - or by loading a pre-computed array (npy-file) if specified in cfg-file
     # X, Y = xydata.create_XY(
@@ -71,32 +70,25 @@ def cli(cfg):
     _ = MachineLearning.scaler.fit(X[:, 2:])  # returns scaler_fitted
 
     # - initializing output variables
-    # TODO: put all this into one function
-    out_X_df = evaluation.init_out_df()
-    out_y_df = evaluation.init_out_df()
+    out_X_df = pd.DataFrame()
+    out_y_df = pd.DataFrame()
     out_dict = evaluation.init_out_dict()
 
     # - go through all n model executions
     # - that is, create different classifiers based on different train-test data combinations
-    click.echo("INFO: training and testing machine learning model")
+    click.echo("Training and testing machine learning model")
     for n in range(config_REF.getint("machine_learning", "n_runs")):
 
-        click.echo(
-            "INFO: run {} of {}".format(
-                n + 1, config_REF.getint("machine_learning", "n_runs")
-            )
-        )
+        click.echo(f"Run {n+1} of {config_REF.getint('machine_learning', 'n_runs')}.")
 
         # - run machine learning model and return outputs
         # TODO: check if both function calls are doing the same
         # copro.pipeline.run_reference(X, Y, config_REF, scaler, clf, out_dir_REF, run_nr=n+1)
-        X_df, y_df, _ = MachineLearning.run(run_nr=n)
+        X_df, y_df, out_dict = MachineLearning.run(run_nr=n)
 
         # - append per model execution
-        # TODO: put all this into one function
-        out_X_df = evaluation.fill_out_df(out_X_df, X_df)
-        out_y_df = evaluation.fill_out_df(out_y_df, y_df)
-        # TODO: the arguments available and required do not seem to match
+        out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
+        out_y_df = pd.concat([out_y_df, y_df], axis=0, ignore_index=True)
         out_dict = evaluation.fill_out_dict(
             out_dict=out_dict, y_pred=None, y_prob=None, y_test=None, config=config_REF
         )

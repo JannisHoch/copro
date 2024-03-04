@@ -57,31 +57,12 @@ def fill_out_dict(
         dict: dictionary with collected scores for each simulation
     """
 
-    eval_dict = _evaluate_prediction(y_test, y_pred, y_prob, config)
+    eval_dict = evaluate_prediction(y_test, y_pred, y_prob, config)
 
     for key in out_dict:
         out_dict[key].append(eval_dict[key])
 
     return out_dict
-
-
-def fill_out_df(out_df: pd.DataFrame, y_df: pd.DataFrame) -> pd.DataFrame:
-    """Appends output dataframe of each simulation to main output dataframe.
-
-    ..note::
-        Is a separate function needed for this?
-
-    Args:
-        out_df (dataframe): main output dataframe.
-        y_df (dataframe): output dataframe of each simulation.
-
-    Returns:
-        dataframe: main output dataframe containing results of all simulations.
-    """
-
-    out_df = out_df.append(y_df, ignore_index=True)
-
-    return out_df
 
 
 def polygon_model_accuracy(
@@ -234,7 +215,7 @@ def get_permutation_importance(
     return df
 
 
-def _evaluate_prediction(
+def evaluate_prediction(
     y_test: list, y_pred: list, y_prob: list, config: RawConfigParser
 ) -> dict:
     """Computes a range of model evaluation metrics and appends the resulting scores to a dictionary.
