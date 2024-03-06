@@ -39,8 +39,38 @@ class MainModel:
         )
         self.out_dir = out_dir
 
-    def run(self, run_nr) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-        """Main model workflow when all XY-data is used.
+    def run(self, number_runs: int) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+        """Top-level function to execute the machine learning model for all specified runs.
+
+        Args:
+            number_runs (int): Number of runs as specified in the settings-file.
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame, dict]: Prediction dataframes, model output on polygon-basis, \
+                and evaluation dictionary.
+        """
+
+        # - initializing output variables
+        out_X_df = pd.DataFrame()
+        out_y_df = pd.DataFrame()
+        out_dict = evaluation.init_out_dict()
+
+        click.echo("Training and testing machine learning model")
+        for n in range(number_runs):
+            click.echo(f"Run {n+1} of {number_runs}.")
+
+            # - run machine learning model and return outputs
+            X_df, y_df, eval_dict = self._n_run(run_nr=n)
+
+            # - append per model execution
+            out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
+            out_y_df = pd.concat([out_y_df, y_df], axis=0, ignore_index=True)
+            out_dict = evaluation.fill_out_dict(out_dict, eval_dict)
+
+        return out_X_df, out_y_df, out_dict
+
+    def _n_run(self, run_nr) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+        """Runs workflow per specified number of runs.
         The model workflow is executed for each classifier.
 
         Returns:

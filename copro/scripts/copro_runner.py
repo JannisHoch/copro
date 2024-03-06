@@ -2,7 +2,6 @@ from copro import settings, selection, evaluation, io, models, xydata
 
 import click
 import numpy as np
-import pandas as pd
 import os
 
 import warnings
@@ -69,26 +68,9 @@ def cli(cfg):
     # TODO: scaler_fitted needs to be part of the class
     _ = MachineLearning.scaler.fit(X[:, 2:])  # returns scaler_fitted
 
-    # - initializing output variables
-    out_X_df = pd.DataFrame()
-    out_y_df = pd.DataFrame()
-    out_dict = evaluation.init_out_dict()
-
-    # - go through all n model executions
-    # - that is, create different classifiers based on different train-test data combinations
-    # TODO: this loop should be part of MachineLearning class
-    click.echo("Training and testing machine learning model")
-    for n in range(config_REF.getint("machine_learning", "n_runs")):
-
-        click.echo(f"Run {n+1} of {config_REF.getint('machine_learning', 'n_runs')}.")
-
-        # - run machine learning model and return outputs
-        X_df, y_df, eval_dict = MachineLearning.run(run_nr=n)
-
-        # - append per model execution
-        out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
-        out_y_df = pd.concat([out_y_df, y_df], axis=0, ignore_index=True)
-        out_dict = evaluation.fill_out_dict(out_dict, eval_dict)
+    _, out_y_df, out_dict = MachineLearning.run(
+        config_REF.getint("machine_learning", "n_runs")
+    )
 
     # - save output dictionary to csv-file
     io.save_to_csv(out_dict, out_dir_REF, "evaluation_metrics")
