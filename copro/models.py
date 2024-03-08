@@ -1,6 +1,7 @@
 from copro import machine_learning, conflict, evaluation, utils, xydata
 from configparser import RawConfigParser
 from sklearn import ensemble
+from sklearn.utils.validation import check_is_fitted
 import pandas as pd
 import numpy as np
 from typing import Union
@@ -32,8 +33,10 @@ class MainModel:
         self.X = X
         self.Y = Y
         self.config = config
-        # TODO: scaler and clf settings need to be aligned with machine_learning.py class
         self.scaler = machine_learning.define_scaling(config)
+        self.scaler_all_data = self.scaler.fit(
+            X[:, 2:]
+        )  # NOTE: supposed to be used in projections
         self.clf = ensemble.RandomForestClassifier(
             n_estimators=1000, class_weight={1: 100}, random_state=42
         )
@@ -49,6 +52,8 @@ class MainModel:
             tuple[pd.DataFrame, pd.DataFrame, dict]: Prediction dataframes, model output on polygon-basis, \
                 and evaluation dictionary.
         """
+
+        check_is_fitted(self.scaler)
 
         # - initializing output variables
         out_X_df = pd.DataFrame()

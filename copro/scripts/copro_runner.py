@@ -58,9 +58,6 @@ def cli(cfg):
     )
 
     # - fit-transform on scaler to be used later during projections
-    click.echo("INFO: fitting scaler to sample data")
-    # TODO: scaler_fitted needs to be part of the class
-    _ = ModelWorkflow.scaler.fit(X[:, 2:])  # returns scaler_fitted
 
     _, out_y_df, out_dict = ModelWorkflow.run(
         config_REF.getint("machine_learning", "n_runs")
