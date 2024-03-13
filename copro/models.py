@@ -1,7 +1,8 @@
-from copro import machine_learning, conflict, evaluation, utils, xydata
+from copro import machine_learning, conflict, evaluation, utils, xydata, settings
 from configparser import RawConfigParser
 from sklearn import ensemble
 from sklearn.utils.validation import check_is_fitted
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from typing import Union
@@ -146,10 +147,7 @@ class MainModel:
         config_REF = main_dict["_REF"][0]
         out_dir_REF = main_dict["_REF"][1]
 
-        clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
-
-        # initiate output dataframe
-        all_y_df = pd.DataFrame(columns=["ID", "geometry", "y_pred"])
+        clfs, all_y_df = _init_prediction_run(config_REF, out_dir_REF)
 
         # going through each projection specified
         for each_key, _ in config_REF.items("PROJ_files"):
@@ -160,15 +158,13 @@ class MainModel:
             out_dir_PROJ = main_dict[str(each_key)][1]
 
             click.echo(f"Storing output for this projections to folder {out_dir_PROJ}.")
-
-            # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
-            #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
-            if not os.path.isdir(os.path.join(out_dir_PROJ, "clfs")):
-                os.makedirs(os.path.join(out_dir_PROJ, "clfs"))
+            Path.mkdir(
+                Path(os.path.join(out_dir_PROJ, "clfs")), parents=True, exist_ok=True
+            )
 
             # get projection period for this projection
             # defined as all years starting from end of reference run until specified end of projections
-            projection_period = utils.determine_projection_period(
+            projection_period = settings.determine_projection_period(
                 config_REF, config_PROJ
             )
 
@@ -328,3 +324,13 @@ class MainModel:
             all_y_df = all_y_df.append(y_df, ignore_index=True)
 
         return all_y_df
+
+
+def _init_prediction_run(config_REF, out_dir_REF):
+
+    clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
+
+    # initiate output dataframe
+    all_y_df = pd.DataFrame(columns=["ID", "geometry", "y_pred"])
+
+    return clfs, all_y_df

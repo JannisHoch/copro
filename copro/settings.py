@@ -1,5 +1,6 @@
 import click
 import os
+import numpy as np
 from configparser import RawConfigParser
 from shutil import copyfile
 from typing import Tuple
@@ -112,3 +113,33 @@ def _collect_simulation_settings(config: RawConfigParser, root_dir: click.Path) 
         config_dict[each_key] = [each_config]
 
     return config_dict
+
+
+def determine_projection_period(
+    config_REF: RawConfigParser, config_PROJ: RawConfigParser
+) -> list:
+    """Determines the period for which projections need to be made.
+    This is defined as the period between the end year of the reference run
+    and the specified projection year for each projection.
+
+    Args:
+        config_REF (RawConfigParser): model configuration-settings for the reference run.
+        config_PROJ (RawConfigParser): model configuration-settings for a projection run..
+
+    Returns:
+        list: all years of the projection period.
+    """
+
+    # get all years of projection period
+    projection_period = np.arange(
+        config_REF.getint("settings", "y_end") + 1,
+        config_PROJ.getint("settings", "y_proj") + 1,
+        1,
+    )
+    # convert to list
+    projection_period = projection_period.tolist()
+    click.echo(
+        f"The projection period is {projection_period[0]} to {projection_period[-1]}."
+    )
+
+    return projection_period
