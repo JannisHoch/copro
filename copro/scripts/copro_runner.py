@@ -41,14 +41,16 @@ def cli(cfg):
         config_REF, out_dir_REF, root_dir
     )
 
-    # - create X and Y arrays by reading conflict and variable files for reference run
-    # - or by loading a pre-computed array (npy-file) if specified in cfg-file
-    X, Y = xydata.create_XY(
-        config_REF, out_dir_REF, root_dir, extent_active_polys_gdf, conflict_gdf
+    XY_class = xydata.XYData(config_REF)
+    X, Y = XY_class.create_XY(
+        out_dir=out_dir_REF,
+        root_dir=root_dir,
+        polygon_gdf=extent_active_polys_gdf,
+        conflict_gdf=conflict_gdf,
     )
 
     # - defining scaling and model algorithms
-    MachineLearning = models.MainModel(
+    ModelWorkflow = models.MainModel(
         config=config_REF,
         X=X,
         Y=Y,
@@ -56,40 +58,10 @@ def cli(cfg):
     )
 
     # - fit-transform on scaler to be used later during projections
-    click.echo("INFO: fitting scaler to sample data")
-    # TODO: scaler_fitted needs to be part of the class
-    _ = MachineLearning.scaler.fit(X[:, 2:])  # returns scaler_fitted
 
-    # - initializing output variables
-    # TODO: put all this into one function
-    out_X_df = evaluation.init_out_df()
-    out_y_df = evaluation.init_out_df()
-    out_dict = evaluation.init_out_dict()
-
-    # - go through all n model executions
-    # - that is, create different classifiers based on different train-test data combinations
-    click.echo("INFO: training and testing machine learning model")
-    for n in range(config_REF.getint("machine_learning", "n_runs")):
-
-        click.echo(
-            "INFO: run {} of {}".format(
-                n + 1, config_REF.getint("machine_learning", "n_runs")
-            )
-        )
-
-        # - run machine learning model and return outputs
-        # TODO: check if both function calls are doing the same
-        # copro.pipeline.run_reference(X, Y, config_REF, scaler, clf, out_dir_REF, run_nr=n+1)
-        X_df, y_df, _ = MachineLearning.run(run_nr=n)
-
-        # - append per model execution
-        # TODO: put all this into one function
-        out_X_df = evaluation.fill_out_df(out_X_df, X_df)
-        out_y_df = evaluation.fill_out_df(out_y_df, y_df)
-        # TODO: the arguments available and required do not seem to match
-        out_dict = evaluation.fill_out_dict(
-            out_dict=out_dict, y_pred=None, y_prob=None, y_test=None, config=config_REF
-        )
+    _, out_y_df, out_dict = ModelWorkflow.run(
+        config_REF.getint("machine_learning", "n_runs")
+    )
 
     # - save output dictionary to csv-file
     io.save_to_csv(out_dict, out_dir_REF, "evaluation_metrics")
@@ -106,21 +78,9 @@ def cli(cfg):
         )
 
     # - create accuracy values per polygon and save to output folder
-    # - note only the dataframe is stored, not the geo-dataframe
-    _, gdf_hit = evaluation.polygon_model_accuracy(out_y_df, global_df)
+    gdf_hit = evaluation.polygon_model_accuracy(out_y_df, global_df)
     gdf_hit.to_file(
         os.path.join(out_dir_REF, "output_for_REF.geojson"), driver="GeoJSON"
-    )
-
-    df_feat_imp = evaluation.get_feature_importance(
-        MachineLearning.clf, config_REF, out_dir_REF
-    )
-    _ = evaluation.get_permutation_importance(
-        MachineLearning.clf,
-        MachineLearning.scaler.fit_transform(X[:, 2:]),
-        Y,
-        df_feat_imp,
-        out_dir_REF,
     )
 
     click.echo(click.style("\nINFO: reference run succesfully finished\n", fg="cyan"))
@@ -129,6 +89,6 @@ def cli(cfg):
 
     # - running prediction runs
     # TODO: scaler_fitted is now not part of the class
-    MachineLearning.run_prediction(main_dict, root_dir, extent_active_polys_gdf)
+    ModelWorkflow.run_prediction(main_dict, root_dir, extent_active_polys_gdf)
 
     click.echo(click.style("\nINFO: all projections succesfully finished\n", fg="cyan"))

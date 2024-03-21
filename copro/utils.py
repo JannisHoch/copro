@@ -1,5 +1,6 @@
 import geopandas as gpd
 import pandas as pd
+import numpy as np
 import os
 from configparser import RawConfigParser
 from datetime import date
@@ -104,12 +105,15 @@ def get_ID_geometry_lookup(
     """
 
     # stack identifier and geometry of all polygons
-    # NOTE: columnn 'watprovID' is hardcoded here
-    df = pd.DataFrame(
-        index=gdf["watprovID"].to_list(),
-        data=gdf["geometry"].to_list(),
-        columns=["geometry"],
-    )
+    # FIXME: 'watprovID' is hard-coded
+    arr = np.column_stack((gdf["watprovID"].to_numpy(), gdf.geometry.to_numpy()))
+
+    # convert to dataframe
+    df = pd.DataFrame(data=arr, columns=["ID", "geometry"])
+
+    # use column ID as index
+    df.set_index(df.ID, inplace=True)
+    df = df.drop("ID", axis=1)
 
     return df
 

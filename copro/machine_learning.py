@@ -38,14 +38,14 @@ class MachineLearning:
         X_ID, X_geom, X_data = _split_conflict_geom_data(X)
 
         ##- scaling only the variable values
-        click.echo("Fitting and transforming X")
+        click.echo("Fitting and transforming X.")
         X_ft = self.scaler.fit_transform(X_data)
 
         ##- combining ID, geometry and scaled sample values per polygon
         X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
         ##- splitting in train and test samples based on user-specified fraction
-        click.echo("Splitting both X and Y in train and test data")
+        click.echo("Splitting both X and Y in train and test data.")
         X_train, X_test, y_train, y_test = model_selection.train_test_split(
             X_cs,
             Y,
@@ -170,9 +170,6 @@ def define_scaling(
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
-    Raises:
-        ValueError: raised if a non-supported scaling method is specified.
-
     Returns:
         scaler: the specified scaling method instance.
     """
@@ -194,3 +191,51 @@ def define_scaling(
     click.echo(f"Chosen scaling method is {scaler}.")
 
     return scaler
+
+
+def predictive(
+    X: np.ndarray,
+    clf: ensemble.RandomForestClassifier,
+    scaler: Union[
+        preprocessing.MinMaxScaler,
+        preprocessing.StandardScaler,
+        preprocessing.RobustScaler,
+        preprocessing.QuantileTransformer,
+    ],
+) -> pd.DataFrame:
+    """Predictive model to use the already fitted classifier
+    to make annual projections for the projection period.
+    As other models, it reads data which are then scaled and
+    used in conjuction with the classifier to project conflict risk.
+
+    Args:
+        X (np.ndarray): array containing the variable values plus unique identifer and geometry information.
+        clf (RandomForestClassifier): the fitted RandomForestClassifier.
+        scaler (scaler): the fitted specified scaling method instance.
+
+    Returns:
+        pd.DataFrame: containing model output on polygon-basis.
+    """
+
+    # splitting the data from the ID and geometry part of X
+    X_ID, X_geom, X_data = _split_conflict_geom_data(X.to_numpy())
+
+    # transforming the data
+    # fitting is not needed as already happend before
+    X_ft = scaler.transform(X_data)
+
+    # make projection with transformed data
+    y_pred = clf.predict(X_ft)
+
+    # predict probabilites of outcomes
+    y_prob = clf.predict_proba(X_ft)
+    y_prob_0 = y_prob[:, 0]  # probability to predict 0
+    y_prob_1 = y_prob[:, 1]  # probability to predict 1
+
+    # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
+    arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1))
+    y_df = pd.DataFrame(
+        arr, columns=["ID", "geometry", "y_pred", "y_prob_0", "y_prob_1"]
+    )
+
+    return y_df

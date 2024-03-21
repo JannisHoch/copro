@@ -7,7 +7,6 @@ import xarray as xr
 import pandas as pd
 import geopandas as gpd
 import os
-import warnings
 
 
 class XYData:
@@ -64,7 +63,7 @@ class XYData:
         """
 
         # if nothing is specified in cfg-file, then initiate and fill XY data from scratch
-        if self.config.get("pre_calc", "XY") != "":
+        if self.config.get("pre_calc", "XY") != " ":
             self._initiate_XY_data()
             # fill the dictionary and get array
             XY_arr = _fill_XY(
@@ -91,7 +90,7 @@ class XYData:
         return X, Y
 
 
-def initiate_X_data(config):
+def initiate_X_data(config: RawConfigParser) -> dict:
     """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data.
     This is needed for each time step of each projection run.
     By default, the first column is for the polygon ID and the second for polygon geometry.
@@ -100,7 +99,7 @@ def initiate_X_data(config):
     All remaining columns correspond to the variables provided in the cfg-file.
 
     Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        config (RawConfigParser): object containing the parsed configuration-settings of the model.
 
     Returns:
         dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
@@ -116,15 +115,20 @@ def initiate_X_data(config):
     X["conflict_t_min_1"] = pd.Series(dtype=bool)
     X["conflict_t_min_1_nb"] = pd.Series(dtype=float)
 
-    if config.getboolean("general", "verbose"):
-        click.echo("DEBUG: the columns in the sample matrix used are:")
-        for key in X:
-            click.echo("...{}".format(key))
+    click.echo("The columns in the sample matrix used are:")
+    for key in X:
+        click.echo(f"...{key}")
 
     return X
 
 
-def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
+def fill_X_sample(
+    X: dict,
+    config: RawConfigParser,
+    root_dir: str,
+    polygon_gdf: gpd.GeoDataFrame,
+    proj_year: int,
+) -> dict:
     """Fills the X-dictionary with the data sample data besides
     any conflict-related data for each polygon and each year.
     Used during the projection runs as the sample and conflict data
@@ -132,17 +136,14 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
 
     Args:
         X (dict): dictionary containing keys to be sampled.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        config (RawConfigParser): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file of reference run.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        polygon_gdf (gpd.GeoDataFrame): geo-dataframe containing the selected polygons.
         proj_year (int): year for which projection is made.
 
     Returns:
         dict: dictionary containing sample values.
     """
-
-    if config.getboolean("general", "verbose"):
-        click.echo("DEBUG: reading sample data from files")
 
     # go through all keys in dictionary
     for key, value in X.items():
@@ -150,15 +151,19 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         if key == "poly_ID":
 
             data_series = value
-            data_list = conflict.get_poly_ID(polygon_gdf)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_list = utils.get_poly_ID(polygon_gdf)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         elif key == "poly_geometry":
 
             data_series = value
-            data_list = conflict.get_poly_geometry(polygon_gdf, config)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_list = utils.get_poly_geometry(polygon_gdf)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         else:
@@ -180,8 +185,8 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     data_list = variables.nc_with_float_timestamp(
                         polygon_gdf, config, root_dir, key, proj_year
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     X[key] = data_series
 
@@ -190,13 +195,13 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     data_list = variables.nc_with_continous_datetime_timestamp(
                         polygon_gdf, config, root_dir, key, proj_year
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     X[key] = data_series
 
                 else:
-                    raise Warning(
+                    raise ValueError(
                         "This file has an unsupported dtype for the time variable: {}".format(
                             os.path.join(
                                 root_dir,
@@ -209,35 +214,36 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     return X
 
 
-def fill_X_conflict(X, config, conflict_data, polygon_gdf):
+def fill_X_conflict(
+    X: dict, conflict_data: pd.DataFrame, polygon_gdf: gpd.GeoDataFrame
+) -> dict:
     """Fills the X-dictionary with the conflict data for each polygon and each year.
     Used during the projection runs as the sample and conflict data need to be treated separately there.
 
     Args:
         X (dict): dictionary containing keys to be sampled.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        conflict_data (dataframe): dataframe containing all polygons with conflict.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        conflict_data (pd.DataFrame): dataframe containing all polygons with conflict.
+        polygon_gdf (gpd.GeoDataFrame): geo-dataframe containing the selected polygons.
 
     Returns:
         dict: dictionary containing sample and conflict values.
     """
 
     # determine all neighbours for each polygon
-    neighboring_matrix = nb.neighboring_polys(config, polygon_gdf)
+    neighboring_matrix = nb.neighboring_polys(polygon_gdf)
 
     # go through all keys in dictionary
     for key, value in X.items():
-
         if key == "conflict_t_min_1":
 
             data_series = value
             data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         elif key == "conflict_t_min_1_nb":
-
             data_series = value
             data_list = conflict.read_projected_conflict(
                 polygon_gdf,
@@ -245,15 +251,13 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
                 check_neighbors=True,
                 neighboring_matrix=neighboring_matrix,
             )
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         else:
-
             pass
-
-    if config.getboolean("general", "verbose"):
-        click.echo("DEBUG: all data read")
 
     return X
 
@@ -305,35 +309,34 @@ def _fill_XY(  # noqa: R0912
                     data_list = conflict.conflict_in_year_bool(
                         config, conflict_data, polygon_gdf, sim_year, out_dir
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
                 elif key == "conflict_t_min_1":
 
                     data_series = value
-                    data_list = conflict.conflict_in_previous_year(
-                        config, conflict_data, polygon_gdf, sim_year
+                    data_list = conflict.conflict_in_previous_year_bool(
+                        conflict_data, polygon_gdf, sim_year
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
                 elif key == "conflict_t_min_1_nb":
 
                     data_series = value
-                    data_list = conflict.conflict_in_previous_year(
-                        config,
+                    data_list = conflict.conflict_in_previous_year_bool(
                         conflict_data,
                         polygon_gdf,
                         sim_year,
                         check_neighbors=True,
                         neighboring_matrix=neighboring_matrix,
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
@@ -341,8 +344,8 @@ def _fill_XY(  # noqa: R0912
 
                     data_series = value
                     data_list = utils.get_poly_ID(polygon_gdf)
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
@@ -350,8 +353,8 @@ def _fill_XY(  # noqa: R0912
 
                     data_series = value
                     data_list = utils.get_poly_geometry(polygon_gdf)
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     XY[key] = data_series
 
@@ -372,8 +375,10 @@ def _fill_XY(  # noqa: R0912
                         data_list = variables.nc_with_float_timestamp(
                             polygon_gdf, config, root_dir, key, sim_year
                         )
-                        data_series = data_series.append(
-                            pd.Series(data_list), ignore_index=True
+                        data_series = pd.concat(
+                            [data_series, pd.Series(data_list)],
+                            axis=0,
+                            ignore_index=True,
                         )
                         XY[key] = data_series
 
@@ -382,13 +387,15 @@ def _fill_XY(  # noqa: R0912
                         data_list = variables.nc_with_continous_datetime_timestamp(
                             polygon_gdf, config, root_dir, key, sim_year
                         )
-                        data_series = data_series.append(
-                            pd.Series(data_list), ignore_index=True
+                        data_series = pd.concat(
+                            [data_series, pd.Series(data_list)],
+                            axis=0,
+                            ignore_index=True,
                         )
                         XY[key] = data_series
 
                     else:
-                        warnings.warn(
+                        raise ValueError(
                             "This file has an unsupported dtype for the time variable: {}".format(
                                 os.path.join(
                                     root_dir,

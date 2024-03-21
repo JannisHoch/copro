@@ -56,7 +56,7 @@ def conflict_in_year_bool(
 
     if sim_year == config.getint("settings", "y_end"):
         _store_boolean_conflict_data_to_csv(
-            fatalities_per_poly, config, extent_gdf, sim_year, out_dir
+            fatalities_per_poly, extent_gdf, sim_year, out_dir
         )
 
     # loop through all regions and check if exists in sub-set

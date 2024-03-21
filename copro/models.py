@@ -1,9 +1,11 @@
-from copro import machine_learning, conflict, evaluation, utils, xydata
+from copro import machine_learning, conflict, evaluation, utils, xydata, settings
 from configparser import RawConfigParser
 from sklearn import ensemble
+from sklearn.utils.validation import check_is_fitted
+from pathlib import Path
 import pandas as pd
 import numpy as np
-from typing import Union
+from typing import Union, Tuple
 import geopandas as gpd
 import click
 import os
@@ -23,24 +25,55 @@ class MainModel:
         Args:
             X (np.ndarray, pd.DataFrame): array containing the variable values plus IDs and geometry information.
             Y (np.ndarray): array containing merely the binary conflict classifier data.
-            config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-            scaler (scaler): the specified scaling method instance.
-            clf (classifier): the specified model instance.
+            config (RawConfigParser): object containing the parsed configuration-settings of the model.
             out_dir (str): path to output folder.
-            run_nr (int): number of the current run.
         """
         self.X = X
         self.Y = Y
         self.config = config
-        # TODO: scaler and clf settings need to be aligned with machine_learning.py class
         self.scaler = machine_learning.define_scaling(config)
+        self.scaler_all_data = self.scaler.fit(
+            X[:, 2:]
+        )  # NOTE: supposed to be used in projections
         self.clf = ensemble.RandomForestClassifier(
             n_estimators=1000, class_weight={1: 100}, random_state=42
         )
         self.out_dir = out_dir
 
-    def run(self, run_nr) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
-        """Main model workflow when all XY-data is used.
+    def run(self, number_runs: int) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+        """Top-level function to execute the machine learning model for all specified runs.
+
+        Args:
+            number_runs (int): Number of runs as specified in the settings-file.
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame, dict]: Prediction dataframes, model output on polygon-basis, \
+                and evaluation dictionary.
+        """
+
+        check_is_fitted(self.scaler)
+
+        # - initializing output variables
+        out_X_df = pd.DataFrame()
+        out_y_df = pd.DataFrame()
+        out_dict = evaluation.init_out_dict()
+
+        click.echo("Training and testing machine learning model")
+        for n in range(number_runs):
+            click.echo(f"Run {n+1} of {number_runs}.")
+
+            # - run machine learning model and return outputs
+            X_df, y_df, eval_dict = self._n_run(run_nr=n)
+
+            # - append per model execution
+            out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
+            out_y_df = pd.concat([out_y_df, y_df], axis=0, ignore_index=True)
+            out_dict = evaluation.fill_out_dict(out_dict, eval_dict)
+
+        return out_X_df, out_y_df, out_dict
+
+    def _n_run(self, run_nr) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+        """Runs workflow per specified number of runs.
         The model workflow is executed for each classifier.
 
         Returns:
@@ -48,8 +81,6 @@ class MainModel:
             datatrame: containing model output on polygon-basis.
             dict: dictionary containing evaluation metrics per simulation.
         """
-        if self.config.getboolean("general", "verbose"):
-            print("DEBUG: using all data")
 
         MLmodel = machine_learning.MachineLearning(
             self.config,
@@ -78,12 +109,10 @@ class MainModel:
         y_prob_1 = y_prob[:, 1]  # probability to predict 1
 
         # evaluate prediction and save to dict
-        eval_dict = evaluation.evaluate_prediction(
-            y_test, y_pred, y_prob, X_test, self.clf, self.config
-        )
+        eval_dict = evaluation.evaluate_prediction(y_test, y_pred, y_prob)
 
         # aggregate predictions per polygon
-        y_df = conflict.get_pred_conflict_geometry(
+        y_df = conflict.check_for_correct_prediction(
             X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1
         )
 
@@ -115,10 +144,7 @@ class MainModel:
         config_REF = main_dict["_REF"][0]
         out_dir_REF = main_dict["_REF"][1]
 
-        clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
-
-        # initiate output dataframe
-        all_y_df = pd.DataFrame(columns=["ID", "geometry", "y_pred"])
+        clfs, all_y_df = _init_prediction_run(config_REF, out_dir_REF)
 
         # going through each projection specified
         for each_key, _ in config_REF.items("PROJ_files"):
@@ -129,15 +155,13 @@ class MainModel:
             out_dir_PROJ = main_dict[str(each_key)][1]
 
             click.echo(f"Storing output for this projections to folder {out_dir_PROJ}.")
-
-            # if not os.path.isdir(os.path.join(out_dir_PROJ, 'files')):
-            #     os.makedirs(os.path.join(out_dir_PROJ, 'files'))
-            if not os.path.isdir(os.path.join(out_dir_PROJ, "clfs")):
-                os.makedirs(os.path.join(out_dir_PROJ, "clfs"))
+            Path.mkdir(
+                Path(os.path.join(out_dir_PROJ, "clfs")), parents=True, exist_ok=True
+            )
 
             # get projection period for this projection
             # defined as all years starting from end of reference run until specified end of projections
-            projection_period = utils.determine_projection_period(
+            projection_period = settings.determine_projection_period(
                 config_REF, config_PROJ
             )
 
@@ -176,9 +200,7 @@ class MainModel:
                         index_col=0,
                     )
 
-                    X = xydata.fill_X_conflict(
-                        X, config_PROJ, conflict_data, selected_polygons_gdf
-                    )
+                    X = xydata.fill_X_conflict(X, conflict_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
                 # initiating dataframe containing all projections from all classifiers for this timestep
@@ -239,7 +261,7 @@ class MainModel:
                         )
 
                         X = xydata.fill_X_conflict(
-                            X, config_PROJ, conflict_data, selected_polygons_gdf
+                            X, conflict_data, selected_polygons_gdf
                         )
                         X = pd.DataFrame.from_dict(X).to_numpy()
 
@@ -249,11 +271,9 @@ class MainModel:
                     # put all the data into the machine learning algo
                     # here the data will be used to make projections with various classifiers
                     # returns the prediction based on one individual classifier
-
-                    # TODO: check what this function should contain
-                    # TODO: and where it is now in the upcated copro code
-                    # y_df_clf = models.predictive(X, clf_obj, self.scaler, config_PROJ)
-                    y_df_clf = pd.DataFrame(clf_obj)
+                    y_df_clf = machine_learning.predictive(
+                        X, clf_obj, self.scaler_all_data
+                    )
 
                     # storing the projection per clf to be used in the following timestep
                     y_df_clf.to_csv(
@@ -265,27 +285,16 @@ class MainModel:
                         )
                     )
 
-                    # removing projection of previous time step as not needed anymore
-                    if i > 0:
-                        os.remove(
-                            os.path.join(
-                                out_dir_PROJ,
-                                "clfs",
-                                str(clf).rsplit(".", maxsplit=1)[0],
-                                "projection_for_{}.csv".format(proj_year - 1),
-                            )
-                        )
-
                     # append to all classifiers dataframe
-                    y_df = y_df.append(y_df_clf, ignore_index=True)
+                    y_df = pd.concat([y_df, y_df_clf], axis=0, ignore_index=True)
 
                 # get look-up dataframe to assign geometry to polygons via unique ID
-                global_df = utils.global_ID_geom_info(selected_polygons_gdf)
+                global_df = utils.get_ID_geometry_lookup(selected_polygons_gdf)
 
                 click.echo(
-                    f"Storing model output for year {proj_year} to output folder".format
+                    f"Storing model output for year {proj_year} to output folder."
                 )
-                _, gdf_hit = evaluation.polygon_model_accuracy(
+                gdf_hit = evaluation.polygon_model_accuracy(
                     y_df, global_df, make_proj=True
                 )
                 gdf_hit.to_file(
@@ -294,6 +303,28 @@ class MainModel:
                 )
 
             # create one major output dataframe containing all output for all projections with all classifiers
-            all_y_df = all_y_df.append(y_df, ignore_index=True)
+            all_y_df = pd.concat([all_y_df, y_df], axis=0, ignore_index=True)
 
         return all_y_df
+
+
+def _init_prediction_run(
+    config_REF: RawConfigParser, out_dir_REF: str
+) -> Tuple[list, pd.DataFrame]:
+    """Initializes the prediction run by loading all classifiers created in the reference run.
+    Also initiates an empty dataframe to store the predictions.
+
+    Args:
+        config_REF (RawConfigParser): Reference configuration object.
+        out_dir_REF (str): Output directory for reference run.
+
+    Returns:
+        Tuple[list, pd.DataFrame]: List with classifiers and initiated empty dataframe for predictions.
+    """
+
+    clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
+
+    # initiate output dataframe
+    all_y_df = pd.DataFrame(columns=["ID", "geometry", "y_pred"])
+
+    return clfs, all_y_df

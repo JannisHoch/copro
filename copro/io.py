@@ -51,7 +51,7 @@ def make_and_collect_output_dirs(
     for key, value in config_outdir_dict.items():
         # value [0] would be the config-object
         click.echo(f"Creating output-folder {value[1]}.")
-        Path.mkdir(Path(value[1]), exist_ok=True)
+        Path.mkdir(Path(value[1]), exist_ok=True, parents=True)
 
     return config_outdir_dict
 

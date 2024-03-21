@@ -32,7 +32,7 @@ def neighboring_polys(
             extent_gdf.geometry.touches(wp), columns=[extent_gdf[identifier].iloc[i]]
         ).T
         # append the dataframe
-        df = df.append(df_temp)
+        df = pd.concat([df, df_temp], axis=0)
 
     # replace generic indices with actual water province IDs
     df.set_index(extent_gdf[identifier], inplace=True)
