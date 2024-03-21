@@ -170,9 +170,6 @@ def define_scaling(
     Args:
         config (ConfigParser-object): object containing the parsed configuration-settings of the model.
 
-    Raises:
-        ValueError: raised if a non-supported scaling method is specified.
-
     Returns:
         scaler: the specified scaling method instance.
     """
@@ -196,19 +193,28 @@ def define_scaling(
     return scaler
 
 
-def predictive(X, clf, scaler):
+def predictive(
+    X: np.ndarray,
+    clf: ensemble.RandomForestClassifier,
+    scaler: Union[
+        preprocessing.MinMaxScaler,
+        preprocessing.StandardScaler,
+        preprocessing.RobustScaler,
+        preprocessing.QuantileTransformer,
+    ],
+) -> pd.DataFrame:
     """Predictive model to use the already fitted classifier
     to make annual projections for the projection period.
     As other models, it reads data which are then scaled and
     used in conjuction with the classifier to project conflict risk.
 
     Args:
-        X (array): array containing the variable values plus unique identifer and geometry information.
-        clf (classifier): the fitted specified classifier instance.
+        X (np.ndarray): array containing the variable values plus unique identifer and geometry information.
+        clf (RandomForestClassifier): the fitted RandomForestClassifier.
         scaler (scaler): the fitted specified scaling method instance.
 
     Returns:
-        datatrame: containing model output on polygon-basis.
+        pd.DataFrame: containing model output on polygon-basis.
     """
 
     # splitting the data from the ID and geometry part of X

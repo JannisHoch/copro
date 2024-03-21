@@ -91,7 +91,7 @@ class XYData:
         return X, Y
 
 
-def initiate_X_data(config):
+def initiate_X_data(config: RawConfigParser) -> dict:
     """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data.
     This is needed for each time step of each projection run.
     By default, the first column is for the polygon ID and the second for polygon geometry.
@@ -100,7 +100,7 @@ def initiate_X_data(config):
     All remaining columns correspond to the variables provided in the cfg-file.
 
     Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        config (RawConfigParser): object containing the parsed configuration-settings of the model.
 
     Returns:
         dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
@@ -124,7 +124,13 @@ def initiate_X_data(config):
     return X
 
 
-def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
+def fill_X_sample(
+    X: dict,
+    config: RawConfigParser,
+    root_dir: str,
+    polygon_gdf: gpd.GeoDataFrame,
+    proj_year: int,
+) -> dict:
     """Fills the X-dictionary with the data sample data besides
     any conflict-related data for each polygon and each year.
     Used during the projection runs as the sample and conflict data
@@ -132,17 +138,14 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
 
     Args:
         X (dict): dictionary containing keys to be sampled.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        config (RawConfigParser): object containing the parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file of reference run.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        polygon_gdf (gpd.GeoDataFrame): geo-dataframe containing the selected polygons.
         proj_year (int): year for which projection is made.
 
     Returns:
         dict: dictionary containing sample values.
     """
-
-    if config.getboolean("general", "verbose"):
-        click.echo("DEBUG: reading sample data from files")
 
     # go through all keys in dictionary
     for key, value in X.items():
@@ -213,14 +216,16 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     return X
 
 
-def fill_X_conflict(X, conflict_data, polygon_gdf):
+def fill_X_conflict(
+    X: dict, conflict_data: pd.DataFrame, polygon_gdf: gpd.GeoDataFrame
+) -> dict:
     """Fills the X-dictionary with the conflict data for each polygon and each year.
     Used during the projection runs as the sample and conflict data need to be treated separately there.
 
     Args:
         X (dict): dictionary containing keys to be sampled.
-        conflict_data (dataframe): dataframe containing all polygons with conflict.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
+        conflict_data (pd.DataFrame): dataframe containing all polygons with conflict.
+        polygon_gdf (gpd.GeoDataFrame): geo-dataframe containing the selected polygons.
 
     Returns:
         dict: dictionary containing sample and conflict values.

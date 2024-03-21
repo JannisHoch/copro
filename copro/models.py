@@ -5,7 +5,7 @@ from sklearn.utils.validation import check_is_fitted
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from typing import Union
+from typing import Union, Tuple
 import geopandas as gpd
 import click
 import os
@@ -25,11 +25,8 @@ class MainModel:
         Args:
             X (np.ndarray, pd.DataFrame): array containing the variable values plus IDs and geometry information.
             Y (np.ndarray): array containing merely the binary conflict classifier data.
-            config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-            scaler (scaler): the specified scaling method instance.
-            clf (classifier): the specified model instance.
+            config (RawConfigParser): object containing the parsed configuration-settings of the model.
             out_dir (str): path to output folder.
-            run_nr (int): number of the current run.
         """
         self.X = X
         self.Y = Y
@@ -311,7 +308,19 @@ class MainModel:
         return all_y_df
 
 
-def _init_prediction_run(config_REF, out_dir_REF):
+def _init_prediction_run(
+    config_REF: RawConfigParser, out_dir_REF: str
+) -> Tuple[list, pd.DataFrame]:
+    """Initializes the prediction run by loading all classifiers created in the reference run.
+    Also initiates an empty dataframe to store the predictions.
+
+    Args:
+        config_REF (RawConfigParser): Reference configuration object.
+        out_dir_REF (str): Output directory for reference run.
+
+    Returns:
+        Tuple[list, pd.DataFrame]: List with classifiers and initiated empty dataframe for predictions.
+    """
 
     clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
 
