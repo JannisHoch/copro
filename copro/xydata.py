@@ -150,15 +150,19 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
         if key == "poly_ID":
 
             data_series = value
-            data_list = conflict.get_poly_ID(polygon_gdf)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_list = utils.get_poly_ID(polygon_gdf)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         elif key == "poly_geometry":
 
             data_series = value
-            data_list = conflict.get_poly_geometry(polygon_gdf, config)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_list = utils.get_poly_geometry(polygon_gdf)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         else:
@@ -180,8 +184,8 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     data_list = variables.nc_with_float_timestamp(
                         polygon_gdf, config, root_dir, key, proj_year
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     X[key] = data_series
 
@@ -190,8 +194,8 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
                     data_list = variables.nc_with_continous_datetime_timestamp(
                         polygon_gdf, config, root_dir, key, proj_year
                     )
-                    data_series = data_series.append(
-                        pd.Series(data_list), ignore_index=True
+                    data_series = pd.concat(
+                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
                     )
                     X[key] = data_series
 
@@ -209,13 +213,12 @@ def fill_X_sample(X, config, root_dir, polygon_gdf, proj_year):
     return X
 
 
-def fill_X_conflict(X, config, conflict_data, polygon_gdf):
+def fill_X_conflict(X, conflict_data, polygon_gdf):
     """Fills the X-dictionary with the conflict data for each polygon and each year.
     Used during the projection runs as the sample and conflict data need to be treated separately there.
 
     Args:
         X (dict): dictionary containing keys to be sampled.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
         conflict_data (dataframe): dataframe containing all polygons with conflict.
         polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
 
@@ -224,20 +227,20 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
     """
 
     # determine all neighbours for each polygon
-    neighboring_matrix = nb.neighboring_polys(config, polygon_gdf)
+    neighboring_matrix = nb.neighboring_polys(polygon_gdf)
 
     # go through all keys in dictionary
     for key, value in X.items():
-
         if key == "conflict_t_min_1":
 
             data_series = value
             data_list = conflict.read_projected_conflict(polygon_gdf, conflict_data)
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         elif key == "conflict_t_min_1_nb":
-
             data_series = value
             data_list = conflict.read_projected_conflict(
                 polygon_gdf,
@@ -245,15 +248,13 @@ def fill_X_conflict(X, config, conflict_data, polygon_gdf):
                 check_neighbors=True,
                 neighboring_matrix=neighboring_matrix,
             )
-            data_series = data_series.append(pd.Series(data_list), ignore_index=True)
+            data_series = pd.concat(
+                [data_series, pd.Series(data_list)], axis=0, ignore_index=True
+            )
             X[key] = data_series
 
         else:
-
             pass
-
-    if config.getboolean("general", "verbose"):
-        click.echo("DEBUG: all data read")
 
     return X
 

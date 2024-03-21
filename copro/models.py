@@ -203,9 +203,7 @@ class MainModel:
                         index_col=0,
                     )
 
-                    X = xydata.fill_X_conflict(
-                        X, config_PROJ, conflict_data, selected_polygons_gdf
-                    )
+                    X = xydata.fill_X_conflict(X, conflict_data, selected_polygons_gdf)
                     X = pd.DataFrame.from_dict(X).to_numpy()
 
                 # initiating dataframe containing all projections from all classifiers for this timestep
@@ -266,7 +264,7 @@ class MainModel:
                         )
 
                         X = xydata.fill_X_conflict(
-                            X, config_PROJ, conflict_data, selected_polygons_gdf
+                            X, conflict_data, selected_polygons_gdf
                         )
                         X = pd.DataFrame.from_dict(X).to_numpy()
 
@@ -276,11 +274,9 @@ class MainModel:
                     # put all the data into the machine learning algo
                     # here the data will be used to make projections with various classifiers
                     # returns the prediction based on one individual classifier
-
-                    # TODO: check what this function should contain
-                    # TODO: and where it is now in the upcated copro code
-                    # y_df_clf = models.predictive(X, clf_obj, self.scaler, config_PROJ)
-                    y_df_clf = pd.DataFrame(clf_obj)
+                    y_df_clf = machine_learning.predictive(
+                        X, clf_obj, self.scaler_all_data
+                    )
 
                     # storing the projection per clf to be used in the following timestep
                     y_df_clf.to_csv(
@@ -292,27 +288,16 @@ class MainModel:
                         )
                     )
 
-                    # removing projection of previous time step as not needed anymore
-                    if i > 0:
-                        os.remove(
-                            os.path.join(
-                                out_dir_PROJ,
-                                "clfs",
-                                str(clf).rsplit(".", maxsplit=1)[0],
-                                "projection_for_{}.csv".format(proj_year - 1),
-                            )
-                        )
-
                     # append to all classifiers dataframe
-                    y_df = y_df.append(y_df_clf, ignore_index=True)
+                    y_df = pd.concat([y_df, y_df_clf], axis=0, ignore_index=True)
 
                 # get look-up dataframe to assign geometry to polygons via unique ID
-                global_df = utils.global_ID_geom_info(selected_polygons_gdf)
+                global_df = utils.get_ID_geometry_lookup(selected_polygons_gdf)
 
                 click.echo(
-                    f"Storing model output for year {proj_year} to output folder".format
+                    f"Storing model output for year {proj_year} to output folder."
                 )
-                _, gdf_hit = evaluation.polygon_model_accuracy(
+                gdf_hit = evaluation.polygon_model_accuracy(
                     y_df, global_df, make_proj=True
                 )
                 gdf_hit.to_file(
@@ -321,7 +306,7 @@ class MainModel:
                 )
 
             # create one major output dataframe containing all output for all projections with all classifiers
-            all_y_df = all_y_df.append(y_df, ignore_index=True)
+            all_y_df = pd.concat([all_y_df, y_df], axis=0, ignore_index=True)
 
         return all_y_df
 

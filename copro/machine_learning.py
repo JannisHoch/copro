@@ -194,3 +194,42 @@ def define_scaling(
     click.echo(f"Chosen scaling method is {scaler}.")
 
     return scaler
+
+
+def predictive(X, clf, scaler):
+    """Predictive model to use the already fitted classifier
+    to make annual projections for the projection period.
+    As other models, it reads data which are then scaled and
+    used in conjuction with the classifier to project conflict risk.
+
+    Args:
+        X (array): array containing the variable values plus unique identifer and geometry information.
+        clf (classifier): the fitted specified classifier instance.
+        scaler (scaler): the fitted specified scaling method instance.
+
+    Returns:
+        datatrame: containing model output on polygon-basis.
+    """
+
+    # splitting the data from the ID and geometry part of X
+    X_ID, X_geom, X_data = _split_conflict_geom_data(X.to_numpy())
+
+    # transforming the data
+    # fitting is not needed as already happend before
+    X_ft = scaler.transform(X_data)
+
+    # make projection with transformed data
+    y_pred = clf.predict(X_ft)
+
+    # predict probabilites of outcomes
+    y_prob = clf.predict_proba(X_ft)
+    y_prob_0 = y_prob[:, 0]  # probability to predict 0
+    y_prob_1 = y_prob[:, 1]  # probability to predict 1
+
+    # stack together ID, gemoetry, and projection per polygon, and convert to dataframe
+    arr = np.column_stack((X_ID, X_geom, y_pred, y_prob_0, y_prob_1))
+    y_df = pd.DataFrame(
+        arr, columns=["ID", "geometry", "y_pred", "y_prob_0", "y_prob_1"]
+    )
+
+    return y_df
