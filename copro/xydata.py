@@ -7,7 +7,6 @@ import xarray as xr
 import pandas as pd
 import geopandas as gpd
 import os
-import warnings
 
 
 class XYData:
@@ -116,10 +115,9 @@ def initiate_X_data(config: RawConfigParser) -> dict:
     X["conflict_t_min_1"] = pd.Series(dtype=bool)
     X["conflict_t_min_1_nb"] = pd.Series(dtype=float)
 
-    if config.getboolean("general", "verbose"):
-        click.echo("DEBUG: the columns in the sample matrix used are:")
-        for key in X:
-            click.echo("...{}".format(key))
+    click.echo("The columns in the sample matrix used are:")
+    for key in X:
+        click.echo(f"...{key}")
 
     return X
 
@@ -203,7 +201,7 @@ def fill_X_sample(
                     X[key] = data_series
 
                 else:
-                    raise Warning(
+                    raise ValueError(
                         "This file has an unsupported dtype for the time variable: {}".format(
                             os.path.join(
                                 root_dir,
@@ -397,7 +395,7 @@ def _fill_XY(  # noqa: R0912
                         XY[key] = data_series
 
                     else:
-                        warnings.warn(
+                        raise ValueError(
                             "This file has an unsupported dtype for the time variable: {}".format(
                                 os.path.join(
                                     root_dir,

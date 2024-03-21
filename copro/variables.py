@@ -12,7 +12,7 @@ from configparser import RawConfigParser
 
 import warnings
 
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("once")
 
 
 def nc_with_float_timestamp(
@@ -52,7 +52,7 @@ def nc_with_float_timestamp(
     # if not all of these three aspects are provided, raise error
     if len(data_fo) != 3:
         raise ValueError(
-            "ERROR: not all settings for input data set {} provided - \
+            "Not all settings for input data set {} provided - \
                 it must contain of path, False/True, and statistical method".format(
                 os.path.join(
                     root_dir,
@@ -68,22 +68,21 @@ def nc_with_float_timestamp(
     stat_method = str(data_fo[2])
 
     lag_time = 1
-    click.echo("INFO: applying {} year lag time".format(lag_time))
+    click.echo(f"Applying {lag_time} year lag time.")
     sim_year = sim_year - lag_time
 
-    if config.getboolean("general", "verbose"):
-        if ln_flag:
-            click.echo(
-                "DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}".format(
-                    stat_method, var_name, nc_fo, sim_year
-                )
+    if ln_flag:
+        click.echo(
+            "Calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}".format(
+                stat_method, var_name, nc_fo, sim_year
             )
-        else:
-            click.echo(
-                "DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}".format(
-                    stat_method, var_name, nc_fo, sim_year
-                )
+        )
+    else:
+        click.echo(
+            "Calculating {0} {1} per aggregation unit from file {2} for year {3}".format(
+                stat_method, var_name, nc_fo, sim_year
             )
+        )
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -99,9 +98,7 @@ def nc_with_float_timestamp(
     nc_arr_vals = nc_arr.values
     if nc_arr_vals.size == 0:
         raise ValueError(
-            "ERROR: the data was found for this year in the nc-file {}, check if all is correct".format(
-                nc_fo
-            )
+            f"No data was found for this year in the nc-file {nc_fo}, check if all is correct."
         )
 
     # initialize output list
@@ -137,7 +134,7 @@ def nc_with_float_timestamp(
 
         # click.echo a warning if result is NaN
         if val is math.nan:
-            click.echo("WARNING: NaN computed!")
+            warnings.warn("NaN computed!")
 
         list_out.append(val)
 
@@ -181,7 +178,7 @@ def nc_with_continous_datetime_timestamp(
     # if not all of these three aspects are provided, raise error
     if len(data_fo) != 3:
         raise ValueError(
-            "ERROR: not all settings for input data set {} provided - \
+            "Not all settings for input data set {} provided - \
                 it must contain of path, False/True, and statistical method".format(
                 os.path.join(
                     root_dir,
@@ -197,27 +194,21 @@ def nc_with_continous_datetime_timestamp(
     stat_method = str(data_fo[2])
 
     lag_time = 1
-    if config.getboolean("general", "verbose"):
-        click.echo(
-            "DEBUG: applying {} year lag time for variable {}".format(
-                lag_time, var_name
-            )
-        )
+    click.echo(f"Applying {lag_time} year lag time for variable {var_name}.")
     sim_year = sim_year - lag_time
 
-    if config.getboolean("general", "verbose"):
-        if ln_flag:
-            click.echo(
-                "DEBUG: calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}".format(
-                    stat_method, var_name, nc_fo, sim_year
-                )
+    if ln_flag:
+        click.echo(
+            "Calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}".format(
+                stat_method, var_name, nc_fo, sim_year
             )
-        else:
-            click.echo(
-                "DEBUG: calculating {0} {1} per aggregation unit from file {2} for year {3}".format(
-                    stat_method, var_name, nc_fo, sim_year
-                )
+        )
+    else:
+        click.echo(
+            "Calculating {0} {1} per aggregation unit from file {2} for year {3}".format(
+                stat_method, var_name, nc_fo, sim_year
             )
+        )
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -231,13 +222,11 @@ def nc_with_continous_datetime_timestamp(
         .to_numpy(dtype=int)
     )
     if sim_year not in years:
-        click.echo(
-            "WARNING: the simulation year {0} can not be found in file {1}".format(
-                sim_year, nc_fo
-            )
+        warnings.warn(
+            f"The simulation year {sim_year} can not be found in file {nc_fo}."
         )
-        click.echo(
-            "WARNING: using the next following year instead (yes that is an ugly solution...)"
+        warnings.warn(
+            "Using the next following year instead (yes that is an ugly solution...)"
         )
         sim_year = sim_year + 1
         # raise ValueError('ERROR: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
@@ -249,7 +238,7 @@ def nc_with_continous_datetime_timestamp(
     nc_arr_vals = nc_arr.values
     if nc_arr_vals.size == 0:
         raise ValueError(
-            "ERROR: no data was found for this year in the nc-file {}, check if all is correct".format(
+            "No data was found for this year in the nc-file {}, check if all is correct".format(
                 nc_fo
             )
         )
@@ -289,12 +278,8 @@ def nc_with_continous_datetime_timestamp(
                 val = val_ln
 
         # print a warning if result is None
-        if (
-            (val is None)
-            or (val == np.nan)
-            and (config.getboolean("general", "verbose"))
-        ):
-            click.echo("WARNING: {} computed for ID {}!".format(val, prov.watprovID))
+        if (val is None) or (val == np.nan):
+            warnings.warn(f"{val} computed for ID {prov.watprovID}!")
 
         list_out.append(val)
 

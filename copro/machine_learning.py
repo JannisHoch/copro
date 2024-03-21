@@ -38,14 +38,14 @@ class MachineLearning:
         X_ID, X_geom, X_data = _split_conflict_geom_data(X)
 
         ##- scaling only the variable values
-        click.echo("Fitting and transforming X")
+        click.echo("Fitting and transforming X.")
         X_ft = self.scaler.fit_transform(X_data)
 
         ##- combining ID, geometry and scaled sample values per polygon
         X_cs = np.column_stack((X_ID, X_geom, X_ft))
 
         ##- splitting in train and test samples based on user-specified fraction
-        click.echo("Splitting both X and Y in train and test data")
+        click.echo("Splitting both X and Y in train and test data.")
         X_train, X_test, y_train, y_test = model_selection.train_test_split(
             X_cs,
             Y,
