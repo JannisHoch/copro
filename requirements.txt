@@ -1,10 +1,15 @@
 # local package
 
-# external requirements
 
 # testing, mypy and linting requirements
 flake8
 mypy
 pre-commit
 prospector>=1.9.0
+# external requirements
+pydata-sphinx-theme==0.15.2
 pylint
+rasterstats==0.19.0
+setuptools==69.0.3
+tox==4.14.2
+wheel==0.38.1
