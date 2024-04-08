@@ -12,6 +12,12 @@ application in mind, unravelling the interplay of socio-economic development, cl
 Nevertheless, we put a lot of emphasis on making it flexible. 
 We hope that other, related questions about climate and conflict can be tackled as well, and that process understanding is deepened further.
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   test.rst
+
 Authors
 ----------------
 
