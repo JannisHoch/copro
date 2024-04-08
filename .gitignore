@@ -133,6 +133,7 @@ OUT*/
 
 #pictures
 *.png
+!docs/_static/logo.png
 
 #latest UCDP file too large for commit
 *ged201*
