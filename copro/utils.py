@@ -47,14 +47,12 @@ def get_conflict_geodataframe(
     return gdf
 
 
-def get_poly_ID(extent_gdf: gpd.GeoDataFrame) -> list:
+def get_poly_ID(extent_gdf: gpd.GeoDataFrame, identifier="watprovID") -> list:
     """Extracts and returns a list with unique identifiers for each polygon used in the model.
-
-    .. note::
-        The identifiers are currently limited to `watprovID`.
 
     Args:
         extent_gdf (gpd.GeoDataFrame): all polygons considered in model.
+        identifier (str, optional): unique polygon identifier column in `extent_gdf`. Defaults to 'watprovID'.
 
     Returns:
         list: list with ID of each polygons.
@@ -65,7 +63,7 @@ def get_poly_ID(extent_gdf: gpd.GeoDataFrame) -> list:
     # loop through all polygons
     for i in range(len(extent_gdf)):
         # append geometry of each polygon to list
-        list_ID.append(extent_gdf.iloc[i]["watprovID"])
+        list_ID.append(extent_gdf.iloc[i][identifier])
 
     return list_ID
 
@@ -93,20 +91,21 @@ def get_poly_geometry(extent_gdf: gpd.GeoDataFrame) -> list:
 
 def get_ID_geometry_lookup(
     gdf: gpd.GeoDataFrame,
+    identifier="watprovID",
 ) -> pd.DataFrame:
     """Retrieves unique ID and geometry information from geo-dataframe for a global look-up dataframe.
     The IDs currently supported are 'name' or 'watprovID'.
 
     Args:
         gdf (gpd.GeoDataFrame): containing all polygons used in the model.
+        identifier (str, optional): column name in `gdf` to be used as unique identifier. Defaults to 'watprovID'.
 
     Returns:
         pd.DataFrame: look-up dataframe associated ID with geometry
     """
 
     # stack identifier and geometry of all polygons
-    # FIXME: 'watprovID' is hard-coded
-    arr = np.column_stack((gdf["watprovID"].to_numpy(), gdf.geometry.to_numpy()))
+    arr = np.column_stack((gdf[identifier].to_numpy(), gdf.geometry.to_numpy()))
 
     # convert to dataframe
     df = pd.DataFrame(data=arr, columns=["ID", "geometry"])
