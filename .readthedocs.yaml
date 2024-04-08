@@ -9,10 +9,6 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.10"
-    install:
-      - requirements: docs/requirements.rtd.txt
-      - method: pip
-        path: .
     # You can also specify other tool versions:
     # nodejs: "20"
     # rust: "1.70"
@@ -35,6 +31,8 @@ formats: all
 # Optional but recommended, declare the Python requirements required
 # to build your documentation
 # See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
-# python:
-#   install:
-#     - requirements: docs/requirements.txt
+python:
+  install:
+    - requirements: docs/requirements.rtd.txt
+    - method: pip
+      path: .
