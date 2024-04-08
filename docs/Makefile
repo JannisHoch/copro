@@ -5,7 +5,7 @@
 SPHINXOPTS    =
 # SPHINXBUILD   = python -msphinx
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = coprp
+SPHINXPROJ    = copro
 SOURCEDIR     = source
 BUILDDIR      = _build
 
