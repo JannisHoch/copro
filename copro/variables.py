@@ -132,7 +132,7 @@ def nc_with_float_timestamp(
             else:
                 val = val_ln
 
-        # click.echo a warning if result is NaN
+        # warn if result is NaN
         if val is math.nan:
             warnings.warn("NaN computed!")
 
@@ -277,9 +277,9 @@ def nc_with_continous_datetime_timestamp(
             else:
                 val = val_ln
 
-        # print a warning if result is None
-        if (val is None) or (val == np.nan):
-            warnings.warn(f"{val} computed for ID {prov.watprovID}!")
+        # warn if result is NaN
+        if val is math.nan:
+            warnings.warn("NaN computed!")
 
         list_out.append(val)
 

@@ -16,6 +16,7 @@ def conflict_in_year_bool(
     extent_gdf: gpd.GeoDataFrame,
     sim_year: int,
     out_dir: click.Path,
+    identifier="watprovID",
 ) -> list:
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
@@ -26,6 +27,7 @@ def conflict_in_year_bool(
             with geometry information for which values are extracted.
         sim_year (int): year for which data is extracted.
         out_dir (str): path to output folder. If 'None', no output is stored.
+        identifier (str, optional): unique polygon identifier column name. Defaults to 'watprovID'.
 
     Returns:
         list: list containing 0/1 per polygon depending on conflict occurence.
@@ -45,7 +47,7 @@ def conflict_in_year_bool(
     # determine the aggregated amount of fatalities in one region (e.g. water province)
     fatalities_per_poly = (
         data_merged["best"]
-        .groupby(data_merged["watprovID"])
+        .groupby(data_merged[identifier])
         .sum()
         .to_frame()
         .rename(columns={"best": "total_fatalities"})
@@ -63,7 +65,7 @@ def conflict_in_year_bool(
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i, _ in extent_gdf.iterrows():
-        i_poly = extent_gdf.iloc[i]["watprovID"]
+        i_poly = extent_gdf.iloc[i][identifier]
         if i_poly in fatalities_per_poly.index.values:
             list_out.append(1)
         else:
@@ -78,18 +80,23 @@ def conflict_in_previous_year_bool(
     sim_year: int,
     check_neighbors: bool = False,
     neighboring_matrix: Union[None, pd.DataFrame] = None,
+    identifier="watprovID",
 ) -> list:
-    """_summary_
+    """Creates a list for each timestep with boolean information whether 
+    a conflict took place in the previous year in a polygon or not.
 
     Args:
-        conflict_gdf (gpd.GeoDataFrame): _description_
-        extent_gdf (gpd.GeoDataFrame): _description_
-        sim_year (int): _description_
-        check_neighbors (bool, optional): _description_. Defaults to False.
-        neighboring_matrix (Union[None, pd.DataFrame], optional): _description_. Defaults to None.
+        conflict_gdf (gpd.GeoDataFrame): georeferenced information of conflict.
+        extent_gdf (gpd.GeoDataFrame):  geo-dataframe containing one or more polygons \
+            with geometry information for which values are extracted.
+        sim_year (int): year for which data is extracted.
+        check_neighbors (bool, optional): whether to check for conflict in neighbouring polygons. Defaults to False.
+        neighboring_matrix (Union[None, pd.DataFrame], optional): dataframe with neighbouring polygons per polygon. \
+            Defaults to None.
+        identifier (str, optional): unique polygon identifier column name. Defaults to 'watprovID'.
 
     Returns:
-        list: _description_
+        list: list containing 0/1 per polygon depending on conflict occurence.
     """
 
     if check_neighbors:
@@ -108,7 +115,7 @@ def conflict_in_previous_year_bool(
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
 
     conflicts_per_poly = (
-        data_merged.id.groupby(data_merged["watprovID"])
+        data_merged.id.groupby(data_merged[identifier])
         .count()
         .to_frame()
         .rename(columns={"id": "conflict_count"})
@@ -117,7 +124,7 @@ def conflict_in_previous_year_bool(
     # loop through all polygons
     list_out = []
     for i in range(len(extent_gdf)):
-        i_poly = extent_gdf.watprovID.iloc[i]
+        i_poly = extent_gdf[identifier].iloc[i]
         # check if polygon is in list with conflict polygons
         if i_poly in conflicts_per_poly.index.values:
             # if so, check if neighboring polygons contain conflict and assign boolean value
@@ -140,6 +147,7 @@ def read_projected_conflict(
     bool_conflict: pd.DataFrame,
     check_neighbors=False,
     neighboring_matrix=None,
+    identifier="watprovID",
 ) -> list:
     """Creates a list for each timestep with boolean information 
     whether a conflict took place in a polygon or not.
@@ -155,6 +163,7 @@ def read_projected_conflict(
             Defaults to `False`.
         neighboring_matrix (pd.DataFrame, optional): look-up dataframe listing all neighboring polygons. \
             Defaults to `None`.
+        identifier (str, optional): unique polygon identifier column name. Defaults to 'watprovID'.
 
     Returns:
         list: 1 and 0 values for each polygon with conflict respectively without conflict. \
@@ -164,7 +173,7 @@ def read_projected_conflict(
     # loop through all polygons and check if exists in sub-set
     list_out = []
     for i in range(len(extent_gdf)):
-        i_poly = extent_gdf.watprovID.iloc[i]
+        i_poly = extent_gdf[identifier].iloc[i]
         if i_poly in bool_conflict.index.values:
             if check_neighbors:
                 # determine log-scaled number of conflict events in neighboring polygons
@@ -257,6 +266,7 @@ def _store_boolean_conflict_data_to_csv(
     extent_gdf: gpd.GeoDataFrame,
     sim_year: int,
     out_dir: click.Path,
+    identifier="watprovID",
 ):
     """Stores boolean conflict data to csv-file at the end of reference period.
     Used as initial conditions for projections from there.
@@ -266,6 +276,7 @@ def _store_boolean_conflict_data_to_csv(
         extent_gdf (gpd.GeoDataFrame): All polygons considered in analysis, also those w/o conflict.
         sim_year (int): Simulation year for which data is stored.
         out_dir (click.Path): Path to output folder.
+        identifier (str, optional): Unique polygon identifier column name. Defaults to 'watprovID'.
     """
 
     # get a 1 for each polygon where there was conflict
@@ -286,7 +297,7 @@ def _store_boolean_conflict_data_to_csv(
     )
 
     data_stored = pd.merge(bool_per_poly, global_df, on="ID", how="right").dropna()
-    data_stored.index = data_stored.index.rename("watprovID")
+    data_stored.index = data_stored.index.rename(identifier)
     data_stored = data_stored.drop("geometry", axis=1)
     data_stored = data_stored.astype(int)
     data_stored.to_csv(os.path.join(out_dir, f"conflicts_in_{sim_year}.csv"))
