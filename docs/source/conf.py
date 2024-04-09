@@ -169,7 +169,6 @@ htmlhelp_basename = "copro_doc"
 # of the sidebar.
 html_logo = "../_static/logo.png"
 
-
 # -- Options for HTMLHelp output ---------------------------------------
 
 # Output file base name for HTML help builder.
