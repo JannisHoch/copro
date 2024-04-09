@@ -159,16 +159,15 @@ htmlhelp_basename = "copro_doc"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["../_static"]
 
-html_css_files = [
-    "css/custom.css",
-]
+# html_css_files = [
+#     "css/custom.css",
+# ]
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "_static/logo.png"
-
+html_logo = "../_static/logo.png"
 
 # -- Options for HTMLHelp output ---------------------------------------
 
