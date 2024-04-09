@@ -14,11 +14,11 @@ A software description paper was published in `JOSS <https://doi.org/10.21105/jo
 .. image:: https://readthedocs.org/projects/copro/badge/?version=latest
     :target: https://copro.readthedocs.io/en/latest/?badge=latest
 
-.. .. image:: https://img.shields.io/github/v/release/JannisHoch/copro
-..     :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.8
+.. image:: https://img.shields.io/github/v/release/JannisHoch/copro
+    :target: https://github.com/JannisHoch/copro/releases/tag/v0.1.2
 
-.. .. image:: https://zenodo.org/badge/254407279.svg
-..     :target: https://zenodo.org/badge/latestdoi/254407279
+.. image:: https://zenodo.org/badge/254407279.svg
+    :target: https://zenodo.org/badge/latestdoi/254407279
 
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
