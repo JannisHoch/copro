@@ -27,13 +27,6 @@ warnings.filterwarnings("ignore")
 )
 def cli(cfg: click.Path, cores: int, verbose: int):
     """Main command line script to execute the model.
-    All settings are read from cfg-file.
-    One cfg-file is required argument to train, test, and evaluate the model.
-    Multiple classifiers are trained based on different train-test data combinations.
-    Additional cfg-files for multiple projections can be provided as optional arguments,
-    whereby each file corresponds to one projection to be made.
-    Per projection, each classifiers is used to create separate projection outcomes per time step (year).
-    All outcomes are combined after each time step to obtain the common projection outcome.
 
     Args:
         CFG (str): (relative) path to cfg-file

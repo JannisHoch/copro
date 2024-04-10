@@ -15,9 +15,7 @@ class MachineLearning:
     def __init__(self, config: RawConfigParser) -> None:
         self.config = config
         self.scaler = define_scaling(config)
-        self.clf = ensemble.RandomForestClassifier(
-            n_estimators=1000, class_weight={1: 100}, random_state=42
-        )
+        self.clf = ensemble.RandomForestClassifier(random_state=42)
 
     def split_scale_train_test_split(
         self, X: Union[np.ndarray, pd.DataFrame], Y: np.ndarray
@@ -284,12 +282,18 @@ def apply_gridsearchCV(
         "max_features": ("sqrt", "log2"),
         "min_samples_split": [2, 5, 10],
         "min_samples_leaf": [1, 2, 4],
+        "class_weight": [{1: 75}, {1: 100}, {1: 150}],
         # 'bootstrap': [True, False]
     }
 
     # Instantiate the grid search model
     grid_search = GridSearchCV(
-        estimator=estimator, param_grid=param_grid, cv=5, n_jobs=n_jobs, verbose=verbose
+        estimator=estimator,
+        param_grid=param_grid,
+        cv=5,
+        n_jobs=n_jobs,
+        verbose=verbose,
+        scoring="roc_auc",
     )
 
     # Fit the grid search to the data
@@ -297,5 +301,7 @@ def apply_gridsearchCV(
 
     # Get the best estimator
     best_estimator = grid_search.best_estimator_
+    click.echo(f"ROC-AUC of best estimator is {grid_search.best_score_}.")
+    click.echo(f"Best estimator is {grid_search.best_estimator_}.")
 
     return best_estimator
