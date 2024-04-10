@@ -11,15 +11,22 @@ warnings.filterwarnings("ignore")
 
 @click.command()
 @click.argument("cfg", type=click.Path())
-def cli(cfg):
+@click.option(
+    "--cores",
+    "-c",
+    type=int,
+    default=5,
+    help="Number of jobs to run in parallel. Default is 0.",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    type=int,
+    default=0,
+    help="Verbosity level of the output. Default is 0.",
+)
+def cli(cfg: click.Path, cores: int, verbose: int):
     """Main command line script to execute the model.
-    All settings are read from cfg-file.
-    One cfg-file is required argument to train, test, and evaluate the model.
-    Multiple classifiers are trained based on different train-test data combinations.
-    Additional cfg-files for multiple projections can be provided as optional arguments,
-    whereby each file corresponds to one projection to be made.
-    Per projection, each classifiers is used to create separate projection outcomes per time step (year).
-    All outcomes are combined after each time step to obtain the common projection outcome.
 
     Args:
         CFG (str): (relative) path to cfg-file
@@ -51,16 +58,13 @@ def cli(cfg):
 
     # - defining scaling and model algorithms
     ModelWorkflow = models.MainModel(
-        config=config_REF,
-        X=X,
-        Y=Y,
-        out_dir=out_dir_REF,
+        config=config_REF, X=X, Y=Y, out_dir=out_dir_REF, n_jobs=cores, verbose=verbose
     )
 
     # - fit-transform on scaler to be used later during projections
 
     _, out_y_df, out_dict = ModelWorkflow.run(
-        config_REF.getint("machine_learning", "n_runs")
+        config_REF.getint("machine_learning", "n_runs"), tune_hyperparameters=True
     )
 
     # - save output dictionary to csv-file

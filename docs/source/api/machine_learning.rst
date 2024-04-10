@@ -17,6 +17,6 @@ Other functions
 Functions for machine learning applications in the model.
 
 .. automodule:: machine_learning
-    :members: load_clfs,define_scaling,predictive
+    :members: define_scaling,apply_gridsearchCV,load_clfs,predictive
     :undoc-members:
     :show-inheritance:
