@@ -11,7 +11,21 @@ warnings.filterwarnings("ignore")
 
 @click.command()
 @click.argument("cfg", type=click.Path())
-def cli(cfg):
+@click.option(
+    "--cores",
+    "-c",
+    type=int,
+    default=5,
+    help="Number of jobs to run in parallel. Default is 0.",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    type=int,
+    default=0,
+    help="Verbosity level of the output. Default is 0.",
+)
+def cli(cfg: click.Path, cores: int, verbose: int):
     """Main command line script to execute the model.
     All settings are read from cfg-file.
     One cfg-file is required argument to train, test, and evaluate the model.
@@ -51,7 +65,7 @@ def cli(cfg):
 
     # - defining scaling and model algorithms
     ModelWorkflow = models.MainModel(
-        config=config_REF, X=X, Y=Y, out_dir=out_dir_REF, n_jobs=5, verbose=0
+        config=config_REF, X=X, Y=Y, out_dir=out_dir_REF, n_jobs=cores, verbose=verbose
     )
 
     # - fit-transform on scaler to be used later during projections
