@@ -7,6 +7,8 @@ from sklearn import ensemble, preprocessing, model_selection
 from typing import Union, Tuple
 import click
 from pathlib import Path
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
 
 
 class MachineLearning:
@@ -74,10 +76,14 @@ class MachineLearning:
         X_test: Union[np.ndarray, pd.DataFrame],
         out_dir: str,
         run_nr: int,
+        tune_hyperparameters=False,
+        n_jobs=2,
+        verbose=0,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Fits classifier based on training-data and makes predictions.
         The fitted classifier is dumped to file with pickle to be used again during projections.
         Makes prediction with test-data including probabilities of those predictions.
+        If specified, hyperparameters of classifier are tuned with GridSearchCV.
 
         Args:
             X_train (np.ndarray, pd.DataFrame): training-data of variable values.
@@ -85,13 +91,21 @@ class MachineLearning:
             X_test (np.ndarray, pd.DataFrame): test-data of variable values.
             out_dir (str): path to output folder.
             run_nr (int): number of fit/predict repetition and created classifier.
+            tune_hyperparameters (bool, optional): whether to tune hyperparameters. Defaults to False.
+            n_jobs (int, optional): Number of cores to be used. Defaults to 2.
+            verbose (int, optional): Verbosity level. Defaults to 0.
 
         Returns:
             arrays: arrays including the predictions made and their probabilities
         """
 
-        # fit the classifier with training data
-        self.clf.fit(X_train, y_train)
+        if tune_hyperparameters:
+            fitted_estimator = apply_gridsearchCV(
+                self.clf, X_train, y_train, n_jobs=n_jobs, verbose=verbose
+            )
+        else:
+            # fit the classifier with training data
+            fitted_estimator = self.clf.fit(X_train, y_train)
 
         # create folder to store all classifiers with pickle
         clf_pickle_rep = os.path.join(out_dir, "clfs")
@@ -100,12 +114,12 @@ class MachineLearning:
         # save the fitted classifier to file via pickle.dump()
         click.echo(f"Dumping classifier to {clf_pickle_rep}.")
         with open(os.path.join(clf_pickle_rep, "clf_{}.pkl".format(run_nr)), "wb") as f:
-            pickle.dump(self.clf, f)
+            pickle.dump(fitted_estimator, f)
 
         # make prediction
-        y_pred = self.clf.predict(X_test)
+        y_pred = fitted_estimator.predict(X_test)
         # make prediction of probability
-        y_prob = self.clf.predict_proba(X_test)
+        y_prob = fitted_estimator.predict_proba(X_test)
 
         return y_pred, y_prob
 
@@ -239,3 +253,49 @@ def predictive(
     )
 
     return y_df
+
+
+def apply_gridsearchCV(
+    estimator: RandomForestClassifier,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    n_jobs=2,
+    verbose=0,
+) -> RandomForestClassifier:
+    """Applies grid search to find the best hyperparameters for the RandomForestClassifier.
+
+    Args:
+        estimator (RandomForestClassifier): Estimator to be used in the grid search.
+        X_train (np.ndarray): Feature matrix.
+        y_train (np.ndarray): Target vector.
+        n_jobs (int, optional): Number of cores to be used. Defaults to 2.
+        verbose (int, optional): Verbosity level. Defaults to 0.
+
+    Returns:
+        RandomForestClassifier: Best estimator of the grid search.
+    """
+
+    click.echo("Tuning hyperparameters with GridSearchCV.")
+    # Define the parameter grid
+    param_grid = {
+        "n_estimators": [50, 100, 200],
+        "criterion": ["gini", "entropy"],
+        "min_impurity_decrease": [0, 0.5, 1],
+        "max_features": ("sqrt", "log2"),
+        "min_samples_split": [2, 5, 10],
+        "min_samples_leaf": [1, 2, 4],
+        # 'bootstrap': [True, False]
+    }
+
+    # Instantiate the grid search model
+    grid_search = GridSearchCV(
+        estimator=estimator, param_grid=param_grid, cv=5, n_jobs=n_jobs, verbose=verbose
+    )
+
+    # Fit the grid search to the data
+    grid_search.fit(X_train, y_train)
+
+    # Get the best estimator
+    best_estimator = grid_search.best_estimator_
+
+    return best_estimator

@@ -51,16 +51,13 @@ def cli(cfg):
 
     # - defining scaling and model algorithms
     ModelWorkflow = models.MainModel(
-        config=config_REF,
-        X=X,
-        Y=Y,
-        out_dir=out_dir_REF,
+        config=config_REF, X=X, Y=Y, out_dir=out_dir_REF, n_jobs=5, verbose=0
     )
 
     # - fit-transform on scaler to be used later during projections
 
     _, out_y_df, out_dict = ModelWorkflow.run(
-        config_REF.getint("machine_learning", "n_runs")
+        config_REF.getint("machine_learning", "n_runs"), tune_hyperparameters=True
     )
 
     # - save output dictionary to csv-file

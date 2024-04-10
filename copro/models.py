@@ -19,6 +19,8 @@ class MainModel:
         Y: np.ndarray,
         config: RawConfigParser,
         out_dir: str,
+        n_jobs=2,
+        verbose=0,
     ):
         """Constructor for the MainModel class.
 
@@ -27,6 +29,8 @@ class MainModel:
             Y (np.ndarray): array containing merely the binary conflict classifier data.
             config (RawConfigParser): object containing the parsed configuration-settings of the model.
             out_dir (str): path to output folder.
+            n_jobs (int, optional): Number of jobs to run in parallel. Defaults to 2.
+            verbose (int, optional): Verbosity level. Defaults to 0.
         """
         self.X = X
         self.Y = Y
@@ -39,12 +43,17 @@ class MainModel:
             n_estimators=1000, class_weight={1: 100}, random_state=42
         )
         self.out_dir = out_dir
+        self.n_jobs = n_jobs
+        self.verbose = verbose
 
-    def run(self, number_runs: int) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    def run(
+        self, number_runs: int, tune_hyperparameters=False
+    ) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
         """Top-level function to execute the machine learning model for all specified runs.
 
         Args:
             number_runs (int): Number of runs as specified in the settings-file.
+            tune_hyperparameters (bool, optional): Whether to tune hyperparameters or not. Defaults to False.
 
         Returns:
             tuple[pd.DataFrame, pd.DataFrame, dict]: Prediction dataframes, model output on polygon-basis, \
@@ -63,7 +72,9 @@ class MainModel:
             click.echo(f"Run {n+1} of {number_runs}.")
 
             # - run machine learning model and return outputs
-            X_df, y_df, eval_dict = self._n_run(run_nr=n)
+            X_df, y_df, eval_dict = self._n_run(
+                run_nr=n, tune_hyperparameters=tune_hyperparameters
+            )
 
             # - append per model execution
             out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
@@ -72,9 +83,15 @@ class MainModel:
 
         return out_X_df, out_y_df, out_dict
 
-    def _n_run(self, run_nr) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    def _n_run(
+        self, run_nr: int, tune_hyperparameters=False
+    ) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
         """Runs workflow per specified number of runs.
         The model workflow is executed for each classifier.
+
+        Args:
+            run_nr (int): Number of run.
+            tune_hyperparameters (bool, optional): Whether to tune hyperparameters or not. Defaults to False.
 
         Returns:
             dataframe: containing the test-data X-array values.
@@ -103,7 +120,14 @@ class MainModel:
 
         # fit classifier and make prediction with test-set
         y_pred, y_prob = MLmodel.fit_predict(
-            X_train, y_train, X_test, self.out_dir, run_nr
+            X_train,
+            y_train,
+            X_test,
+            self.out_dir,
+            run_nr,
+            tune_hyperparameters,
+            self.n_jobs,
+            self.verbose,
         )
         y_prob_0 = y_prob[:, 0]  # probability to predict 0
         y_prob_1 = y_prob[:, 1]  # probability to predict 1
