@@ -143,7 +143,7 @@ generated*
 
 # example input data
 example/*.zip
-example/example_data/*
+example/example_data
 
 # article related stuff
 _paper/*

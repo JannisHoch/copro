@@ -1,9 +1,10 @@
-Models
-=======
+Main Model
+===========
 
 The models class
 ---------------------------
-THe models class contains all the steps required to prepare and run the conflict projections.
+The models class contains all the steps required to prepare and run the conflict projections.
+It essentially wraps the much of the functionality of the :ref:`Machine Learning` class.
 
 .. currentmodule:: copro
 
