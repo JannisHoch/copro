@@ -42,6 +42,7 @@ Contents
    :maxdepth: 1
 
    Installation <installation>
+   Using Copro <usage>
    API <api>
 
 Authors
