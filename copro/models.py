@@ -48,7 +48,7 @@ class MainModel:
 
     def run(
         self, number_runs: int, tune_hyperparameters=False
-    ) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict]:
         """Top-level function to execute the machine learning model for all specified runs.
 
         Args:
@@ -56,8 +56,10 @@ class MainModel:
             tune_hyperparameters (bool, optional): Whether to tune hyperparameters or not. Defaults to False.
 
         Returns:
-            tuple[pd.DataFrame, pd.DataFrame, dict]: Prediction dataframes, model output on polygon-basis, \
-                and evaluation dictionary.
+            pd.DataFrame: Prediction dataframes.
+            pd.DataFrame: model output on polygon-basis.
+            pd.DataFrame: containing permutation importances for all runs.
+            dict: evaluation dictionary.
         """
 
         check_is_fitted(self.scaler)
@@ -65,6 +67,7 @@ class MainModel:
         # - initializing output variables
         out_X_df = pd.DataFrame()
         out_y_df = pd.DataFrame()
+        out_perm_importances_df = pd.DataFrame()
         out_dict = evaluation.init_out_dict()
 
         click.echo("Training and testing machine learning model")
@@ -72,20 +75,25 @@ class MainModel:
             click.echo(f"Run {n+1} of {number_runs}.")
 
             # - run machine learning model and return outputs
-            X_df, y_df, eval_dict = self._n_run(
+            X_df, y_df, eval_dict, perm_importances_df_n = self._n_run(
                 run_nr=n, tune_hyperparameters=tune_hyperparameters
             )
 
             # - append per model execution
             out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
             out_y_df = pd.concat([out_y_df, y_df], axis=0, ignore_index=True)
+            out_perm_importances_df = pd.concat(
+                [out_perm_importances_df, perm_importances_df_n],
+                axis=0,
+                ignore_index=True,
+            )
             out_dict = evaluation.fill_out_dict(out_dict, eval_dict)
 
-        return out_X_df, out_y_df, out_dict
+        return out_X_df, out_y_df, out_perm_importances_df, out_dict
 
     def _n_run(
         self, run_nr: int, tune_hyperparameters=False
-    ) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
         """Runs workflow per specified number of runs.
         The model workflow is executed for each classifier.
 
@@ -94,9 +102,10 @@ class MainModel:
             tune_hyperparameters (bool, optional): Whether to tune hyperparameters or not. Defaults to False.
 
         Returns:
-            dataframe: containing the test-data X-array values.
-            datatrame: containing model output on polygon-basis.
+            pd.DataFrame: containing the test-data X-array values.
+            pd.DataFrame: containing model output on polygon-basis.
             dict: dictionary containing evaluation metrics per simulation.
+            pd.DataFrame: containing permutation importances for run n.
         """
 
         MLmodel = machine_learning.MachineLearning(
@@ -119,7 +128,7 @@ class MainModel:
         X_df = pd.DataFrame(X_test)
 
         # fit classifier and make prediction with test-set
-        y_pred, y_prob = MLmodel.fit_predict(
+        y_pred, y_prob, perm_importances_df_n = MLmodel.fit_predict(
             X_train,
             y_train,
             X_test,
@@ -140,7 +149,7 @@ class MainModel:
             X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1
         )
 
-        return X_df, y_df, eval_dict
+        return X_df, y_df, eval_dict, perm_importances_df_n
 
     def run_prediction(
         self,

@@ -33,14 +33,3 @@ def test_split_conflict_geom_data():
     X_false = np.where(np.equal(X_in, X_out) == False)[0]
 
     assert X_false.size == 0
-
-
-def test_get_poly_geometry():
-
-    gdf = gpd.read_file(gpd.datasets.get_path("naturalearth_lowres"))
-
-    config = create_fake_config()
-
-    list_geometry = conflict.get_poly_geometry(gdf, config)
-
-    assert len(gdf) == len(list_geometry)

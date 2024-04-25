@@ -63,11 +63,19 @@ def cli(cfg: click.Path, cores: int, verbose: int):
 
     # - fit-transform on scaler to be used later during projections
 
-    _, out_y_df, out_dict = ModelWorkflow.run(
+    _, out_y_df, out_perm_importances_df, out_dict = ModelWorkflow.run(
         config_REF.getint("machine_learning", "n_runs"), tune_hyperparameters=True
     )
 
-    # - save output dictionary to csv-file
+    # - save output to files
+    out_perm_importances_df.columns = [
+        key
+        for key in XY_class.XY_dict
+        if key not in ["poly_ID", "poly_geometry", "conflict"]
+    ]
+    out_perm_importances_df.to_parquet(
+        os.path.join(out_dir_REF, "perm_importances.parquet")
+    )
     io.save_to_csv(out_dict, out_dir_REF, "evaluation_metrics")
     io.save_to_npy(out_y_df, out_dir_REF, "raw_output_data")
 
