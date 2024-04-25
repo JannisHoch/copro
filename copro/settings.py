@@ -106,7 +106,6 @@ def _collect_simulation_settings(config: RawConfigParser, root_dir: click.Path) 
         each_val = os.path.abspath(os.path.join(root_dir, each_val))
 
         # parse each config-file specified
-        click.echo(f"Parsing settings from file {each_val}.")
         each_config = _parse_settings(each_val)
 
         # update the output dictionary with key and config-object

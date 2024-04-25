@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from configparser import RawConfigParser
-from sklearn import ensemble, preprocessing, model_selection
+from sklearn import ensemble, preprocessing, model_selection, inspection
 from typing import Union, Tuple
 import click
 from pathlib import Path
@@ -38,7 +38,7 @@ class MachineLearning:
         X_ID, X_geom, X_data = _split_conflict_geom_data(X)
 
         ##- scaling only the variable values
-        click.echo("Fitting and transforming X.")
+        click.echo("Fitting and transforming scaler.")
         X_ft = self.scaler.fit_transform(X_data)
 
         ##- combining ID, geometry and scaled sample values per polygon
@@ -77,7 +77,7 @@ class MachineLearning:
         tune_hyperparameters=False,
         n_jobs=2,
         verbose=0,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[np.ndarray, np.ndarray, pd.DataFrame]:
         """Fits classifier based on training-data and makes predictions.
         The fitted classifier is dumped to file with pickle to be used again during projections.
         Makes prediction with test-data including probabilities of those predictions.
@@ -94,7 +94,9 @@ class MachineLearning:
             verbose (int, optional): Verbosity level. Defaults to 0.
 
         Returns:
-            arrays: arrays including the predictions made and their probabilities
+            np.ndarray: array with the predictions made.
+            np.ndarray: array with probabilities of the predictions made.
+            pd.DataFrame: dataframe containing permutation importances of variables.
         """
 
         if tune_hyperparameters:
@@ -104,6 +106,22 @@ class MachineLearning:
         else:
             # fit the classifier with training data
             fitted_estimator = self.clf.fit(X_train, y_train)
+
+        # compute permutation importance
+        click.echo("Computing permutation importance.")
+        perm_importances = inspection.permutation_importance(
+            fitted_estimator,
+            X_train,
+            y_train,
+            n_repeats=10,
+            random_state=42,
+            n_jobs=n_jobs,
+        )
+        sorted_importances_idx = perm_importances.importances_mean.argsort()
+        perm_importances_df = pd.DataFrame(
+            perm_importances.importances[sorted_importances_idx].T,
+            # columns=X_train.columns[sorted_importances_idx],
+        )
 
         # create folder to store all classifiers with pickle
         clf_pickle_rep = os.path.join(out_dir, "clfs")
@@ -119,7 +137,7 @@ class MachineLearning:
         # make prediction of probability
         y_prob = fitted_estimator.predict_proba(X_test)
 
-        return y_pred, y_prob
+        return y_pred, y_prob, perm_importances_df
 
 
 def load_clfs(config: RawConfigParser, out_dir: str) -> list[str]:
