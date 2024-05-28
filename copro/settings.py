@@ -68,12 +68,12 @@ def _parse_settings(settings_file: click.Path) -> dict:
     click.echo(f"Parsing settings from file {settings_file}.")
 
     with open(settings_file, "r") as stream:
-        data_loaded = yaml.safe_load(stream)
+        config = yaml.safe_load(stream)
 
-    return data_loaded
+    return config
 
 
-def _collect_simulation_settings(config: RawConfigParser, root_dir: click.Path) -> dict:
+def _collect_simulation_settings(config: dict, root_dir: click.Path) -> dict:
     """Collects the configuration settings for the reference run and all projection runs.
     These cfg-files need to be specified one by one in the PROJ_files section of the cfg-file for the reference run.
     The function returns then a dictionary with the name of the run and the associated config-object.
@@ -88,7 +88,7 @@ def _collect_simulation_settings(config: RawConfigParser, root_dir: click.Path) 
         config_dict = {'_REF': [config_REF], 'run1': [config_run1], 'run2': [config_run2]}
 
     Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings \
+        config (dict): dictionariy containing the parsed configuration-settings \
             of the model for the reference run.
         root_dir (Path): path to location of the cfg-file for the reference run.
 
@@ -101,17 +101,19 @@ def _collect_simulation_settings(config: RawConfigParser, root_dir: click.Path) 
     # first entry is config-object for reference run
     config_dict["_REF"] = config
 
-    # loop through all keys and values in PROJ_files section of reference config-object
-    for (each_key, each_val) in config.items("PROJ_files"):
+    if "PROJ_files" in config["general"].keys():
 
-        # for each value (here representing the cfg-files of the projections), get the absolute path
-        each_val = os.path.abspath(os.path.join(root_dir, each_val))
+        # loop through all keys and values in PROJ_files section of reference config-object
+        for (each_key, each_val) in config.items("PROJ_files"):
 
-        # parse each config-file specified
-        each_config = _parse_settings(each_val)
+            # for each value (here representing the cfg-files of the projections), get the absolute path
+            each_val = os.path.abspath(os.path.join(root_dir, each_val))
 
-        # update the output dictionary with key and config-object
-        config_dict[each_key] = [each_config]
+            # parse each config-file specified
+            each_config = _parse_settings(each_val)
+
+            # update the output dictionary with key and config-object
+            config_dict[each_key] = [each_config]
 
     return config_dict
 
@@ -133,8 +135,8 @@ def determine_projection_period(
 
     # get all years of projection period
     projection_period = np.arange(
-        config_REF.getint("settings", "y_end") + 1,
-        config_PROJ.getint("settings", "y_proj") + 1,
+        config_REF["general"]["y_end"] + 1,
+        config_PROJ["general"]["y_proj"] + 1,
         1,
     )
     # convert to list
