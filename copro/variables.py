@@ -7,7 +7,6 @@ import numpy as np
 import os
 import math
 import click
-from distutils import util
 from configparser import RawConfigParser
 
 import warnings
@@ -64,12 +63,12 @@ def nc_with_float_timestamp(
 
     # if not, split the list into separate variables
     nc_fo = data_fo[0]
-    ln_flag = bool(util.strtobool(data_fo[1]))
+    ln_flag = bool(data_fo[1])
     stat_method = str(data_fo[2])
 
-    lag_time = 1
-    click.echo(f"Applying {lag_time} year lag time.")
-    sim_year = sim_year - lag_time
+    LAG_TIME = 1
+    click.echo(f"Applying {LAG_TIME} year lag time.")
+    sim_year = sim_year - LAG_TIME
 
     if ln_flag:
         click.echo(
@@ -190,12 +189,12 @@ def nc_with_continous_datetime_timestamp(
 
     # if not, split the list into separate variables
     nc_fo = data_fo[0]
-    ln_flag = bool(util.strtobool(data_fo[1]))
+    ln_flag = bool(data_fo[1])
     stat_method = str(data_fo[2])
 
-    lag_time = 1
-    click.echo(f"Applying {lag_time} year lag time for variable {var_name}.")
-    sim_year = sim_year - lag_time
+    LAG_TIME = 1
+    click.echo(f"Applying {LAG_TIME} year lag time for variable {var_name}.")
+    sim_year = sim_year - LAG_TIME
 
     if ln_flag:
         click.echo(
