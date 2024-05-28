@@ -68,26 +68,30 @@ def _filter_conflict_properties(
         gpd.GeoDataFrame: geo-dataframe containing filtered entries.
     """
 
-    # create dictionary with all selection criteria
-    selection_criteria = {
-        "best": config.getint("conflict", "min_nr_casualties"),
-        "type_of_violence": (config.get("conflict", "type_of_violence")).rsplit(","),
-    }
+    conflict_items = dict(config.items("conflict"))
+
+    # # create dictionary with all selection criteria
+    # selection_criteria = {
+    #     "best": config.getint("conflict", "min_nr_casualties"),
+    #     "type_of_violence": (config.get("conflict", "type_of_violence")).rsplit(","),
+    # }
 
     click.echo("Filtering based on conflict properties.")
     # go through all criteria
-    for key, value in selection_criteria.items():
+    for key, value in conflict_items.items():
 
-        # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
-        if key == "best" and value != "":
-            click.echo(f"Filtering key {key} with lower value {value}.")
-            gdf = gdf[gdf["best"] >= value]
-        # for other criteria, select all entries matching the specified value(s) per criterion
-        if key == "type_of_violence" and value != "":
-            click.echo(f"Filtering key {key} with value(s) {value}.")
-            # NOTE: check if this works like this
-            values = [literal_eval(i) for i in value]
-            gdf = gdf[gdf[key].isin(values)]
+        if key not in ["conflict_file", "predicted_var"]:
+
+            # for criterion 'best' (i.e. best estimate of fatalities), select all entries above threshold
+            if key == "best" and value != "":
+                click.echo(f"Filtering key {key} with lower value {value}.")
+                gdf = gdf[gdf["best"] >= value]
+            # for other criteria, select all entries matching the specified value(s) per criterion
+            if key == "type_of_violence" and value != "":
+                click.echo(f"Filtering key {key} with value(s) {value}.")
+                # NOTE: check if this works like this
+                values = [literal_eval(i) for i in value]
+                gdf = gdf[gdf[key].isin(values)]
 
     return gdf
 
