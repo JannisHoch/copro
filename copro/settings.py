@@ -6,6 +6,8 @@ from shutil import copyfile
 from typing import Tuple
 from copro import utils, io
 
+import yaml
+
 
 def initiate_setup(settings_file: click.Path) -> Tuple[dict, str]:
     """Initiates the model set-up.
@@ -53,22 +55,22 @@ def initiate_setup(settings_file: click.Path) -> Tuple[dict, str]:
     return main_dict, root_dir
 
 
-def _parse_settings(settings_file: click.Path) -> RawConfigParser:
-    """Reads the model configuration file.
+def _parse_settings(settings_file: click.Path) -> dict:
+    """Reads the model configuration YAML-file and returns contant as dictionary.
 
     Args:
         settings_file (Path): path to settings-file (cfg-file).
 
     Returns:
-        RawConfigParser: parsed model configuration.
+        dict: parsed model configuration.
     """
 
     click.echo(f"Parsing settings from file {settings_file}.")
-    config = RawConfigParser(allow_no_value=True, inline_comment_prefixes="#")
-    config.optionxform = lambda option: option
-    config.read(settings_file)
 
-    return config
+    with open(settings_file, "r") as stream:
+        data_loaded = yaml.safe_load(stream)
+
+    return data_loaded
 
 
 def _collect_simulation_settings(config: RawConfigParser, root_dir: click.Path) -> dict:
