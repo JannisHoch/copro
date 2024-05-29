@@ -7,7 +7,6 @@ import numpy as np
 import os
 import math
 import click
-from configparser import RawConfigParser
 
 import warnings
 
@@ -16,85 +15,63 @@ warnings.filterwarnings("once")
 
 def nc_with_float_timestamp(
     extent_gdf: gpd.GeoDataFrame,
-    config: RawConfigParser,
+    config: dict,
     root_dir: str,
     var_name: str,
     sim_year: int,
 ) -> list:
-    """This function extracts a value from a netCDF-file (specified in the cfg-file)
+    """This function extracts a value from a netCDF-file (specified in the yaml-file)
     for each polygon specified in extent_gdf for a given year.
-    In the cfg-file, it must also be specified whether the value is log-transformed or not,
+    In the yaml-file, it must also be specified whether the value is log-transformed or not,
     and which statistical method is applied.
 
     .. note::
-        The key in the cfg-file must be identical to variable name in netCDF-file.
+        The key in the yaml-file must be identical to variable name in netCDF-file.
 
     .. note::
         Works only with nc-files with annual data.
 
     Args:
         extent_gdf (gpd.GeoDataFrame): One or more polygons with geometry information for which values are extracted.
-        config (RawConfigParser): parsed configuration settings of run.
-        root_dir (str): path to location of cfg-file.
-        var_name (str): name of variable in nc-file. Must be the same as is specified in cfg-file.
-        sim_year (int): year for which data is extracted.
+        config (dict): Parsed configuration settings of run.
+        root_dir (str): Path to location of yaml-file.
+        var_name (str): Name of variable in nc-file. Must be the same as is specified in yaml-file.
+        sim_year (int): Year for which data is extracted.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+        list: List containing statistical value per polygon, i.e. with same length as extent_gdf.
     """
 
-    # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
-    data_fo = os.path.join(
-        root_dir, config.get("general", "input_dir"), config.get("data", var_name)
-    ).rsplit(",")
+    nc_fo = os.path.join(
+        root_dir,
+        config["general"]["input_dir"],
+        config["data"]["indicators"][var_name]["file"],
+    )
 
-    # if not all of these three aspects are provided, raise error
-    if len(data_fo) != 3:
-        raise ValueError(
-            "Not all settings for input data set {} provided - \
-                it must contain of path, False/True, and statistical method".format(
-                os.path.join(
-                    root_dir,
-                    config.get("general", "input_dir"),
-                    config.get("data", var_name),
-                )
-            )
-        )
-
-    # if not, split the list into separate variables
-    nc_fo = data_fo[0]
-    ln_flag = bool(data_fo[1])
-    stat_method = str(data_fo[2])
-
-    LAG_TIME = 1
-    click.echo(f"Applying {LAG_TIME} year lag time.")
-    sim_year = sim_year - LAG_TIME
-
-    if ln_flag:
-        click.echo(
-            "Calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}".format(
-                stat_method, var_name, nc_fo, sim_year
-            )
-        )
+    if "log" not in config["data"]["indicators"][var_name].keys():
+        ln_flag = False
     else:
-        click.echo(
-            "Calculating {0} {1} per aggregation unit from file {2} for year {3}".format(
-                stat_method, var_name, nc_fo, sim_year
-            )
-        )
+        ln_flag = config["data"]["indicators"][var_name]["log"]
+    if "stat" not in config["data"]["indicators"][var_name].keys():
+        stat_method = "mean"
+    else:
+        stat_method = config["data"]["indicators"][var_name]["stat"]
+    LAG_TIME = 1
+    click.echo(f"\tuse log: {ln_flag}.")
+    click.echo(f"\tstatistical method: {stat_method}.")
+    click.echo(f"\tLAG TIME: {LAG_TIME} year(s).")
+
+    sim_year = sim_year - LAG_TIME
 
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
-    if ln_flag:
-        nc_var = np.log(nc_var)
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
 
     # get values from data-array for specified year
-    nc_arr = nc_var.sel(time=sim_year)
-    nc_arr_vals = nc_arr.values
+    nc_arr_vals = nc_var.sel({"time": sim_year}).values
     if nc_arr_vals.size == 0:
         raise ValueError(
             f"No data was found for this year in the nc-file {nc_fo}, check if all is correct."
@@ -142,106 +119,66 @@ def nc_with_float_timestamp(
 
 def nc_with_continous_datetime_timestamp(
     extent_gdf: gpd.GeoDataFrame,
-    config: RawConfigParser,
+    config: dict,
     root_dir: str,
     var_name: str,
     sim_year: int,
 ) -> list:
-    """This function extracts a value from a netCDF-file (specified in the cfg-file)
+    """This function extracts a value from a netCDF-file (specified in the yaml-file)
     for each polygon specified in extent_gdf for a given year.
-    In the cfg-file, it must also be specified whether the value is log-transformed or not,
+    In the yaml-file, it must also be specified whether the value is log-transformed or not,
     and which statistical method is applied.
 
     .. note::
-        The key in the cfg-file must be identical to variable name in netCDF-file.
+        The key in the yaml-file must be identical to variable name in netCDF-file.
 
     .. note::
         Works only with nc-files with annual data.
 
     Args:
         extent_gdf (gpd.GeoDataFrame): One or more polygons with geometry information for which values are extracted.
-        config (RawConfigParser): parsed configuration settings of run.
-        root_dir (str): path to location of cfg-file.
-        var_name (str): name of variable in nc-file. Must be the same as in the cfg-file.
-        sim_year (int): year for which data is extracted.
+        config (config): Parsed configuration settings of run.
+        root_dir (str): Path to location of yaml-file.
+        var_name (str): Name of variable in nc-file. Must be the same as in the yaml-file.
+        sim_year (int): Year for which data is extracted.
 
     Returns:
-        list: list containing statistical value per polygon, i.e. with same length as extent_gdf.
+        list: List containing statistical value per polygon, i.e. with same length as extent_gdf.
     """
 
-    # get the filename, True/False whether log-transform shall be applied, and statistical method from cfg-file as list
-    data_fo = os.path.join(
-        root_dir, config.get("general", "input_dir"), config.get("data", var_name)
-    ).rsplit(",")
+    nc_fo = os.path.join(
+        root_dir,
+        config["general"]["input_dir"],
+        config["data"]["indicators"][var_name]["file"],
+    )
 
-    # if not all of these three aspects are provided, raise error
-    if len(data_fo) != 3:
-        raise ValueError(
-            "Not all settings for input data set {} provided - \
-                it must contain of path, False/True, and statistical method".format(
-                os.path.join(
-                    root_dir,
-                    config.get("general", "input_dir"),
-                    config.get("data", var_name),
-                )
-            )
-        )
-
-    # if not, split the list into separate variables
-    nc_fo = data_fo[0]
-    ln_flag = bool(data_fo[1])
-    stat_method = str(data_fo[2])
-
-    LAG_TIME = 1
-    click.echo(f"Applying {LAG_TIME} year lag time for variable {var_name}.")
-    sim_year = sim_year - LAG_TIME
-
-    if ln_flag:
-        click.echo(
-            "Calculating log-transformed {0} {1} per aggregation unit from file {2} for year {3}".format(
-                stat_method, var_name, nc_fo, sim_year
-            )
-        )
+    if "log" not in config["data"]["indicators"][var_name].keys():
+        ln_flag = False
     else:
-        click.echo(
-            "Calculating {0} {1} per aggregation unit from file {2} for year {3}".format(
-                stat_method, var_name, nc_fo, sim_year
-            )
-        )
+        ln_flag = config["data"]["indicators"][var_name]["log"]
+    if "stat" not in config["data"]["indicators"][var_name].keys():
+        stat_method = "mean"
+    else:
+        stat_method = config["data"]["indicators"][var_name]["stat"]
+    LAG_TIME = 1
+    click.echo(f"\tuse log: {ln_flag}.")
+    click.echo(f"\tstatistical method: {stat_method}.")
+    click.echo(f"\tLAG TIME: {LAG_TIME} year(s).")
 
+    sim_year = sim_year - LAG_TIME
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
     # get xarray data-array for specified variable
     nc_var = nc_ds[var_name]
-    # get years contained in nc-file as integer array to be compatible with sim_year
-    years = (
-        pd.to_datetime(nc_ds.time.values)
-        .to_period(freq="Y")
-        .strftime("%Y")
-        .to_numpy(dtype=int)
-    )
-    if sim_year not in years:
-        warnings.warn(
-            f"The simulation year {sim_year} can not be found in file {nc_fo}."
-        )
-        warnings.warn(
-            "Using the next following year instead (yes that is an ugly solution...)"
-        )
-        sim_year = sim_year + 1
-        # raise ValueError('ERROR: the simulation year {0} can not be found in file {1}'.format(sim_year, nc_fo))
 
-    # get index which corresponds with sim_year in years in nc-file
-    sim_year_idx = int(np.where(years == sim_year)[0])
     # get values from data-array for specified year based on index
-    nc_arr = nc_var.sel(time=nc_ds.time.values[sim_year_idx])
-    nc_arr_vals = nc_arr.values
+    nc_arr_vals = nc_var.sel({"time": pd.to_datetime(sim_year, format="%Y")}).values
     if nc_arr_vals.size == 0:
         raise ValueError(
             "No data was found for this year in the nc-file {}, check if all is correct".format(
                 nc_fo
             )
         )
-
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
 

@@ -113,7 +113,6 @@ def conflict_in_previous_year_bool(
 
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-
     conflicts_per_poly = (
         data_merged.id.groupby(data_merged[identifier])
         .count()
