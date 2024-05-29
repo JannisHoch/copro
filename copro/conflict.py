@@ -80,8 +80,8 @@ def conflict_in_previous_year_bool(
     sim_year: int,
     check_neighbors: bool = False,
     neighboring_matrix: Union[None, pd.DataFrame] = None,
-    poly_identifier="watprovID",
-    conflict_identifier="event_id_cnty",
+    poly_identifier="watprovID",  # TODO: no kwarg, should come from config
+    conflict_identifier="event_id_cnty",  # TODO: no kwarg, should come from config
 ) -> list:
     """Creates a list for each timestep with boolean information whether 
     a conflict took place in the previous year in a polygon or not.
@@ -105,6 +105,7 @@ def conflict_in_previous_year_bool(
     else:
         click.echo("Checking for conflict event in polygon at t-1")
 
+    # TODO: screening whether there is any conflict data in sim_year should be done earlier
     # get conflicts at t-1
     temp_sel_year = conflict_gdf[conflict_gdf.year == sim_year - 1]
     if temp_sel_year.empty:
