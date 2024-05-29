@@ -2,7 +2,6 @@ import geopandas as gpd
 import pandas as pd
 import os
 from copro import utils
-from configparser import RawConfigParser
 import click
 from typing import Tuple
 import warnings
@@ -98,24 +97,24 @@ def _filter_conflict_properties(
 
 
 def _clip_to_extent(
-    conflict_gdf: gpd.GeoDataFrame, config: RawConfigParser, root_dir: click.Path
+    conflict_gdf: gpd.GeoDataFrame, config: dict, root_dir: click.Path
 ) -> Tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """As the original conflict data has global extent, this function clips the database
     to those entries which have occured on a specified continent.
 
     Args:
-        conflict_gdf (geo-dataframe): geo-dataframe containing entries with conflicts.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        root_dir (str): path to location of cfg-file.
+        conflict_gdf (gpd.GeoDataFrame): Geodataframe containing entries with conflicts.
+        config (dict): Parsed configuration-settings of the model.
+        root_dir (str): Path to location of cfg-file.
 
     Returns:
-        geo-dataframe: geo-dataframe containing filtered entries.
-        geo-dataframe: geo-dataframe containing country polygons of selected continent.
+        gpd.GeoDataFrame: Geodataframe containing filtered entries.
+        gpd.GeoDataFrame: Geodataframe containing country polygons of selected continent.
     """
 
     # get path to file with polygons for which analysis is carried out
     shp_fo = os.path.join(
-        root_dir, config.get("general", "input_dir"), config.get("extent", "shp")
+        root_dir, config["general"]["input_dir"], config["data"]["extent"]
     )
 
     # read file
