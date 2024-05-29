@@ -2,14 +2,13 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import os
-from configparser import RawConfigParser
 from datetime import date
 import click
 from copro import __version__, __author__, __email__
 
 
 def get_conflict_geodataframe(
-    config: RawConfigParser,
+    config: dict,
     root_dir: click.Path,
     longitude="longitude",
     latitude="latitude",
@@ -18,21 +17,21 @@ def get_conflict_geodataframe(
     """Converts a csv-file containing geo-referenced conflict data to a geodataframe.
 
     Args:
-        config (RawConfigParser): object containing the parsed configuration-settings of the model.
+        config (dict): Parsed configuration-settings of the model.
         root_dir (Path): path to location of cfg-file.
         longitude (str, optional): column name with longitude coordinates. Defaults to 'longitude'.
         latitude (str, optional): column name with latitude coordinates. Defaults to 'latitude'.
         crs (str, optional): coordinate system to be used for georeferencing. Defaults to 'EPSG:4326'.
 
     Returns:
-        geo-dataframe: geo-referenced conflict data.
+        gpd.GeoDataFrame: geo-referenced conflict data.
     """
 
     # get path to file containing data
     conflict_fo = os.path.join(
         root_dir,
-        config.get("general", "input_dir"),
-        config.get("conflict", "conflict_file"),
+        config["general"]["input_dir"],
+        config["data"]["conflict"]["path"],
     )
 
     # read file to pandas dataframe
