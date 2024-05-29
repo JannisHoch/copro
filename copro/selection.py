@@ -114,7 +114,7 @@ def _clip_to_extent(
 
     # get path to file with polygons for which analysis is carried out
     shp_fo = os.path.join(
-        root_dir, config["general"]["input_dir"], config["data"]["extent"]
+        root_dir, config["general"]["input_dir"], config["data"]["extent"]["file"]
     )
 
     # read file
@@ -126,7 +126,7 @@ def _clip_to_extent(
     extent_gdf.geometry = extent_gdf.buffer(0)
 
     # clip the conflict dataframe to the specified polygons
-    click.echo("Clipping clipping conflict dataset to extent.")
+    click.echo("Clipping conflict dataset to extent.")
     conflict_gdf = gpd.clip(conflict_gdf, extent_gdf)
 
     return conflict_gdf, extent_gdf

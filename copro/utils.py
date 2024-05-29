@@ -31,7 +31,7 @@ def get_conflict_geodataframe(
     conflict_fo = os.path.join(
         root_dir,
         config["general"]["input_dir"],
-        config["data"]["conflict"]["path"],
+        config["data"]["conflict"]["file"],
     )
 
     # read file to pandas dataframe
