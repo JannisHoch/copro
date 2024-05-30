@@ -1,5 +1,4 @@
 from copro import conflict, variables, nb, utils
-from configparser import RawConfigParser
 from typing import Tuple
 import click
 import numpy as np
@@ -10,7 +9,7 @@ import os
 
 
 class XYData:
-    def __init__(self, config: RawConfigParser):
+    def __init__(self, config: dict):
         self.XY_dict = {}
         self.__XY_dict_initiated__ = False
         self.config = config
@@ -26,8 +25,8 @@ class XYData:
         # some entries are set by default, besides the ones corresponding to input data variables
         self.XY_dict["poly_ID"] = pd.Series()
         self.XY_dict["poly_geometry"] = pd.Series()
-        for key in self.config.items("data"):
-            self.XY_dict[str(key[0])] = pd.Series(dtype=float)
+        for key in self.config["data"]["indicators"]:
+            self.XY_dict[key] = pd.Series(dtype=float)
         self.XY_dict["conflict_t_min_1"] = pd.Series(dtype=bool)
         self.XY_dict["conflict_t_min_1_nb"] = pd.Series(dtype=float)
         self.XY_dict["conflict"] = pd.Series(dtype=bool)
@@ -44,45 +43,33 @@ class XYData:
         root_dir: click.Path,
         polygon_gdf: gpd.GeoDataFrame,
         conflict_gdf: gpd.GeoDataFrame,
-    ) -> Tuple[np.array, np.array]:
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Top-level function to create the X-array and Y-array.
         If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
         If not, variable values and conflict data are read from file and stored in array.
         The resulting array is by default saved as npy-format to file.
 
         Args:
-            config (ConfigParser-object): object containing the parsed configuration-settings of the model.
             out_dir (str): path to output folder.
             root_dir (str): path to location of cfg-file.
             polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
             conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
 
         Returns:
-            array: X-array containing variable values.
-            array: Y-array containing conflict data.
+            np.ndarray: X-array containing variable values.
+            np.ndarray: Y-array containing conflict data.
         """
 
-        # if nothing is specified in cfg-file, then initiate and fill XY data from scratch
-        if self.config.get("pre_calc", "XY") != " ":
-            self._initiate_XY_data()
-            # fill the dictionary and get array
-            XY_arr = _fill_XY(
-                self.XY_dict, self.config, root_dir, conflict_gdf, polygon_gdf, out_dir
-            )
-            # save array to XY.npy out_dir
-            click.echo(
-                f"Saving XY data by default to file {os.path.join(out_dir, 'XY.npy')}."
-            )
-            np.save(os.path.join(out_dir, "XY"), XY_arr)
-        # if path to XY.npy is specified, read the data intead
-        else:
-            click.echo(
-                f"Loading XY data from file {os.path.join(root_dir, self.config.get('pre_calc', 'XY'))}."
-            )
-            XY_arr = np.load(
-                os.path.join(root_dir, self.config.get("pre_calc", "XY")),
-                allow_pickle=True,
-            )
+        self._initiate_XY_data()
+        # fill the dictionary and get array
+        XY_arr = _fill_XY(
+            self.XY_dict, self.config, root_dir, conflict_gdf, polygon_gdf, out_dir
+        )
+        # save array to XY.npy out_dir
+        click.echo(
+            f"Saving XY data by default to file {os.path.join(out_dir, 'XY.npy')}."
+        )
+        np.save(os.path.join(out_dir, "XY"), XY_arr)
 
         # split the XY data into sample data X and target values Y
         X, Y = _split_XY_data(XY_arr)
@@ -90,41 +77,41 @@ class XYData:
         return X, Y
 
 
-def initiate_X_data(config: RawConfigParser) -> dict:
-    """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data.
-    This is needed for each time step of each projection run.
-    By default, the first column is for the polygon ID and the second for polygon geometry.
-    The penultimate column is for boolean information about conflict at t-1
-    while the last column is for boolean information about conflict at t-1 in neighboring polygons.
-    All remaining columns correspond to the variables provided in the cfg-file.
+# def initiate_X_data(config: RawConfigParser) -> dict:
+#     """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data.
+#     This is needed for each time step of each projection run.
+#     By default, the first column is for the polygon ID and the second for polygon geometry.
+#     The penultimate column is for boolean information about conflict at t-1
+#     while the last column is for boolean information about conflict at t-1 in neighboring polygons.
+#     All remaining columns correspond to the variables provided in the cfg-file.
 
-    Args:
-        config (RawConfigParser): object containing the parsed configuration-settings of the model.
+#     Args:
+#         config (RawConfigParser): object containing the parsed configuration-settings of the model.
 
-    Returns:
-        dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
-    """
+#     Returns:
+#         dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
+#     """
 
-    # Initialize dictionary
-    # some entries are set by default, besides the ones corresponding to input data variables
-    X = {}
-    X["poly_ID"] = pd.Series()
-    X["poly_geometry"] = pd.Series()
-    for key in config.items("data"):
-        X[str(key[0])] = pd.Series(dtype=float)
-    X["conflict_t_min_1"] = pd.Series(dtype=bool)
-    X["conflict_t_min_1_nb"] = pd.Series(dtype=float)
+#     # Initialize dictionary
+#     # some entries are set by default, besides the ones corresponding to input data variables
+#     X = {}
+#     X["poly_ID"] = pd.Series()
+#     X["poly_geometry"] = pd.Series()
+#     for key in config.items("data"):
+#         X[str(key[0])] = pd.Series(dtype=float)
+#     X["conflict_t_min_1"] = pd.Series(dtype=bool)
+#     X["conflict_t_min_1_nb"] = pd.Series(dtype=float)
 
-    click.echo("The columns in the sample matrix used are:")
-    for key in X:
-        click.echo(f"...{key}")
+#     click.echo("The columns in the sample matrix used are:")
+#     for key in X:
+#         click.echo(f"...{key}")
 
-    return X
+#     return X
 
 
 def fill_X_sample(
     X: dict,
-    config: RawConfigParser,
+    config: dict,
     root_dir: str,
     polygon_gdf: gpd.GeoDataFrame,
     proj_year: int,
@@ -136,7 +123,7 @@ def fill_X_sample(
 
     Args:
         X (dict): dictionary containing keys to be sampled.
-        config (RawConfigParser): object containing the parsed configuration-settings of the model.
+        config (dict): Parsed configuration-settings of the model.
         root_dir (str): path to location of cfg-file of reference run.
         polygon_gdf (gpd.GeoDataFrame): geo-dataframe containing the selected polygons.
         proj_year (int): year for which projection is made.
@@ -173,9 +160,9 @@ def fill_X_sample(
                 nc_ds = xr.open_dataset(
                     os.path.join(
                         root_dir,
-                        config.get("general", "input_dir"),
-                        config.get("data", key),
-                    ).rsplit(",")[0]
+                        config["general"]["input_dir"],
+                        config["data"]["indicators"][key]["file"],
+                    )
                 )
 
                 if (np.dtype(nc_ds.time) == np.float32) or (
@@ -205,8 +192,8 @@ def fill_X_sample(
                         "This file has an unsupported dtype for the time variable: {}".format(
                             os.path.join(
                                 root_dir,
-                                config.get("general", "input_dir"),
-                                config.get("data", key),
+                                config["general"]["input_dir"],
+                                config["data"]["indicators"][key]["file"],
                             )
                         )
                     )
@@ -264,7 +251,7 @@ def fill_X_conflict(
 
 def _fill_XY(  # noqa: R0912
     XY: dict,
-    config: RawConfigParser,
+    config: dict,
     root_dir: click.Path,
     conflict_data: gpd.GeoDataFrame,
     polygon_gdf: gpd.GeoDataFrame,
@@ -276,19 +263,19 @@ def _fill_XY(  # noqa: R0912
 
     Args:
         XY (dict): initiated, i.e. empty, XY-dictionary
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
-        root_dir (str): path to location of cfg-file.
-        conflict_data (geo-dataframe): geo-dataframe containing the selected conflicts.
-        polygon_gdf (geo-dataframe): geo-dataframe containing the selected polygons.
-        out_dir (path): path to output folder.
+        config (dict): Parsed configuration-settings of the model.
+        root_dir (str): Path to location of cfg-file.
+        conflict_data (gpd.GeoDataFrame): Geodataframe containing the selected conflicts.
+        polygon_gdf (gpd.GeoDataFrame): Geodataframe containing the selected polygons.
+        out_dir (path): Path to output folder.
 
     Returns:
-        array: filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
+        np.ndarray: Filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """
 
     # go through all simulation years as specified in config-file
     model_period = np.arange(
-        config.getint("settings", "y_start"), config.getint("settings", "y_end") + 1, 1
+        config["general"]["y_start"], config["general"]["y_end"] + 1, 1
     )
     click.echo(f"Reading data for period from {model_period[0]} to {model_period[-1]}.")
 
@@ -297,7 +284,7 @@ def _fill_XY(  # noqa: R0912
     for (sim_year, i) in zip(model_period, range(len(model_period))):
 
         if i == 0:
-            click.echo(f"Skipping first year {sim_year} to start up model")
+            click.echo(f"Skipping first year {sim_year} to start up model.")
         else:
             click.echo(f"Entering year {sim_year}.")
             # go through all keys in dictionary
@@ -360,13 +347,13 @@ def _fill_XY(  # noqa: R0912
 
                 else:
 
-                    nc_ds = xr.open_dataset(
-                        os.path.join(
-                            root_dir,
-                            config.get("general", "input_dir"),
-                            config.get("data", key),
-                        ).rsplit(",")[0]
+                    nc_fo = os.path.join(
+                        root_dir,
+                        config["general"]["input_dir"],
+                        config["data"]["indicators"][key]["file"],
                     )
+                    click.echo(f"Reading data for indicator {key} from {nc_fo}.")
+                    nc_ds = xr.open_dataset(nc_fo)
 
                     if (np.dtype(nc_ds.time) == np.float32) or (
                         np.dtype(nc_ds.time) == np.float64

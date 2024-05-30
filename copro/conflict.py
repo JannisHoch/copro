@@ -16,7 +16,8 @@ def conflict_in_year_bool(
     extent_gdf: gpd.GeoDataFrame,
     sim_year: int,
     out_dir: click.Path,
-    identifier="watprovID",
+    poly_identifier="watprovID",
+    conflict_identifier="event_id_cnty",
 ) -> list:
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
@@ -46,17 +47,17 @@ def conflict_in_year_bool(
 
     # determine the aggregated amount of fatalities in one region (e.g. water province)
     fatalities_per_poly = (
-        data_merged["best"]
-        .groupby(data_merged[identifier])
-        .sum()
+        data_merged[conflict_identifier]
+        .groupby(data_merged[poly_identifier])
+        .count()
         .to_frame()
-        .rename(columns={"best": "total_fatalities"})
+        .rename(columns={conflict_identifier: "total_fatalities"})
     )
 
     out_dir = os.path.join(out_dir, "files")
     Path.mkdir(Path(out_dir), exist_ok=True)
 
-    if sim_year == config.getint("settings", "y_end"):
+    if sim_year == config["general"]["y_end"]:
         _store_boolean_conflict_data_to_csv(
             fatalities_per_poly, extent_gdf, sim_year, out_dir
         )
@@ -65,7 +66,7 @@ def conflict_in_year_bool(
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i, _ in extent_gdf.iterrows():
-        i_poly = extent_gdf.iloc[i][identifier]
+        i_poly = extent_gdf.iloc[i][poly_identifier]
         if i_poly in fatalities_per_poly.index.values:
             list_out.append(1)
         else:
@@ -80,7 +81,8 @@ def conflict_in_previous_year_bool(
     sim_year: int,
     check_neighbors: bool = False,
     neighboring_matrix: Union[None, pd.DataFrame] = None,
-    identifier="watprovID",
+    poly_identifier="watprovID",  # TODO: no kwarg, should come from config
+    conflict_identifier="event_id_cnty",  # TODO: no kwarg, should come from config
 ) -> list:
     """Creates a list for each timestep with boolean information whether 
     a conflict took place in the previous year in a polygon or not.
@@ -104,27 +106,28 @@ def conflict_in_previous_year_bool(
     else:
         click.echo("Checking for conflict event in polygon at t-1")
 
+    # TODO: screening whether there is any conflict data in sim_year should be done earlier
     # get conflicts at t-1
-    temp_sel_year = conflict_gdf.loc[conflict_gdf.year == sim_year - 1]
+    temp_sel_year = conflict_gdf[conflict_gdf.year == sim_year - 1]
     if temp_sel_year.empty:
         warnings.warn(
             f"No conflicts were found in sampled conflict data set for year {sim_year - 1}."
         )
-
     # merge the dataframes with polygons and conflict information, creating a sub-set of polygons/regions
     data_merged = gpd.sjoin(temp_sel_year, extent_gdf)
-
     conflicts_per_poly = (
-        data_merged.id.groupby(data_merged[identifier])
+        data_merged[conflict_identifier]
+        .groupby(data_merged[poly_identifier])
         .count()
         .to_frame()
-        .rename(columns={"id": "conflict_count"})
+        .rename(columns={conflict_identifier: "conflict_count"})
     )
+    # NOTE: WORKS UNTIL HERE
 
     # loop through all polygons
     list_out = []
     for i in range(len(extent_gdf)):
-        i_poly = extent_gdf[identifier].iloc[i]
+        i_poly = extent_gdf[poly_identifier].iloc[i]
         # check if polygon is in list with conflict polygons
         if i_poly in conflicts_per_poly.index.values:
             # if so, check if neighboring polygons contain conflict and assign boolean value

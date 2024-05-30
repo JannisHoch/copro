@@ -1,20 +1,19 @@
 import pandas as pd
 import numpy as np
 from typing import Union
-from configparser import RawConfigParser
 from pathlib import Path
 import os
 import click
 
 
 def make_and_collect_output_dirs(
-    config: RawConfigParser, root_dir: click.Path, config_dict: dict
+    config: dict, root_dir: click.Path, config_dict: dict
 ) -> dict:
-    """Creates the output folder at location specfied in cfg-file
+    """Creates the output folder at location specfied in YAML-file
     and returns dictionary with config-objects and out-dir per run.
 
     Args:
-        config (RawConfigParser): object containing the parsed configuration-settings of the model.
+        config (dict): dictionary containing the parsed configuration-settings of the model.
         root_dir (Path): absolute path to location of configurations-file
         config_dict (dict): dictionary containing config-objects for reference run and all projection.
 
@@ -23,7 +22,7 @@ def make_and_collect_output_dirs(
     """
 
     # get path to main output directory as specified in cfg-file
-    out_dir = os.path.join(root_dir, config.get("general", "output_dir"))
+    out_dir = os.path.join(root_dir, config["general"]["output_dir"])
     click.echo(f"Saving output to main output folder {out_dir}.")
 
     # initalize list for all out-dirs
