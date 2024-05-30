@@ -69,6 +69,10 @@ def _filter_conflict_properties(
         gpd.GeoDataFrame: geo-dataframe containing filtered entries.
     """
 
+    if "thresholds" not in config["data"]["conflict"]:
+        click.echo("No thresholding options found in configuration file.")
+        return gdf
+
     # go through all criteria
     for key, value in config["data"]["conflict"]["thresholds"].items():
 

@@ -16,7 +16,8 @@ def conflict_in_year_bool(
     extent_gdf: gpd.GeoDataFrame,
     sim_year: int,
     out_dir: click.Path,
-    identifier="watprovID",
+    poly_identifier="watprovID",
+    conflict_identifier="event_id_cnty",
 ) -> list:
     """Creates a list for each timestep with boolean information whether a conflict took place in a polygon or not.
 
@@ -46,17 +47,17 @@ def conflict_in_year_bool(
 
     # determine the aggregated amount of fatalities in one region (e.g. water province)
     fatalities_per_poly = (
-        data_merged["best"]
-        .groupby(data_merged[identifier])
-        .sum()
+        data_merged[conflict_identifier]
+        .groupby(data_merged[poly_identifier])
+        .count()
         .to_frame()
-        .rename(columns={"best": "total_fatalities"})
+        .rename(columns={conflict_identifier: "total_fatalities"})
     )
 
     out_dir = os.path.join(out_dir, "files")
     Path.mkdir(Path(out_dir), exist_ok=True)
 
-    if sim_year == config.getint("settings", "y_end"):
+    if sim_year == config["general"]["y_end"]:
         _store_boolean_conflict_data_to_csv(
             fatalities_per_poly, extent_gdf, sim_year, out_dir
         )
@@ -65,7 +66,7 @@ def conflict_in_year_bool(
     # if so, this means that there was conflict and thus assign value 1
     list_out = []
     for i, _ in extent_gdf.iterrows():
-        i_poly = extent_gdf.iloc[i][identifier]
+        i_poly = extent_gdf.iloc[i][poly_identifier]
         if i_poly in fatalities_per_poly.index.values:
             list_out.append(1)
         else:

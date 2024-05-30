@@ -59,7 +59,7 @@ def nc_with_float_timestamp(
     LAG_TIME = 1
     click.echo(f"\tuse log: {ln_flag}.")
     click.echo(f"\tstatistical method: {stat_method}.")
-    click.echo(f"\tLAG TIME: {LAG_TIME} year(s).")
+    click.echo(f"\tlag time: {LAG_TIME} year(s).")
 
     sim_year = sim_year - LAG_TIME
 
@@ -163,7 +163,7 @@ def nc_with_continous_datetime_timestamp(
     LAG_TIME = 1
     click.echo(f"\tuse log: {ln_flag}.")
     click.echo(f"\tstatistical method: {stat_method}.")
-    click.echo(f"\tLAG TIME: {LAG_TIME} year(s).")
+    click.echo(f"\tlag time: {LAG_TIME} year(s).")
 
     sim_year = sim_year - LAG_TIME
     # open nc-file with xarray as dataset
