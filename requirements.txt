@@ -13,6 +13,6 @@ pyarrow==16.0.0
 pydata-sphinx-theme==0.15.2
 pylint
 rasterstats==0.19.0
-setuptools==69.0.3
+setuptools==70.0.0
 tox==4.14.2
 wheel==0.38.1
