@@ -15,7 +15,7 @@ requirements = ['click==8.1.7',
                 'rasterstats==0.19.0',
                 'geopandas==0.14.2',
                 'numpy==1.26.3',
-                'scikit-learn==1.3.2',
+                'scikit-learn==1.5.0',
                 'netcdf4==1.6.0',
                 ]
 
