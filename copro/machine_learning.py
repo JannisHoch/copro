@@ -6,7 +6,7 @@ from sklearn import ensemble, preprocessing, model_selection, inspection
 from typing import Union, Tuple
 import click
 from pathlib import Path
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.ensemble import RandomForestClassifier
 
 
@@ -304,7 +304,7 @@ def apply_gridsearchCV(
     grid_search = GridSearchCV(
         estimator=estimator,
         param_grid=param_grid,
-        cv=5,
+        cv=KFold(n_splits=5, shuffle=True, random_state=42),
         n_jobs=n_jobs,
         verbose=verbose,
         scoring="roc_auc",
