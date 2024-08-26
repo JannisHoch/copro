@@ -69,6 +69,11 @@ def _filter_conflict_properties(
         gpd.GeoDataFrame: geo-dataframe containing filtered entries.
     """
 
+    gdf = gdf[
+        (gdf.year >= config["general"]["y_start"])
+        & (gdf.year <= config["general"]["y_end"])
+    ]
+
     # if not thresholding options are found, return the original dataframe
     if "thresholds" not in config["data"]["conflict"]:
         click.echo("No thresholding options found in configuration file.")
