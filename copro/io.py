@@ -22,7 +22,9 @@ def make_and_collect_output_dirs(
     """
 
     # get path to main output directory as specified in cfg-file
-    out_dir = os.path.join(root_dir, config["general"]["output_dir"])
+    out_dir = os.path.join(
+        root_dir, config["general"]["output_dir"], config["general"]["simulation_name"]
+    )
     click.echo(f"Saving output to main output folder {out_dir}.")
 
     # initalize list for all out-dirs
