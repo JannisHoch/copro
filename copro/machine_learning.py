@@ -16,6 +16,16 @@ class MachineLearning:
         self.scaler = define_scaling(config)
         self.estimator = define_model(config)
 
+        if "target_var" in config["machine_learning"].keys():
+            self.target_var = config["machine_learning"]["target_var"]
+        else:
+            if isinstance(self.estimator, RandomForestRegressor):
+                raise ValueError("No target variable specified for regression model.")
+            click.echo(
+                "No targe variable specified, using default classification approach."
+            )
+            self.target_var = None
+
     def split_scale_train_test_split(
         self, X: Union[np.ndarray, pd.DataFrame], Y: np.ndarray
     ):
@@ -241,6 +251,31 @@ def define_model(
         "no supported model selected - \
             choose between Classification or Regression"
     )
+
+
+def define_target_var(
+    config: dict,
+    estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
+) -> Union[str, None]:
+    """Defines target variable of ML model.
+    A target variable needs to be specified for regression models.
+    For classification models, it can be provided in the configuration file.
+    If not, the default classification approach is used.
+
+    Args:
+        config (dict): Parsed configuration-settings of the model.
+        estimator (Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]): ML estimator.
+
+    Returns:
+        Union[str, None]: Either the target variable or `None`.
+    """
+
+    if "target_var" in config["machine_learning"].keys():
+        return config["machine_learning"]["target_var"]
+    if isinstance(estimator, RandomForestRegressor):
+        raise ValueError("No target variable specified for regression model.")
+    click.echo("No targe variable specified, using default classification approach.")
+    return None
 
 
 def predictive(
