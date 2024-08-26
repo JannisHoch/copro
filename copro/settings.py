@@ -3,8 +3,9 @@ import os
 import numpy as np
 from configparser import RawConfigParser
 from shutil import copyfile
-from typing import Tuple
+from typing import Tuple, Union
 from copro import utils, io
+from sklearn import ensemble
 
 import yaml
 
@@ -116,6 +117,57 @@ def _collect_simulation_settings(config: dict, root_dir: click.Path) -> dict:
             config_dict[each_key] = [each_config]
 
     return config_dict
+
+
+def define_model(
+    config: dict,
+) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
+    """Defines model based on model configurations.
+
+    Args:
+        config (dict): Parsed configuration-settings of the model.
+
+    Returns:
+        model: the specified model instance.
+    """
+
+    if config["machine_learning"]["model"] in ["Classification", "C"]:
+        return ensemble.RandomForestClassifier(random_state=42)
+    if config["machine_learning"]["model"] in ["Regression", "R"]:
+        return ensemble.RandomForestRegressor(random_state=42)
+    raise ValueError(
+        "no supported model selected - \
+            choose between Classification or Regression"
+    )
+
+
+def define_target_var(
+    config: dict,
+    estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
+) -> Union[str, None]:
+    """Defines target variable of ML model.
+    A target variable needs to be specified for regression models.
+    For classification models, it can be provided in the configuration file.
+    If not, the default classification approach is used.
+
+    Args:
+        config (dict): Parsed configuration-settings of the model.
+        estimator (Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]): ML estimator.
+
+    Returns:
+        Union[str, None]: Either the target variable or `None`.
+    """
+
+    # if target variable is specified, return it
+    if "target_var" in config["machine_learning"].keys():
+        click.echo(f"Target variable is {config['machine_learning']['target_var']}.")
+        return config["machine_learning"]["target_var"]
+    # if not, but model is regression, raise error
+    if isinstance(estimator, ensemble.RandomForestRegressor):
+        raise ValueError("No target variable specified for regression model.")
+    # if not, but model is classification, return None and use default classification approach
+    click.echo("No target variable specified, using default classification approach.")
+    return None
 
 
 def determine_projection_period(

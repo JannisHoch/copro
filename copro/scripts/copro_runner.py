@@ -44,12 +44,15 @@ def cli(cfg: click.Path, cores: int, verbose: int):
 
     click.echo(click.style("\nINFO: reference run started\n", fg="cyan"))
 
+    estimator = settings.define_model(config_REF)
+    target_var = settings.define_target_var(config_REF, estimator)
+
     # - selecting conflicts and getting area-of-interest and aggregation level
     conflict_gdf, extent_active_polys_gdf, global_df = selection.select(
         config_REF, out_dir_REF, root_dir
     )
 
-    XY_class = xydata.XYData(config_REF)
+    XY_class = xydata.XYData(config_REF, target_var)
     X, Y = XY_class.create_XY(
         out_dir=out_dir_REF,
         root_dir=root_dir,
@@ -59,7 +62,13 @@ def cli(cfg: click.Path, cores: int, verbose: int):
 
     # - defining scaling and model algorithms
     ModelWorkflow = models.MainModel(
-        config=config_REF, X=X, Y=Y, out_dir=out_dir_REF, n_jobs=cores, verbose=verbose
+        config=config_REF,
+        X=X,
+        Y=Y,
+        estimator=estimator,
+        out_dir=out_dir_REF,
+        n_jobs=cores,
+        verbose=verbose,
     )
 
     # - fit-transform on scaler to be used later during projections
