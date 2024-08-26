@@ -100,8 +100,8 @@ def nc_with_float_timestamp(
         # warn if result is NaN
         if val is None:
             warnings.warn(
-                f"`None` computed for {config['data']['extent']['id']} \
-                    {row[config['data']['extent']['id']]}, setting to `np.nan`!"
+                f"`None` computed for {config['data']['extent']['id']}"
+                f"{row[config['data']['extent']['id']]}, setting to `np.nan`!"
             )
             val = np.nan
 
@@ -202,9 +202,10 @@ def nc_with_continous_datetime_timestamp(
         # warn if result is NaN
         if val is None:
             warnings.warn(
-                f"`None` computed for {config['data']['extent']['id']} \
-                    {row[config['data']['extent']['id']]}, setting to `np.nan`!"
+                f"`None` computed for {config['data']['extent']['id']}"
+                f"{row[config['data']['extent']['id']]}, setting to `np.nan`!"
             )
+
             val = np.nan
 
         list_out.append(val)

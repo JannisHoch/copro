@@ -472,7 +472,7 @@ def _split_XY_data(XY_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     # drop missing values
     XY_df_noNaNs = XY_df.dropna()
     click.echo(
-        f"Dropped missing values, which made up {100 * len(XY_df.isna() / len(XY_df))} percent of the data."
+        f"Dropped missing values, which leaves {100 * len(XY_df_noNaNs) / (len(XY_df))} percent of the polygons."
     )
 
     # get X data
