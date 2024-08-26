@@ -45,8 +45,7 @@ class XYData:
         conflict_gdf: gpd.GeoDataFrame,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Top-level function to create the X-array and Y-array.
-        If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
-        If not, variable values and conflict data are read from file and stored in array.
+        Variable values and conflict data are read from file and stored in array.
         The resulting array is by default saved as npy-format to file.
 
         Args:
@@ -264,7 +263,7 @@ def _fill_XY(  # noqa: R0912
     Args:
         XY (dict): initiated, i.e. empty, XY-dictionary
         config (dict): Parsed configuration-settings of the model.
-        root_dir (str): Path to location of cfg-file.
+        root_dir (str): Path to location of yaml-file.
         conflict_data (gpd.GeoDataFrame): Geodataframe containing the selected conflicts.
         polygon_gdf (gpd.GeoDataFrame): Geodataframe containing the selected polygons.
         out_dir (path): Path to output folder.
@@ -347,56 +346,84 @@ def _fill_XY(  # noqa: R0912
 
                 else:
 
-                    nc_fo = os.path.join(
-                        root_dir,
-                        config["general"]["input_dir"],
-                        config["data"]["indicators"][key]["file"],
+                    XY[key] = _read_data_from_netCDF(
+                        root_dir, config, key, value, polygon_gdf, sim_year
                     )
-                    click.echo(f"Reading data for indicator {key} from {nc_fo}.")
-                    nc_ds = xr.open_dataset(nc_fo)
-
-                    if (np.dtype(nc_ds.time) == np.float32) or (
-                        np.dtype(nc_ds.time) == np.float64
-                    ):
-                        data_series = value
-                        data_list = variables.nc_with_float_timestamp(
-                            polygon_gdf, config, root_dir, key, sim_year
-                        )
-                        data_series = pd.concat(
-                            [data_series, pd.Series(data_list)],
-                            axis=0,
-                            ignore_index=True,
-                        )
-                        XY[key] = data_series
-
-                    elif np.dtype(nc_ds.time) == "datetime64[ns]":
-                        data_series = value
-                        data_list = variables.nc_with_continous_datetime_timestamp(
-                            polygon_gdf, config, root_dir, key, sim_year
-                        )
-                        data_series = pd.concat(
-                            [data_series, pd.Series(data_list)],
-                            axis=0,
-                            ignore_index=True,
-                        )
-                        XY[key] = data_series
-
-                    else:
-                        raise ValueError(
-                            "This file has an unsupported dtype for the time variable: {}".format(
-                                os.path.join(
-                                    root_dir,
-                                    config.get("general", "input_dir"),
-                                    config.get("data", key),
-                                )
-                            )
-                        )
 
             click.echo("All data read.")
 
     df_out = pd.DataFrame.from_dict(XY)
 
     return df_out.to_numpy()
+
+
+def _read_data_from_netCDF(
+    root_dir: str,
+    config: dict,
+    key: str,
+    value: pd.Series,
+    polygon_gdf: gpd.GeoDataFrame,
+    sim_year: int,
+) -> pd.Series:
+    """Reads data from netCDF-file and appends it to the series of the XY-dictionary.
+    This happens per variable and simulation year.
+    Appends the extracted data to the series of the XY-dictionary.
+
+    .. todo::
+        Is the check for different time-dtypes necessary?
+
+    Args:
+        root_dir (str): Path to location of yaml-file.
+        config (dict):  Parsed configuration-settings of the model.
+        key (str): Variable name of feature for which data to be extracted.
+        value (pd.Series): Extracted feature values from previous years.
+        polygon_gdf (gpd.GeoDataFrame): Geodataframe containing the selected polygons.
+        sim_year (int): Simulation year.
+
+    Returns:
+        pd.Series: Appended series containing the extracted feature values up to the current simulation year.
+    """
+
+    nc_fo = os.path.join(
+        root_dir,
+        config["general"]["input_dir"],
+        config["data"]["indicators"][key]["file"],
+    )
+    click.echo(f"Reading data for indicator {key} from {nc_fo}.")
+    nc_ds = xr.open_dataset(nc_fo)
+
+    if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+        data_series = value
+        data_list = variables.nc_with_float_timestamp(
+            polygon_gdf, config, root_dir, key, sim_year
+        )
+        data_series = pd.concat(
+            [data_series, pd.Series(data_list)],
+            axis=0,
+            ignore_index=True,
+        )
+    elif np.dtype(nc_ds.time) == "datetime64[ns]":
+        data_series = value
+        data_list = variables.nc_with_continous_datetime_timestamp(
+            polygon_gdf, config, root_dir, key, sim_year
+        )
+        data_series = pd.concat(
+            [data_series, pd.Series(data_list)],
+            axis=0,
+            ignore_index=True,
+        )
+    else:
+        raise ValueError(
+            "This file has an unsupported dtype for the time variable: {}".format(
+                os.path.join(
+                    root_dir,
+                    config.get("general", "input_dir"),
+                    config.get("data", key),
+                )
+            )
+        )
+
+    return data_series
 
 
 def _split_XY_data(XY_arr: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
