@@ -2,17 +2,16 @@ import os
 import pickle
 import pandas as pd
 import numpy as np
-from configparser import RawConfigParser
 from sklearn import ensemble, preprocessing, model_selection, inspection
 from typing import Union, Tuple
 import click
 from pathlib import Path
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, KFold
 from sklearn.ensemble import RandomForestClassifier
 
 
 class MachineLearning:
-    def __init__(self, config: RawConfigParser) -> None:
+    def __init__(self, config: dict) -> None:
         self.config = config
         self.scaler = define_scaling(config)
         self.clf = ensemble.RandomForestClassifier(random_state=42)
@@ -49,7 +48,7 @@ class MachineLearning:
         X_train, X_test, y_train, y_test = model_selection.train_test_split(
             X_cs,
             Y,
-            test_size=1 - self.config.getfloat("machine_learning", "train_fraction"),
+            test_size=1 - self.config["machine_learning"]["train_fraction"],
         )
 
         # for training-set and test-set, split in ID, geometry, and values
@@ -77,7 +76,7 @@ class MachineLearning:
         tune_hyperparameters=False,
         n_jobs=2,
         verbose=0,
-    ) -> Tuple[np.ndarray, np.ndarray, pd.DataFrame]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Fits classifier based on training-data and makes predictions.
         The fitted classifier is dumped to file with pickle to be used again during projections.
         Makes prediction with test-data including probabilities of those predictions.
@@ -96,7 +95,7 @@ class MachineLearning:
         Returns:
             np.ndarray: array with the predictions made.
             np.ndarray: array with probabilities of the predictions made.
-            pd.DataFrame: dataframe containing permutation importances of variables.
+            np.ndarray: dataframe containing permutation importances of variables.
         """
 
         if tune_hyperparameters:
@@ -117,11 +116,8 @@ class MachineLearning:
             random_state=42,
             n_jobs=n_jobs,
         )
-        sorted_importances_idx = perm_importances.importances_mean.argsort()
-        perm_importances_df = pd.DataFrame(
-            perm_importances.importances[sorted_importances_idx].T,
-            # columns=X_train.columns[sorted_importances_idx],
-        )
+        # transpose because by default features are in rows
+        perm_importances_arr = perm_importances["importances"].T
 
         # create folder to store all classifiers with pickle
         clf_pickle_rep = os.path.join(out_dir, "clfs")
@@ -137,16 +133,16 @@ class MachineLearning:
         # make prediction of probability
         y_prob = fitted_estimator.predict_proba(X_test)
 
-        return y_pred, y_prob, perm_importances_df
+        return y_pred, y_prob, perm_importances_arr
 
 
-def load_clfs(config: RawConfigParser, out_dir: str) -> list[str]:
+def load_clfs(config: dict, out_dir: str) -> list[str]:
     """Loads the paths to all previously fitted classifiers to a list.
     Classifiers were saved to file in fit_predict().
     With this list, the classifiers can be loaded again during projections.
 
     Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        config (dict): Parsed configuration-settings of the model.
         out_dir (path): path to output folder.
 
     Returns:
@@ -155,7 +151,7 @@ def load_clfs(config: RawConfigParser, out_dir: str) -> list[str]:
 
     clfs = os.listdir(os.path.join(out_dir, "clfs"))
 
-    if len(clfs) != config.getint("machine_learning", "n_runs"):
+    if len(clfs) != config["machine_learning"]["n_runs"]:
         raise ValueError(
             "Number of loaded classifiers does not match the specified number of runs in cfg-file!"
         )
@@ -188,7 +184,7 @@ def _split_conflict_geom_data(
 
 
 def define_scaling(
-    config: RawConfigParser,
+    config: dict,
 ) -> Union[
     preprocessing.MinMaxScaler,
     preprocessing.StandardScaler,
@@ -198,19 +194,19 @@ def define_scaling(
     """Defines scaling method based on model configurations.
 
     Args:
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        config (dict): Parsed configuration-settings of the model.
 
     Returns:
         scaler: the specified scaling method instance.
     """
 
-    if config.get("machine_learning", "scaler") == "MinMaxScaler":
+    if config["machine_learning"]["scaler"] == "MinMaxScaler":
         scaler = preprocessing.MinMaxScaler()
-    elif config.get("machine_learning", "scaler") == "StandardScaler":
+    elif config["machine_learning"]["scaler"] == "StandardScaler":
         scaler = preprocessing.StandardScaler()
-    elif config.get("machine_learning", "scaler") == "RobustScaler":
+    elif config["machine_learning"]["scaler"] == "RobustScaler":
         scaler = preprocessing.RobustScaler()
-    elif config.get("machine_learning", "scaler") == "QuantileTransformer":
+    elif config["machine_learning"]["scaler"] == "QuantileTransformer":
         scaler = preprocessing.QuantileTransformer(random_state=42)
     else:
         raise ValueError(
@@ -308,7 +304,7 @@ def apply_gridsearchCV(
     grid_search = GridSearchCV(
         estimator=estimator,
         param_grid=param_grid,
-        cv=5,
+        cv=KFold(n_splits=5, shuffle=True, random_state=42),
         n_jobs=n_jobs,
         verbose=verbose,
         scoring="roc_auc",

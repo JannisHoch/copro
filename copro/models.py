@@ -58,7 +58,7 @@ class MainModel:
         Returns:
             pd.DataFrame: Prediction dataframes.
             pd.DataFrame: model output on polygon-basis.
-            pd.DataFrame: containing permutation importances for all runs.
+            np.ndarray: containing permutation importances for all runs.
             dict: evaluation dictionary.
         """
 
@@ -67,7 +67,7 @@ class MainModel:
         # - initializing output variables
         out_X_df = pd.DataFrame()
         out_y_df = pd.DataFrame()
-        out_perm_importances_df = pd.DataFrame()
+        out_perm_importances_arr = np.array([]).reshape(0, self.X.shape[1] - 2)
         out_dict = evaluation.init_out_dict()
 
         click.echo("Training and testing machine learning model")
@@ -75,25 +75,23 @@ class MainModel:
             click.echo(f"Run {n+1} of {number_runs}.")
 
             # - run machine learning model and return outputs
-            X_df, y_df, eval_dict, perm_importances_df_n = self._n_run(
+            X_df, y_df, eval_dict, perm_importances_arr_n = self._n_run(
                 run_nr=n, tune_hyperparameters=tune_hyperparameters
             )
 
             # - append per model execution
             out_X_df = pd.concat([out_X_df, X_df], axis=0, ignore_index=True)
             out_y_df = pd.concat([out_y_df, y_df], axis=0, ignore_index=True)
-            out_perm_importances_df = pd.concat(
-                [out_perm_importances_df, perm_importances_df_n],
-                axis=0,
-                ignore_index=True,
+            out_perm_importances_arr = np.vstack(
+                [out_perm_importances_arr, perm_importances_arr_n]
             )
             out_dict = evaluation.fill_out_dict(out_dict, eval_dict)
 
-        return out_X_df, out_y_df, out_perm_importances_df, out_dict
+        return out_X_df, out_y_df, out_perm_importances_arr, out_dict
 
     def _n_run(
         self, run_nr: int, tune_hyperparameters=False
-    ) -> tuple[pd.DataFrame, pd.DataFrame, dict, pd.DataFrame]:
+    ) -> tuple[pd.DataFrame, pd.DataFrame, dict, np.ndarray]:
         """Runs workflow per specified number of runs.
         The model workflow is executed for each classifier.
 
@@ -105,7 +103,7 @@ class MainModel:
             pd.DataFrame: containing the test-data X-array values.
             pd.DataFrame: containing model output on polygon-basis.
             dict: dictionary containing evaluation metrics per simulation.
-            pd.DataFrame: containing permutation importances for run n.
+            np.ndarray: containing permutation importances for run n.
         """
 
         MLmodel = machine_learning.MachineLearning(
@@ -128,7 +126,7 @@ class MainModel:
         X_df = pd.DataFrame(X_test)
 
         # fit classifier and make prediction with test-set
-        y_pred, y_prob, perm_importances_df_n = MLmodel.fit_predict(
+        y_pred, y_prob, perm_importances_arr_n = MLmodel.fit_predict(
             X_train,
             y_train,
             X_test,
@@ -149,7 +147,7 @@ class MainModel:
             X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1
         )
 
-        return X_df, y_df, eval_dict, perm_importances_df_n
+        return X_df, y_df, eval_dict, perm_importances_arr_n
 
     def run_prediction(
         self,
@@ -180,7 +178,7 @@ class MainModel:
         clfs, all_y_df = _init_prediction_run(config_REF, out_dir_REF)
 
         # going through each projection specified
-        for each_key, _ in config_REF.items("PROJ_files"):
+        for each_key, _ in config_REF.items():
 
             # get config-object and out-dir per projection
             click.echo(f"Loading config-object for projection run: {each_key}.")

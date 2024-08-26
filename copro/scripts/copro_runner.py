@@ -2,6 +2,7 @@ from copro import settings, selection, evaluation, io, models, xydata
 
 import click
 import numpy as np
+import pandas as pd
 import os
 
 import warnings
@@ -62,17 +63,19 @@ def cli(cfg: click.Path, cores: int, verbose: int):
     )
 
     # - fit-transform on scaler to be used later during projections
-
-    _, out_y_df, out_perm_importances_df, out_dict = ModelWorkflow.run(
-        config_REF.getint("machine_learning", "n_runs"), tune_hyperparameters=True
+    _, out_y_df, out_perm_importances_arr, out_dict = ModelWorkflow.run(
+        config_REF["machine_learning"]["n_runs"], tune_hyperparameters=True
     )
 
     # - save output to files
-    out_perm_importances_df.columns = [
-        key
-        for key in XY_class.XY_dict
-        if key not in ["poly_ID", "poly_geometry", "conflict"]
-    ]
+    out_perm_importances_df = pd.DataFrame(
+        data=out_perm_importances_arr,
+        columns=[
+            key
+            for key in XY_class.XY_dict
+            if key not in ["poly_ID", "poly_geometry", "conflict"]
+        ],
+    )
     out_perm_importances_df.to_parquet(
         os.path.join(out_dir_REF, "perm_importances.parquet")
     )
@@ -84,7 +87,7 @@ def cli(cfg: click.Path, cores: int, verbose: int):
         click.echo(
             "Average {} of run with {} repetitions is {:0.3f}".format(
                 key,
-                config_REF.getint("machine_learning", "n_runs"),
+                config_REF["machine_learning"]["n_runs"],
                 np.mean(value),
             )
         )
@@ -97,10 +100,10 @@ def cli(cfg: click.Path, cores: int, verbose: int):
 
     click.echo(click.style("\nINFO: reference run succesfully finished\n", fg="cyan"))
 
-    click.echo(click.style("INFO: starting projections\n", fg="cyan"))
-
-    # - running prediction runs
-    # TODO: scaler_fitted is now not part of the class
-    ModelWorkflow.run_prediction(main_dict, root_dir, extent_active_polys_gdf)
+    if "projections" in config_REF.keys():
+        click.echo(click.style("INFO: starting projections\n", fg="cyan"))
+        # - running prediction runs
+        # TODO: scaler_fitted is now not part of the class
+        ModelWorkflow.run_prediction(main_dict, root_dir, extent_active_polys_gdf)
 
     click.echo(click.style("\nINFO: all projections succesfully finished\n", fg="cyan"))
