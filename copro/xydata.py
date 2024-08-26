@@ -72,7 +72,7 @@ class XYData:
 
         self._initiate_XY_data()
         # fill the dictionary and get array
-        XY_arr = _fill_XY(
+        XY_df = _fill_XY(
             self.XY_dict,
             self.config,
             root_dir,
@@ -81,14 +81,16 @@ class XYData:
             polygon_gdf,
             out_dir,
         )
-        # save array to XY.npy out_dir
+
+        # save dataframe as geodataframe to GeoPackage in out_dir
         click.echo(
-            f"Saving XY data by default to file {os.path.join(out_dir, 'XY.npy')}."
+            f"Saving XY data by default to file {os.path.join(out_dir, 'XY.gpkg')}."
         )
-        np.save(os.path.join(out_dir, "XY"), XY_arr)
+        XY_gdf = gpd.GeoDataFrame(XY_df, geometry="poly_geometry")
+        XY_gdf.to_file(os.path.join(out_dir, "XY.gpkg"), driver="GPKG")
 
         # split the XY data into sample data X and target values Y
-        X, Y = _split_XY_data(XY_arr)
+        X, Y = _split_XY_data(XY_df)
 
         return X, Y
 
@@ -273,7 +275,7 @@ def _fill_XY(  # noqa: R0912
     target_var: Union[str, None],
     polygon_gdf: gpd.GeoDataFrame,
     out_dir: click.Path,
-) -> np.ndarray:
+) -> pd.DataFrame:
     """Fills the (XY-)dictionary with data for each variable and conflict for each polygon for each simulation year.
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -289,7 +291,7 @@ def _fill_XY(  # noqa: R0912
         out_dir (path): Path to output folder.
 
     Returns:
-        np.ndarray: Filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
+        pd.DataFrame: Dataframe containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """
 
     # go through all simulation years as specified in config-file
@@ -381,9 +383,7 @@ def _fill_XY(  # noqa: R0912
 
             click.echo("All data read.")
 
-    df_out = pd.DataFrame.from_dict(XY)
-
-    return df_out.to_numpy()
+    return pd.DataFrame.from_dict(XY)  # .to_numpy()
 
 
 def _read_data_from_netCDF(
@@ -455,37 +455,36 @@ def _read_data_from_netCDF(
     return data_series
 
 
-def _split_XY_data(XY_arr: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _split_XY_data(XY_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Separates the XY-array into array containing information about
     variable values (X-array or sample data) and conflict data (Y-array or target data).
     Thereby, the X-array also contains the information about
     unique identifier and polygon geometry.
 
     Args:
-        XY (array): array containing variable values and conflict data.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        XY_df (pd.DataFrame): array containing variable values and conflict data.
 
     Returns:
-        arrays: two separate arrays, the X-array and Y-array.
+        pd.DataFrame: X-array, i.e. array containing feature values.
+        pd.DataFrame: Y-array, i.e. array containing target values.
     """
 
-    # convert array to dataframe for easier handling
-    XY_df = pd.DataFrame(XY_arr)
-    # fill all missing values with 0
-    XY_df = XY_df.fillna(0)
-    # convert dataframe back to array
-    XY_df = XY_df.to_numpy()
+    # drop missing values
+    XY_df_noNaNs = XY_df.dropna()
+    click.echo(
+        f"Dropped missing values, which made up {100 * len(XY_df.isna() / len(XY_df))} percent of the data."
+    )
 
     # get X data
     # since conflict is the last column, we know that all previous columns must be variable values
-    X = XY_df[:, :-1]
+    X_df = XY_df_noNaNs.iloc[:, :-1]
     # get Y data and convert to integer values
-    Y = XY_df[:, -1]
-    Y = Y.astype(int)
+    Y_df = XY_df_noNaNs.iloc[:, -1]
+    Y_df = Y_df.astype(int)
 
-    fraction_Y_1 = 100 * len(np.where(Y != 0)[0]) / len(Y)
+    fraction_Y_1 = 100 * len(Y_df[Y_df == 1]) / len(Y_df)
     click.echo(
         f"{round(fraction_Y_1, 2)} percent in the data corresponds to conflicts."
     )
 
-    return X, Y
+    return X_df, Y_df
