@@ -16,7 +16,7 @@ class MainModel:
     def __init__(
         self,
         X: Union[np.ndarray, pd.DataFrame],
-        Y: np.ndarray,
+        Y: Union[np.ndarray, pd.DataFrame],
         estimator: Union[
             ensemble.RandomForestClassifier, ensemble.RandomForestRegressor
         ],
@@ -42,7 +42,7 @@ class MainModel:
         self.config = config
         self.scaler = machine_learning.define_scaling(config)
         self.scaler_all_data = self.scaler.fit(
-            X[:, 2:]
+            X.iloc[:, 2:]
         )  # NOTE: supposed to be used in projections
         self.estimator = estimator
         self.out_dir = out_dir

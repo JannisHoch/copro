@@ -54,7 +54,7 @@ class XYData:
         root_dir: click.Path,
         polygon_gdf: gpd.GeoDataFrame,
         conflict_gdf: gpd.GeoDataFrame,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Top-level function to create the X-array and Y-array.
         Variable values and conflict data are read from file and stored in array.
         The resulting array is by default saved as npy-format to file.
@@ -66,8 +66,8 @@ class XYData:
             conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
 
         Returns:
-            np.ndarray: X-array containing variable values.
-            np.ndarray: Y-array containing conflict data.
+            pd.DataFrame: dataframe containing feature (X) values.
+            pd.DataFrame: dataframe containing conflict (Y) data.
         """
 
         self._initiate_XY_data()
