@@ -7,14 +7,14 @@ from typing import Union, Tuple
 import click
 from pathlib import Path
 from sklearn.model_selection import GridSearchCV, KFold
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
 class MachineLearning:
     def __init__(self, config: dict) -> None:
         self.config = config
         self.scaler = define_scaling(config)
-        self.clf = ensemble.RandomForestClassifier(random_state=42)
+        self.estimator = define_model(config)
 
     def split_scale_train_test_split(
         self, X: Union[np.ndarray, pd.DataFrame], Y: np.ndarray
@@ -100,11 +100,11 @@ class MachineLearning:
 
         if tune_hyperparameters:
             fitted_estimator = apply_gridsearchCV(
-                self.clf, X_train, y_train, n_jobs=n_jobs, verbose=verbose
+                self.estimator, X_train, y_train, n_jobs=n_jobs, verbose=verbose
             )
         else:
             # fit the classifier with training data
-            fitted_estimator = self.clf.fit(X_train, y_train)
+            fitted_estimator = self.estimator.fit(X_train, y_train)
 
         # compute permutation importance
         click.echo("Computing permutation importance.")
@@ -120,12 +120,14 @@ class MachineLearning:
         perm_importances_arr = perm_importances["importances"].T
 
         # create folder to store all classifiers with pickle
-        clf_pickle_rep = os.path.join(out_dir, "clfs")
-        Path.mkdir(Path(clf_pickle_rep), parents=True, exist_ok=True)
+        estimator_pickle_rep = os.path.join(out_dir, "estimators")
+        Path.mkdir(Path(estimator_pickle_rep), parents=True, exist_ok=True)
 
         # save the fitted classifier to file via pickle.dump()
-        click.echo(f"Dumping classifier to {clf_pickle_rep}.")
-        with open(os.path.join(clf_pickle_rep, "clf_{}.pkl".format(run_nr)), "wb") as f:
+        click.echo(f"Dumping classifier to {estimator_pickle_rep}.")
+        with open(
+            os.path.join(estimator_pickle_rep, "estimator_{}.pkl".format(run_nr)), "wb"
+        ) as f:
             pickle.dump(fitted_estimator, f)
 
         # make prediction
@@ -136,7 +138,7 @@ class MachineLearning:
         return y_pred, y_prob, perm_importances_arr
 
 
-def load_clfs(config: dict, out_dir: str) -> list[str]:
+def load_estimators(config: dict, out_dir: str) -> list[str]:
     """Loads the paths to all previously fitted classifiers to a list.
     Classifiers were saved to file in fit_predict().
     With this list, the classifiers can be loaded again during projections.
@@ -149,14 +151,14 @@ def load_clfs(config: dict, out_dir: str) -> list[str]:
         list: list with file names of classifiers.
     """
 
-    clfs = os.listdir(os.path.join(out_dir, "clfs"))
+    estimators = os.listdir(os.path.join(out_dir, "estimators"))
 
-    if len(clfs) != config["machine_learning"]["n_runs"]:
+    if len(estimators) != config["machine_learning"]["n_runs"]:
         raise ValueError(
             "Number of loaded classifiers does not match the specified number of runs in cfg-file!"
         )
 
-    return clfs
+    return estimators
 
 
 def _split_conflict_geom_data(
@@ -219,9 +221,31 @@ def define_scaling(
     return scaler
 
 
+def define_model(
+    config: dict,
+) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
+    """Defines model based on model configurations.
+
+    Args:
+        config (dict): Parsed configuration-settings of the model.
+
+    Returns:
+        model: the specified model instance.
+    """
+
+    if config["machine_learning"]["model"] in ["Classification", "C"]:
+        return ensemble.RandomForestClassifier(random_state=42)
+    if config["machine_learning"]["model"] in ["Regression", "R"]:
+        return ensemble.RandomForestRegressor(random_state=42)
+    raise ValueError(
+        "no supported model selected - \
+            choose between Classification or Regression"
+    )
+
+
 def predictive(
     X: np.ndarray,
-    clf: ensemble.RandomForestClassifier,
+    estimator: ensemble.RandomForestClassifier,
     scaler: Union[
         preprocessing.MinMaxScaler,
         preprocessing.StandardScaler,
@@ -236,7 +260,7 @@ def predictive(
 
     Args:
         X (np.ndarray): array containing the variable values plus unique identifer and geometry information.
-        clf (RandomForestClassifier): the fitted RandomForestClassifier.
+        estimator (RandomForestClassifier): the fitted RandomForestClassifier.
         scaler (scaler): the fitted specified scaling method instance.
 
     Returns:
@@ -251,10 +275,10 @@ def predictive(
     X_ft = scaler.transform(X_data)
 
     # make projection with transformed data
-    y_pred = clf.predict(X_ft)
+    y_pred = estimator.predict(X_ft)
 
     # predict probabilites of outcomes
-    y_prob = clf.predict_proba(X_ft)
+    y_prob = estimator.predict_proba(X_ft)
     y_prob_0 = y_prob[:, 0]  # probability to predict 0
     y_prob_1 = y_prob[:, 1]  # probability to predict 1
 
@@ -268,7 +292,7 @@ def predictive(
 
 
 def apply_gridsearchCV(
-    estimator: RandomForestClassifier,
+    estimator: Union[RandomForestClassifier, RandomForestRegressor],
     X_train: np.ndarray,
     y_train: np.ndarray,
     n_jobs=2,
@@ -277,7 +301,7 @@ def apply_gridsearchCV(
     """Applies grid search to find the best hyperparameters for the RandomForestClassifier.
 
     Args:
-        estimator (RandomForestClassifier): Estimator to be used in the grid search.
+        estimator (Union[RandomForestClassifier, RandomForestRegressor]): Estimator to be used in the grid search.
         X_train (np.ndarray): Feature matrix.
         y_train (np.ndarray): Target vector.
         n_jobs (int, optional): Number of cores to be used. Defaults to 2.
@@ -289,16 +313,28 @@ def apply_gridsearchCV(
 
     click.echo("Tuning hyperparameters with GridSearchCV.")
     # Define the parameter grid
-    param_grid = {
-        "n_estimators": [50, 100, 200],
-        "criterion": ["gini", "entropy"],
-        "min_impurity_decrease": [0, 0.5, 1],
-        "max_features": ("sqrt", "log2"),
-        "min_samples_split": [2, 5, 10],
-        "min_samples_leaf": [1, 2, 4],
-        "class_weight": [{1: 75}, {1: 100}, {1: 150}],
-        # 'bootstrap': [True, False]
-    }
+    if isinstance(estimator, RandomForestClassifier):
+        param_grid = {
+            "n_estimators": [50, 100, 200],
+            "criterion": ["gini", "entropy"],
+            "min_impurity_decrease": [0, 0.5, 1],
+            "max_features": ("sqrt", "log2"),
+            "min_samples_split": [2, 5, 10],
+            "min_samples_leaf": [1, 2, 4],
+            "class_weight": [{1: 75}, {1: 100}, {1: 150}],
+            # 'bootstrap': [True, False]
+        }
+        scoring = "roc_auc"
+    else:
+        param_grid = {
+            "n_estimators": [10, 50, 100],
+            "criterion": ("squared_error", "absolute_error", "friedman_mse"),
+            "max_features": ("sqrt", "log2"),
+            "min_samples_split": [2, 5, 20],
+            "min_impurity_decrease": [0, 0.5, 1],
+            "min_samples_leaf": [1, 5, 10],
+        }
+        scoring = "r2"
 
     # Instantiate the grid search model
     grid_search = GridSearchCV(
@@ -307,7 +343,7 @@ def apply_gridsearchCV(
         cv=KFold(n_splits=5, shuffle=True, random_state=42),
         n_jobs=n_jobs,
         verbose=verbose,
-        scoring="roc_auc",
+        scoring=scoring,
     )
 
     # Fit the grid search to the data
