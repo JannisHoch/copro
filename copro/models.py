@@ -26,6 +26,7 @@ class MainModel:
         verbose=0,
     ):
         """Constructor for the MainModel class.
+        Under the hood, the class uses the `machine_learning.MachineLearning()` class to run the computations.
 
         Args:
             X (np.ndarray, pd.DataFrame): array containing the variable values plus IDs and geometry information.

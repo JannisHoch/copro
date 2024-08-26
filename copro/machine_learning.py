@@ -17,6 +17,13 @@ class MachineLearning:
             ensemble.RandomForestClassifier, ensemble.RandomForestRegressor
         ],
     ) -> None:
+        """Class for all ML related stuff.
+        Embedded in more top-level `models.MainModel()` class.
+
+        Args:
+            config (dict): Parsed configuration-settings of the model.
+            estimator (Union[ ensemble.RandomForestClassifier, ensemble.RandomForestRegressor ]): ML model.
+        """
         self.config = config
         self.scaler = define_scaling(config)
         self.estimator = estimator

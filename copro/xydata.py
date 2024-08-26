@@ -9,7 +9,14 @@ import os
 
 
 class XYData:
-    def __init__(self, config: dict, target_var: str):
+    def __init__(self, config: dict, target_var: Union[str, None]):
+        """Collects feature (X) and target (Y) data for the model.
+
+        Args:
+            config (dict): Parsed configuration-settings of the model.
+            target_var (Union[str, None]): Target variable of the ML model. Either a string or None. \
+                Can be `None` for classification models, but needs to be specified for regression models.
+        """
         self.XY_dict = {}
         self.__XY_dict_initiated__ = False
         self.config = config
