@@ -7,24 +7,19 @@ from typing import Union, Tuple
 import click
 from pathlib import Path
 from sklearn.model_selection import GridSearchCV, KFold
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 
 class MachineLearning:
-    def __init__(self, config: dict) -> None:
+    def __init__(
+        self,
+        config: dict,
+        estimator: Union[
+            ensemble.RandomForestClassifier, ensemble.RandomForestRegressor
+        ],
+    ) -> None:
         self.config = config
         self.scaler = define_scaling(config)
-        self.estimator = define_model(config)
-
-        if "target_var" in config["machine_learning"].keys():
-            self.target_var = config["machine_learning"]["target_var"]
-        else:
-            if isinstance(self.estimator, RandomForestRegressor):
-                raise ValueError("No target variable specified for regression model.")
-            click.echo(
-                "No targe variable specified, using default classification approach."
-            )
-            self.target_var = None
+        self.estimator = estimator
 
     def split_scale_train_test_split(
         self, X: Union[np.ndarray, pd.DataFrame], Y: np.ndarray
@@ -213,69 +208,18 @@ def define_scaling(
     """
 
     if config["machine_learning"]["scaler"] == "MinMaxScaler":
-        scaler = preprocessing.MinMaxScaler()
-    elif config["machine_learning"]["scaler"] == "StandardScaler":
-        scaler = preprocessing.StandardScaler()
-    elif config["machine_learning"]["scaler"] == "RobustScaler":
-        scaler = preprocessing.RobustScaler()
-    elif config["machine_learning"]["scaler"] == "QuantileTransformer":
-        scaler = preprocessing.QuantileTransformer(random_state=42)
-    else:
-        raise ValueError(
-            "no supported scaling-algorithm selected - \
-                choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer"
-        )
+        return preprocessing.MinMaxScaler()
+    if config["machine_learning"]["scaler"] == "StandardScaler":
+        return preprocessing.StandardScaler()
+    if config["machine_learning"]["scaler"] == "RobustScaler":
+        return preprocessing.RobustScaler()
+    if config["machine_learning"]["scaler"] == "QuantileTransformer":
+        return preprocessing.QuantileTransformer(random_state=42)
 
-    click.echo(f"Chosen scaling method is {scaler}.")
-
-    return scaler
-
-
-def define_model(
-    config: dict,
-) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
-    """Defines model based on model configurations.
-
-    Args:
-        config (dict): Parsed configuration-settings of the model.
-
-    Returns:
-        model: the specified model instance.
-    """
-
-    if config["machine_learning"]["model"] in ["Classification", "C"]:
-        return ensemble.RandomForestClassifier(random_state=42)
-    if config["machine_learning"]["model"] in ["Regression", "R"]:
-        return ensemble.RandomForestRegressor(random_state=42)
     raise ValueError(
-        "no supported model selected - \
-            choose between Classification or Regression"
+        "no supported scaling-algorithm selected - \
+            choose between MinMaxScaler, StandardScaler, RobustScaler or QuantileTransformer"
     )
-
-
-def define_target_var(
-    config: dict,
-    estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
-) -> Union[str, None]:
-    """Defines target variable of ML model.
-    A target variable needs to be specified for regression models.
-    For classification models, it can be provided in the configuration file.
-    If not, the default classification approach is used.
-
-    Args:
-        config (dict): Parsed configuration-settings of the model.
-        estimator (Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]): ML estimator.
-
-    Returns:
-        Union[str, None]: Either the target variable or `None`.
-    """
-
-    if "target_var" in config["machine_learning"].keys():
-        return config["machine_learning"]["target_var"]
-    if isinstance(estimator, RandomForestRegressor):
-        raise ValueError("No target variable specified for regression model.")
-    click.echo("No targe variable specified, using default classification approach.")
-    return None
 
 
 def predictive(
@@ -327,12 +271,12 @@ def predictive(
 
 
 def apply_gridsearchCV(
-    estimator: Union[RandomForestClassifier, RandomForestRegressor],
+    estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
     X_train: np.ndarray,
     y_train: np.ndarray,
     n_jobs=2,
     verbose=0,
-) -> RandomForestClassifier:
+) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
     """Applies grid search to find the best hyperparameters for the RandomForestClassifier.
 
     Args:
@@ -343,12 +287,12 @@ def apply_gridsearchCV(
         verbose (int, optional): Verbosity level. Defaults to 0.
 
     Returns:
-        RandomForestClassifier: Best estimator of the grid search.
+        Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]: Best estimator of the grid search.
     """
 
     click.echo("Tuning hyperparameters with GridSearchCV.")
     # Define the parameter grid
-    if isinstance(estimator, RandomForestClassifier):
+    if isinstance(estimator, ensemble.RandomForestClassifier):
         param_grid = {
             "n_estimators": [50, 100, 200],
             "criterion": ["gini", "entropy"],
