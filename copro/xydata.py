@@ -1,5 +1,5 @@
 from copro import conflict, variables, nb, utils
-from typing import Tuple
+from typing import Tuple, Union
 import click
 import numpy as np
 import xarray as xr
@@ -9,10 +9,11 @@ import os
 
 
 class XYData:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, target_var: str):
         self.XY_dict = {}
         self.__XY_dict_initiated__ = False
         self.config = config
+        self.target_var = target_var
 
     def _initiate_XY_data(self):
 
@@ -29,7 +30,10 @@ class XYData:
             self.XY_dict[key] = pd.Series(dtype=float)
         self.XY_dict["conflict_t_min_1"] = pd.Series(dtype=bool)
         self.XY_dict["conflict_t_min_1_nb"] = pd.Series(dtype=float)
-        self.XY_dict["conflict"] = pd.Series(dtype=bool)
+        # TODO: somewhere a function needs to be added to cater different types of target variables
+        # dict key can remain "conflict" but the dtype should be adjusted as it may not be 0/1 anymore
+        # could be multi-label classification or regression
+        self.XY_dict["conflict"] = pd.Series()
 
         click.echo("The columns in the sample matrix used are:")
         for key in self.XY_dict:
@@ -62,7 +66,13 @@ class XYData:
         self._initiate_XY_data()
         # fill the dictionary and get array
         XY_arr = _fill_XY(
-            self.XY_dict, self.config, root_dir, conflict_gdf, polygon_gdf, out_dir
+            self.XY_dict,
+            self.config,
+            root_dir,
+            conflict_gdf,
+            self.target_var,
+            polygon_gdf,
+            out_dir,
         )
         # save array to XY.npy out_dir
         click.echo(
@@ -253,6 +263,7 @@ def _fill_XY(  # noqa: R0912
     config: dict,
     root_dir: click.Path,
     conflict_data: gpd.GeoDataFrame,
+    target_var: Union[str, None],
     polygon_gdf: gpd.GeoDataFrame,
     out_dir: click.Path,
 ) -> np.ndarray:
@@ -265,6 +276,8 @@ def _fill_XY(  # noqa: R0912
         config (dict): Parsed configuration-settings of the model.
         root_dir (str): Path to location of yaml-file.
         conflict_data (gpd.GeoDataFrame): Geodataframe containing the selected conflicts.
+        target_var (str): Target variable of the ML model. Either a string or None. \
+            Depending on target_var, the conflict data is read differently.
         polygon_gdf (gpd.GeoDataFrame): Geodataframe containing the selected polygons.
         out_dir (path): Path to output folder.
 
@@ -292,6 +305,15 @@ def _fill_XY(  # noqa: R0912
                 if key == "conflict":
 
                     data_series = value
+                    # TODO: guess for target_vars others than None, a dedicasted function is needed
+                    if target_var is None:
+                        data_list = conflict.conflict_in_year_bool(
+                            config, conflict_data, polygon_gdf, sim_year, out_dir
+                        )
+                    else:
+                        raise NotImplementedError(
+                            "Implementation of target_var did not happen yet."
+                        )
                     data_list = conflict.conflict_in_year_bool(
                         config, conflict_data, polygon_gdf, sim_year, out_dir
                     )
