@@ -326,7 +326,7 @@ def apply_gridsearchCV(
     grid_search = GridSearchCV(
         estimator=estimator,
         param_grid=param_grid,
-        cv=KFold(n_splits=5, shuffle=True, random_state=42),
+        cv=KFold(n_splits=5, shuffle=True),
         n_jobs=n_jobs,
         verbose=verbose,
         scoring=scoring,
