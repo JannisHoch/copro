@@ -69,17 +69,25 @@ def _filter_conflict_properties(
         gpd.GeoDataFrame: geo-dataframe containing filtered entries.
     """
 
+    gdf = gdf[
+        (gdf.year >= config["general"]["y_start"])
+        & (gdf.year <= config["general"]["y_end"])
+    ]
+
+    # if not thresholding options are found, return the original dataframe
     if "thresholds" not in config["data"]["conflict"]:
         click.echo("No thresholding options found in configuration file.")
         return gdf
 
-    # go through all criteria
+    # otherwise, go through all variables for which tresholding is specified
     for key, value in config["data"]["conflict"]["thresholds"].items():
 
+        # if variable is not found in the dataframe, skip it
         if key not in gdf.columns:
             warnings.warn(
-                f"{key} is not found in geodataframe columns, will be skipped."
+                f"{key} is not found in geodataframe columns, thresholding be skipped."
             )
+        # otherwise, check which option is specified and apply it
         else:
             click.echo(f"Tresholding conflict data on {key}.")
             for v, k in value.items():
@@ -93,7 +101,7 @@ def _filter_conflict_properties(
                     click.echo(f"Selecting datapoints less or equal to {k}.")
                     gdf = gdf[gdf[key] <= k]
                 else:
-                    raise ValueError(
+                    warnings.warn(
                         f"{v} is not a recognized tresholding option - use 'values', 'vmin' or 'vmax'."
                     )
 

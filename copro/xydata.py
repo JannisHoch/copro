@@ -1,5 +1,5 @@
 from copro import conflict, variables, nb, utils
-from typing import Tuple
+from typing import Tuple, Union
 import click
 import numpy as np
 import xarray as xr
@@ -9,10 +9,18 @@ import os
 
 
 class XYData:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, target_var: Union[str, None]):
+        """Collects feature (X) and target (Y) data for the model.
+
+        Args:
+            config (dict): Parsed configuration-settings of the model.
+            target_var (Union[str, None]): Target variable of the ML model. Either a string or None. \
+                Can be `None` for classification models, but needs to be specified for regression models.
+        """
         self.XY_dict = {}
         self.__XY_dict_initiated__ = False
         self.config = config
+        self.target_var = target_var
 
     def _initiate_XY_data(self):
 
@@ -29,7 +37,10 @@ class XYData:
             self.XY_dict[key] = pd.Series(dtype=float)
         self.XY_dict["conflict_t_min_1"] = pd.Series(dtype=bool)
         self.XY_dict["conflict_t_min_1_nb"] = pd.Series(dtype=float)
-        self.XY_dict["conflict"] = pd.Series(dtype=bool)
+        # TODO: somewhere a function needs to be added to cater different types of target variables
+        # dict key can remain "conflict" but the dtype should be adjusted as it may not be 0/1 anymore
+        # could be multi-label classification or regression
+        self.XY_dict["conflict"] = pd.Series()
 
         click.echo("The columns in the sample matrix used are:")
         for key in self.XY_dict:
@@ -43,10 +54,9 @@ class XYData:
         root_dir: click.Path,
         polygon_gdf: gpd.GeoDataFrame,
         conflict_gdf: gpd.GeoDataFrame,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """Top-level function to create the X-array and Y-array.
-        If the XY-data was pre-computed and specified in cfg-file, the data is loaded.
-        If not, variable values and conflict data are read from file and stored in array.
+        Variable values and conflict data are read from file and stored in array.
         The resulting array is by default saved as npy-format to file.
 
         Args:
@@ -56,23 +66,31 @@ class XYData:
             conflict_gdf (geo-dataframe): geo-dataframe containing the selected conflicts.
 
         Returns:
-            np.ndarray: X-array containing variable values.
-            np.ndarray: Y-array containing conflict data.
+            pd.DataFrame: dataframe containing feature (X) values.
+            pd.DataFrame: dataframe containing conflict (Y) data.
         """
 
         self._initiate_XY_data()
         # fill the dictionary and get array
-        XY_arr = _fill_XY(
-            self.XY_dict, self.config, root_dir, conflict_gdf, polygon_gdf, out_dir
+        XY_df = _fill_XY(
+            self.XY_dict,
+            self.config,
+            root_dir,
+            conflict_gdf,
+            self.target_var,
+            polygon_gdf,
+            out_dir,
         )
-        # save array to XY.npy out_dir
+
+        # save dataframe as geodataframe to GeoPackage in out_dir
         click.echo(
-            f"Saving XY data by default to file {os.path.join(out_dir, 'XY.npy')}."
+            f"Saving XY data by default to file {os.path.join(out_dir, 'XY.gpkg')}."
         )
-        np.save(os.path.join(out_dir, "XY"), XY_arr)
+        XY_gdf = gpd.GeoDataFrame(XY_df, geometry="poly_geometry")
+        XY_gdf.to_file(os.path.join(out_dir, "XY.gpkg"), driver="GPKG")
 
         # split the XY data into sample data X and target values Y
-        X, Y = _split_XY_data(XY_arr)
+        X, Y = _split_XY_data(XY_df)
 
         return X, Y
 
@@ -254,9 +272,10 @@ def _fill_XY(  # noqa: R0912
     config: dict,
     root_dir: click.Path,
     conflict_data: gpd.GeoDataFrame,
+    target_var: Union[str, None],
     polygon_gdf: gpd.GeoDataFrame,
     out_dir: click.Path,
-) -> np.ndarray:
+) -> pd.DataFrame:
     """Fills the (XY-)dictionary with data for each variable and conflict for each polygon for each simulation year.
     The number of rows should therefore equal to number simulation years times number of polygons.
     At end of last simulation year, the dictionary is converted to a numpy-array.
@@ -264,13 +283,15 @@ def _fill_XY(  # noqa: R0912
     Args:
         XY (dict): initiated, i.e. empty, XY-dictionary
         config (dict): Parsed configuration-settings of the model.
-        root_dir (str): Path to location of cfg-file.
+        root_dir (str): Path to location of yaml-file.
         conflict_data (gpd.GeoDataFrame): Geodataframe containing the selected conflicts.
+        target_var (str): Target variable of the ML model. Either a string or None. \
+            Depending on target_var, the conflict data is read differently.
         polygon_gdf (gpd.GeoDataFrame): Geodataframe containing the selected polygons.
         out_dir (path): Path to output folder.
 
     Returns:
-        np.ndarray: Filled array containing the variable values (X) and binary conflict data (Y) plus meta-data.
+        pd.DataFrame: Dataframe containing the variable values (X) and binary conflict data (Y) plus meta-data.
     """
 
     # go through all simulation years as specified in config-file
@@ -293,6 +314,15 @@ def _fill_XY(  # noqa: R0912
                 if key == "conflict":
 
                     data_series = value
+                    # TODO: guess for target_vars others than None, a dedicasted function is needed
+                    if target_var is None:
+                        data_list = conflict.conflict_in_year_bool(
+                            config, conflict_data, polygon_gdf, sim_year, out_dir
+                        )
+                    else:
+                        raise NotImplementedError(
+                            "Implementation of target_var did not happen yet."
+                        )
                     data_list = conflict.conflict_in_year_bool(
                         config, conflict_data, polygon_gdf, sim_year, out_dir
                     )
@@ -347,89 +377,115 @@ def _fill_XY(  # noqa: R0912
 
                 else:
 
-                    nc_fo = os.path.join(
-                        root_dir,
-                        config["general"]["input_dir"],
-                        config["data"]["indicators"][key]["file"],
+                    XY[key] = _read_data_from_netCDF(
+                        root_dir, config, key, value, polygon_gdf, sim_year
                     )
-                    click.echo(f"Reading data for indicator {key} from {nc_fo}.")
-                    nc_ds = xr.open_dataset(nc_fo)
-
-                    if (np.dtype(nc_ds.time) == np.float32) or (
-                        np.dtype(nc_ds.time) == np.float64
-                    ):
-                        data_series = value
-                        data_list = variables.nc_with_float_timestamp(
-                            polygon_gdf, config, root_dir, key, sim_year
-                        )
-                        data_series = pd.concat(
-                            [data_series, pd.Series(data_list)],
-                            axis=0,
-                            ignore_index=True,
-                        )
-                        XY[key] = data_series
-
-                    elif np.dtype(nc_ds.time) == "datetime64[ns]":
-                        data_series = value
-                        data_list = variables.nc_with_continous_datetime_timestamp(
-                            polygon_gdf, config, root_dir, key, sim_year
-                        )
-                        data_series = pd.concat(
-                            [data_series, pd.Series(data_list)],
-                            axis=0,
-                            ignore_index=True,
-                        )
-                        XY[key] = data_series
-
-                    else:
-                        raise ValueError(
-                            "This file has an unsupported dtype for the time variable: {}".format(
-                                os.path.join(
-                                    root_dir,
-                                    config.get("general", "input_dir"),
-                                    config.get("data", key),
-                                )
-                            )
-                        )
 
             click.echo("All data read.")
 
-    df_out = pd.DataFrame.from_dict(XY)
-
-    return df_out.to_numpy()
+    return pd.DataFrame.from_dict(XY)  # .to_numpy()
 
 
-def _split_XY_data(XY_arr: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _read_data_from_netCDF(
+    root_dir: str,
+    config: dict,
+    key: str,
+    value: pd.Series,
+    polygon_gdf: gpd.GeoDataFrame,
+    sim_year: int,
+) -> pd.Series:
+    """Reads data from netCDF-file and appends it to the series of the XY-dictionary.
+    This happens per variable and simulation year.
+    Appends the extracted data to the series of the XY-dictionary.
+
+    .. todo::
+        Is the check for different time-dtypes necessary?
+
+    Args:
+        root_dir (str): Path to location of yaml-file.
+        config (dict):  Parsed configuration-settings of the model.
+        key (str): Variable name of feature for which data to be extracted.
+        value (pd.Series): Extracted feature values from previous years.
+        polygon_gdf (gpd.GeoDataFrame): Geodataframe containing the selected polygons.
+        sim_year (int): Simulation year.
+
+    Returns:
+        pd.Series: Appended series containing the extracted feature values up to the current simulation year.
+    """
+
+    nc_fo = os.path.join(
+        root_dir,
+        config["general"]["input_dir"],
+        config["data"]["indicators"][key]["file"],
+    )
+    click.echo(f"Reading data for indicator {key} from {nc_fo}.")
+    nc_ds = xr.open_dataset(nc_fo)
+
+    if (np.dtype(nc_ds.time) == np.float32) or (np.dtype(nc_ds.time) == np.float64):
+        data_series = value
+        data_list = variables.nc_with_float_timestamp(
+            polygon_gdf, config, root_dir, key, sim_year
+        )
+        data_series = pd.concat(
+            [data_series, pd.Series(data_list)],
+            axis=0,
+            ignore_index=True,
+        )
+    elif np.dtype(nc_ds.time) == "datetime64[ns]":
+        data_series = value
+        data_list = variables.nc_with_continous_datetime_timestamp(
+            polygon_gdf, config, root_dir, key, sim_year
+        )
+        data_series = pd.concat(
+            [data_series, pd.Series(data_list)],
+            axis=0,
+            ignore_index=True,
+        )
+    else:
+        raise ValueError(
+            "This file has an unsupported dtype for the time variable: {}".format(
+                os.path.join(
+                    root_dir,
+                    config.get("general", "input_dir"),
+                    config.get("data", key),
+                )
+            )
+        )
+
+    return data_series
+
+
+def _split_XY_data(XY_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Separates the XY-array into array containing information about
     variable values (X-array or sample data) and conflict data (Y-array or target data).
     Thereby, the X-array also contains the information about
     unique identifier and polygon geometry.
 
     Args:
-        XY (array): array containing variable values and conflict data.
-        config (ConfigParser-object): object containing the parsed configuration-settings of the model.
+        XY_df (pd.DataFrame): array containing variable values and conflict data.
 
     Returns:
-        arrays: two separate arrays, the X-array and Y-array.
+        pd.DataFrame: X-array, i.e. array containing feature values.
+        pd.DataFrame: Y-array, i.e. array containing target values.
     """
 
-    # convert array to dataframe for easier handling
-    XY_df = pd.DataFrame(XY_arr)
-    # fill all missing values with 0
-    XY_df = XY_df.fillna(0)
-    # convert dataframe back to array
-    XY_df = XY_df.to_numpy()
+    # drop missing values
+    XY_df_noNaNs = XY_df.dropna()
+    click.echo(
+        f"Dropped missing values, which leaves {len(XY_df_noNaNs)} out of {(len(XY_df))} data points."
+        f"Number of polygons with data is now {XY_df_noNaNs.poly_ID.nunique()} out of {XY_df.poly_ID.nunique()}."
+    )
 
     # get X data
     # since conflict is the last column, we know that all previous columns must be variable values
-    X = XY_df[:, :-1]
+    X_df = XY_df_noNaNs.iloc[:, :-1]
     # get Y data and convert to integer values
-    Y = XY_df[:, -1]
-    Y = Y.astype(int)
+    Y_df = XY_df_noNaNs.iloc[:, -1]
+    Y_df = Y_df.astype(int)
 
-    fraction_Y_1 = 100 * len(np.where(Y != 0)[0]) / len(Y)
+    fraction_Y_1 = 100 * len(Y_df[Y_df == 1]) / len(Y_df)
     click.echo(
         f"{round(fraction_Y_1, 2)} percent in the data corresponds to conflicts."
     )
 
-    return X, Y
+    return X_df, Y_df

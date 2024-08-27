@@ -88,11 +88,10 @@ def polygon_model_accuracy(
 
     # - per polygon ID, compute sum of all conflict data points and add to dataframe
     if not make_proj:
-        df_count["nr_observed_conflicts"] = df.y_test.groupby(df.ID).sum()
+        df_count["nr_observed_conflicts"] = df.y_test.groupby(df.ID).sum().astype(float)
 
     # - per polygon ID, compute sum of all conflict data points and add to dataframe
-    df_count["nr_predicted_conflicts"] = df.y_pred.groupby(df.ID).sum()
-
+    df_count["nr_predicted_conflicts"] = df.y_pred.groupby(df.ID).sum().astype(float)
     # - per polygon ID, compute average probability that conflict occurs
     df_count["min_prob_1"] = pd.to_numeric(df.y_prob_1).groupby(df.ID).min()
     df_count["probability_of_conflict"] = (

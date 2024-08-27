@@ -16,18 +16,23 @@ class MainModel:
     def __init__(
         self,
         X: Union[np.ndarray, pd.DataFrame],
-        Y: np.ndarray,
-        config: RawConfigParser,
+        Y: Union[np.ndarray, pd.DataFrame],
+        estimator: Union[
+            ensemble.RandomForestClassifier, ensemble.RandomForestRegressor
+        ],
+        config: dict,
         out_dir: str,
         n_jobs=2,
         verbose=0,
     ):
         """Constructor for the MainModel class.
+        Under the hood, the class uses the `machine_learning.MachineLearning()` class to run the computations.
 
         Args:
             X (np.ndarray, pd.DataFrame): array containing the variable values plus IDs and geometry information.
             Y (np.ndarray): array containing merely the binary conflict classifier data.
-            config (RawConfigParser): object containing the parsed configuration-settings of the model.
+            estimator (Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]): ML model.
+            config (dict): object containing the parsed configuration-settings of the model.
             out_dir (str): path to output folder.
             n_jobs (int, optional): Number of jobs to run in parallel. Defaults to 2.
             verbose (int, optional): Verbosity level. Defaults to 0.
@@ -37,11 +42,9 @@ class MainModel:
         self.config = config
         self.scaler = machine_learning.define_scaling(config)
         self.scaler_all_data = self.scaler.fit(
-            X[:, 2:]
+            X.iloc[:, 2:]
         )  # NOTE: supposed to be used in projections
-        self.clf = ensemble.RandomForestClassifier(
-            n_estimators=1000, class_weight={1: 100}, random_state=42
-        )
+        self.estimator = estimator
         self.out_dir = out_dir
         self.n_jobs = n_jobs
         self.verbose = verbose
@@ -108,6 +111,7 @@ class MainModel:
 
         MLmodel = machine_learning.MachineLearning(
             self.config,
+            self.estimator,
         )
 
         # split X into training-set and test-set, scale training-set data

@@ -5,12 +5,8 @@ import geopandas as gpd
 import rasterstats as rstats
 import numpy as np
 import os
-import math
-import click
-
 import warnings
-
-warnings.filterwarnings("once")
+import click
 
 
 def nc_with_float_timestamp(
@@ -80,17 +76,14 @@ def nc_with_float_timestamp(
     # initialize output list
     list_out = []
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf)):
-
-        # province i
-        prov = extent_gdf.iloc[i]
+    for _, row in extent_gdf.iterrows():
 
         # compute zonal stats for this province
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered,
         # but this is problematic for very small polygons
         zonal_stats = rstats.zonal_stats(
-            prov.geometry,
+            row.geometry,
             nc_arr_vals,
             affine=affine,
             stats=stat_method,
@@ -98,19 +91,19 @@ def nc_with_float_timestamp(
         )
         val = zonal_stats[0][stat_method]
 
-        # # if specified, log-transform value
+        # if specified, log-transform value
         if ln_flag:
-            # works only if zonal stats is not None, i.e. if it's None it stays None
-            val_ln = np.log(val)
-            # in case log-transformed value results in -inf, replace with None
-            if val_ln == -math.inf:
-                val = np.log(val + 1)
-            else:
-                val = val_ln
+            raise NotImplementedError(
+                "Log-transformation for continuous datetime timestamp not yet implemented."
+            )
 
         # warn if result is NaN
-        if val is math.nan:
-            warnings.warn("NaN computed!")
+        if val is None:
+            warnings.warn(
+                f"`None` computed for {config['data']['extent']['id']}"
+                f"{row[config['data']['extent']['id']]}, setting to `np.nan`!"
+            )
+            val = np.nan
 
         list_out.append(val)
 
@@ -185,17 +178,14 @@ def nc_with_continous_datetime_timestamp(
     # initialize output list
     list_out = []
     # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for i in range(len(extent_gdf)):
-
-        # province i
-        prov = extent_gdf.iloc[i]
+    for _, row in extent_gdf.iterrows():
 
         # compute zonal stats for this province
         # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
         # if all_touched=False, only for raster cells with centre point in polygon are considered,
         # but this is problematic for very small polygons
         zonal_stats = rstats.zonal_stats(
-            prov.geometry,
+            row.geometry,
             nc_arr_vals,
             affine=affine,
             stats=stat_method,
@@ -203,19 +193,20 @@ def nc_with_continous_datetime_timestamp(
         )
         val = zonal_stats[0][stat_method]
 
-        # # if specified, log-transform value
+        # if specified, log-transform value
         if ln_flag:
-            # works only if zonal stats is not None, i.e. if it's None it stays None
-            val_ln = np.log(val)
-            # in case log-transformed value results in -inf, replace with None
-            if val_ln == -math.inf:
-                val = np.log(val + 1)
-            else:
-                val = val_ln
+            raise NotImplementedError(
+                "Log-transformation for continuous datetime timestamp not yet implemented."
+            )
 
         # warn if result is NaN
-        if val is math.nan:
-            warnings.warn("NaN computed!")
+        if val is None:
+            warnings.warn(
+                f"`None` computed for {config['data']['extent']['id']}"
+                f"{row[config['data']['extent']['id']]}, setting to `np.nan`!"
+            )
+
+            val = np.nan
 
         list_out.append(val)
 
