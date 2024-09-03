@@ -13,7 +13,7 @@ import os
     "-c",
     type=int,
     default=5,
-    help="Number of jobs to run in parallel. Default is 0.",
+    help="Number of jobs to run in parallel. Default is 5.",
 )
 @click.option(
     "--verbose",

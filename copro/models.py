@@ -47,6 +47,7 @@ class MainModel:
         self.estimator = estimator
         self.out_dir = out_dir
         self.n_jobs = n_jobs
+        click.echo(f"Number of jobs to run in parallel: {n_jobs}.")
         self.verbose = verbose
 
     def run(
