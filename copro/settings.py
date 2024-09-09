@@ -102,13 +102,17 @@ def _collect_simulation_settings(config: dict, root_dir: click.Path) -> dict:
     # first entry is config-object for reference run
     config_dict["_REF"] = config
 
-    if "PROJ_files" in config["general"].keys():
+    if "projections" in config_dict["_REF"]:
 
         # loop through all keys and values in PROJ_files section of reference config-object
-        for (each_key, each_val) in config.items("PROJ_files"):
+        for (each_key, each_val) in config_dict["_REF"]["projections"].items():
 
             # for each value (here representing the cfg-files of the projections), get the absolute path
-            each_val = os.path.abspath(os.path.join(root_dir, each_val))
+            each_val = os.path.abspath(
+                os.path.join(
+                    root_dir, config_dict["_REF"]["projections"][each_key]["file"]
+                )
+            )
 
             # parse each config-file specified
             each_config = _parse_settings(each_val)
