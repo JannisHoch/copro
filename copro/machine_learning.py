@@ -151,8 +151,8 @@ class MachineLearning:
 
 
 def load_estimators(config: dict, out_dir: str) -> list[str]:
-    """Loads the paths to all previously fitted classifiers to a list.
-    Classifiers were saved to file in fit_predict().
+    """Loads the paths to all previously fitted estimators to a list.
+    Estimators were saved to file in `fit_predict()`.
     With this list, the classifiers can be loaded again during projections.
 
     Args:
@@ -160,14 +160,14 @@ def load_estimators(config: dict, out_dir: str) -> list[str]:
         out_dir (path): path to output folder.
 
     Returns:
-        list: list with file names of classifiers.
+        list: list with file names of estimators.
     """
 
     estimators = os.listdir(os.path.join(out_dir, "estimators"))
 
     if len(estimators) != config["machine_learning"]["n_runs"]:
         raise ValueError(
-            "Number of loaded classifiers does not match the specified number of runs in cfg-file!"
+            "Number of loaded estimators does not match the specified number of runs in reference yaml-file!"
         )
 
     return estimators
