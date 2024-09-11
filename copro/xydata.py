@@ -95,36 +95,39 @@ class XYData:
         return X, Y
 
 
-# def initiate_X_data(config: RawConfigParser) -> dict:
-#     """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data.
-#     This is needed for each time step of each projection run.
-#     By default, the first column is for the polygon ID and the second for polygon geometry.
-#     The penultimate column is for boolean information about conflict at t-1
-#     while the last column is for boolean information about conflict at t-1 in neighboring polygons.
-#     All remaining columns correspond to the variables provided in the cfg-file.
+def initiate_X_data(config: dict) -> dict:
+    """Initiates an empty dictionary to contain the X-data for each polygon, ie. only sample data.
+    This is needed for each time step of each projection run.
+    By default, the first column is for the polygon ID and the second for polygon geometry.
+    The penultimate column is for boolean information about conflict at t-1
+    while the last column is for boolean information about conflict at t-1 in neighboring polygons.
+    All remaining columns correspond to the variables provided in the cfg-file.
 
-#     Args:
-#         config (RawConfigParser): object containing the parsed configuration-settings of the model.
+    ..todo::
+        Can this be better aligned with the XYData-class?
 
-#     Returns:
-#         dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
-#     """
+    Args:
+        config (dict): object containing the parsed configuration-settings of the model.
 
-#     # Initialize dictionary
-#     # some entries are set by default, besides the ones corresponding to input data variables
-#     X = {}
-#     X["poly_ID"] = pd.Series()
-#     X["poly_geometry"] = pd.Series()
-#     for key in config.items("data"):
-#         X[str(key[0])] = pd.Series(dtype=float)
-#     X["conflict_t_min_1"] = pd.Series(dtype=bool)
-#     X["conflict_t_min_1_nb"] = pd.Series(dtype=float)
+    Returns:
+        dict: emtpy dictionary to be filled, containing keys for each variable (X) plus meta-data.
+    """
 
-#     click.echo("The columns in the sample matrix used are:")
-#     for key in X:
-#         click.echo(f"...{key}")
+    # Initialize dictionary
+    # some entries are set by default, besides the ones corresponding to input data variables
+    X = {}
+    X["poly_ID"] = pd.Series()
+    X["poly_geometry"] = pd.Series()
+    for key in config["data"]["indicators"].keys():
+        X[key] = pd.Series(dtype=float)
+    X["conflict_t_min_1"] = pd.Series(dtype=bool)
+    X["conflict_t_min_1_nb"] = pd.Series(dtype=float)
 
-#     return X
+    click.echo("The columns in the sample matrix used are:")
+    for key in X:
+        click.echo(f"...{key}")
+
+    return X
 
 
 def fill_X_sample(
@@ -175,46 +178,9 @@ def fill_X_sample(
 
             if key not in ["conflict_t_min_1", "conflict_t_min_1_nb"]:
 
-                nc_ds = xr.open_dataset(
-                    os.path.join(
-                        root_dir,
-                        config["general"]["input_dir"],
-                        config["data"]["indicators"][key]["file"],
-                    )
+                X[key] = _read_data_from_netCDF(
+                    root_dir, config, key, value, polygon_gdf, proj_year
                 )
-
-                if (np.dtype(nc_ds.time) == np.float32) or (
-                    np.dtype(nc_ds.time) == np.float64
-                ):
-                    data_series = value
-                    data_list = variables.nc_with_float_timestamp(
-                        polygon_gdf, config, root_dir, key, proj_year
-                    )
-                    data_series = pd.concat(
-                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
-                    )
-                    X[key] = data_series
-
-                elif np.dtype(nc_ds.time) == "datetime64[ns]":
-                    data_series = value
-                    data_list = variables.nc_with_continous_datetime_timestamp(
-                        polygon_gdf, config, root_dir, key, proj_year
-                    )
-                    data_series = pd.concat(
-                        [data_series, pd.Series(data_list)], axis=0, ignore_index=True
-                    )
-                    X[key] = data_series
-
-                else:
-                    raise ValueError(
-                        "This file has an unsupported dtype for the time variable: {}".format(
-                            os.path.join(
-                                root_dir,
-                                config["general"]["input_dir"],
-                                config["data"]["indicators"][key]["file"],
-                            )
-                        )
-                    )
 
     return X
 

@@ -183,14 +183,14 @@ class MainModel:
         clfs, all_y_df = _init_prediction_run(config_REF, out_dir_REF)
 
         # going through each projection specified
-        for each_key, _ in config_REF.items():
+        for each_key, _ in config_REF["projections"].items():
 
             # get config-object and out-dir per projection
             click.echo(f"Loading config-object for projection run: {each_key}.")
             config_PROJ = main_dict[str(each_key)][0][0]
             out_dir_PROJ = main_dict[str(each_key)][1]
 
-            click.echo(f"Storing output for this projections to folder {out_dir_PROJ}.")
+            click.echo(f"Storing output for this projection to folder {out_dir_PROJ}.")
             Path.mkdir(
                 Path(os.path.join(out_dir_PROJ, "clfs")), parents=True, exist_ok=True
             )
@@ -347,7 +347,7 @@ class MainModel:
 def _init_prediction_run(
     config_REF: RawConfigParser, out_dir_REF: str
 ) -> Tuple[list, pd.DataFrame]:
-    """Initializes the prediction run by loading all classifiers created in the reference run.
+    """Initializes the prediction run by loading all estimators created in the reference run.
     Also initiates an empty dataframe to store the predictions.
 
     Args:
@@ -355,12 +355,13 @@ def _init_prediction_run(
         out_dir_REF (str): Output directory for reference run.
 
     Returns:
-        Tuple[list, pd.DataFrame]: List with classifiers and initiated empty dataframe for predictions.
+        list: List with estimators.
+        pd.DataFrame: Initiated empty dataframe for predictions.
     """
 
-    clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
+    estimators = machine_learning.load_estimators(config_REF, out_dir_REF)
 
     # initiate output dataframe
     all_y_df = pd.DataFrame(columns=["ID", "geometry", "y_pred"])
 
-    return clfs, all_y_df
+    return estimators, all_y_df
