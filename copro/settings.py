@@ -1,7 +1,6 @@
 import click
 import os
 import numpy as np
-from configparser import RawConfigParser
 from shutil import copyfile
 from typing import Tuple, Union
 from copro import utils, io
@@ -174,16 +173,13 @@ def define_target_var(
     return None
 
 
-def determine_projection_period(
-    config_REF: RawConfigParser, config_PROJ: RawConfigParser
-) -> list:
+def determine_projection_period(config_REF: dict) -> list:
     """Determines the period for which projections need to be made.
     This is defined as the period between the end year of the reference run
     and the specified projection year for each projection.
 
     Args:
-        config_REF (RawConfigParser): model configuration-settings for the reference run.
-        config_PROJ (RawConfigParser): model configuration-settings for a projection run..
+        config_REF (dict): model configuration-settings for the reference run.
 
     Returns:
         list: all years of the projection period.
@@ -192,7 +188,7 @@ def determine_projection_period(
     # get all years of projection period
     projection_period = np.arange(
         config_REF["general"]["y_end"] + 1,
-        config_PROJ["general"]["y_proj"] + 1,
+        config_REF["projections"]["proj_2020_to_2023"]["y_end"] + 1,
         1,
     )
     # convert to list
