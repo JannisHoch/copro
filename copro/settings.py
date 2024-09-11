@@ -1,12 +1,13 @@
-import click
 import os
-import numpy as np
 from shutil import copyfile
 from typing import Tuple, Union
-from copro import utils, io
+
+import click
+import numpy as np
+import yaml
 from sklearn import ensemble
 
-import yaml
+from copro import io, utils
 
 
 def initiate_setup(settings_file: click.Path) -> Tuple[dict, str]:

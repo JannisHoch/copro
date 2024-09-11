@@ -1,11 +1,12 @@
 import os
 import pickle
-import pandas as pd
-import numpy as np
-from sklearn import ensemble, preprocessing, model_selection, inspection
-from typing import Union, Tuple
-import click
 from pathlib import Path
+from typing import Tuple, Union
+
+import click
+import numpy as np
+import pandas as pd
+from sklearn import ensemble, inspection, model_selection, preprocessing
 from sklearn.model_selection import GridSearchCV, KFold
 
 

@@ -1,10 +1,11 @@
-import pandas as pd
-import numpy as np
-from typing import Union
-from pathlib import Path
 import os
-import click
 import shutil
+from pathlib import Path
+from typing import Union
+
+import click
+import numpy as np
+import pandas as pd
 
 
 def make_and_collect_output_dirs(

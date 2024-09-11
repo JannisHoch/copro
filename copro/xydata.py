@@ -1,11 +1,13 @@
-from copro import conflict, variables, nb, utils
-from typing import Tuple, Union
-import click
-import numpy as np
-import xarray as xr
-import pandas as pd
-import geopandas as gpd
 import os
+from typing import Tuple, Union
+
+import click
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+from copro import conflict, nb, utils, variables
 
 
 class XYData:

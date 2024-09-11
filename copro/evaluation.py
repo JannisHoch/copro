@@ -1,7 +1,8 @@
-from sklearn import metrics
-import pandas as pd
-import geopandas as gpd
 from typing import Union
+
+import geopandas as gpd
+import pandas as pd
+from sklearn import metrics
 
 
 def init_out_dict(scores: Union[list[str], None] = None) -> dict:

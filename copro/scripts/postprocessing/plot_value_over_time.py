@@ -1,12 +1,13 @@
-import click
 import glob
-import matplotlib.pyplot as plt
-import pandas as pd
-import geopandas as gpd
-import numpy as np
 import os
 import warnings
 from pathlib import Path
+
+import click
+import geopandas as gpd
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 
 def define_val(data_series: pd.Series, statistics: str) -> float:
