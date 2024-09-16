@@ -79,7 +79,7 @@ class XYData:
             self.config,
             root_dir,
             conflict_gdf,
-            self.target_var,
+            # self.target_var,
             polygon_gdf,
             out_dir,
         )
