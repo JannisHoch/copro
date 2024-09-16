@@ -240,7 +240,7 @@ def _fill_XY(  # noqa: R0912
     config: dict,
     root_dir: click.Path,
     conflict_data: gpd.GeoDataFrame,
-    target_var: Union[str, None],
+    # target_var: Union[str, None],
     polygon_gdf: gpd.GeoDataFrame,
     out_dir: click.Path,
 ) -> pd.DataFrame:
@@ -283,14 +283,14 @@ def _fill_XY(  # noqa: R0912
 
                     data_series = value
                     # TODO: guess for target_vars others than None, a dedicasted function is needed
-                    if target_var is None:
-                        data_list = conflict.conflict_in_year_bool(
-                            config, conflict_data, polygon_gdf, sim_year, out_dir
-                        )
-                    else:
-                        raise NotImplementedError(
-                            "Implementation of target_var did not happen yet."
-                        )
+                    # if target_var is None:
+                    #     data_list = conflict.conflict_in_year_bool(
+                    #         config, conflict_data, polygon_gdf, sim_year, out_dir
+                    #     )
+                    # else:
+                    #     raise NotImplementedError(
+                    #         "Implementation of target_var did not happen yet."
+                    #     )
                     data_list = conflict.conflict_in_year_bool(
                         config, conflict_data, polygon_gdf, sim_year, out_dir
                     )
