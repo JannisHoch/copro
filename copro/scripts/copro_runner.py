@@ -1,9 +1,10 @@
-from copro import settings, selection, evaluation, io, models, xydata
+import os
 
 import click
 import numpy as np
 import pandas as pd
-import os
+
+from copro import evaluation, io, models, selection, settings, xydata
 
 
 @click.command()
@@ -13,7 +14,7 @@ import os
     "-c",
     type=int,
     default=5,
-    help="Number of jobs to run in parallel. Default is 0.",
+    help="Number of jobs to run in parallel. Default is 5.",
 )
 @click.option(
     "--verbose",
@@ -100,7 +101,7 @@ def cli(cfg: click.Path, cores: int, verbose: int):
     # - create accuracy values per polygon and save to output folder
     gdf_hit = evaluation.polygon_model_accuracy(out_y_df, global_df)
     gdf_hit.to_file(
-        os.path.join(out_dir_REF, "output_for_REF.geojson"), driver="GeoJSON"
+        os.path.join(out_dir_REF, "output_for_REF.gpkg"), driver="GPKG", crs="EPSG:4326"
     )
 
     click.echo(click.style("\nINFO: reference run succesfully finished\n", fg="cyan"))

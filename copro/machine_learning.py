@@ -1,11 +1,12 @@
 import os
 import pickle
-import pandas as pd
-import numpy as np
-from sklearn import ensemble, preprocessing, model_selection, inspection
-from typing import Union, Tuple
-import click
 from pathlib import Path
+from typing import Tuple, Union
+
+import click
+import numpy as np
+import pandas as pd
+from sklearn import ensemble, inspection, model_selection, preprocessing
 from sklearn.model_selection import GridSearchCV, KFold
 
 
@@ -151,8 +152,8 @@ class MachineLearning:
 
 
 def load_estimators(config: dict, out_dir: str) -> list[str]:
-    """Loads the paths to all previously fitted classifiers to a list.
-    Classifiers were saved to file in fit_predict().
+    """Loads the paths to all previously fitted estimators to a list.
+    Estimators were saved to file in `fit_predict()`.
     With this list, the classifiers can be loaded again during projections.
 
     Args:
@@ -160,14 +161,14 @@ def load_estimators(config: dict, out_dir: str) -> list[str]:
         out_dir (path): path to output folder.
 
     Returns:
-        list: list with file names of classifiers.
+        list: list with file names of estimators.
     """
 
     estimators = os.listdir(os.path.join(out_dir, "estimators"))
 
     if len(estimators) != config["machine_learning"]["n_runs"]:
         raise ValueError(
-            "Number of loaded classifiers does not match the specified number of runs in cfg-file!"
+            "Number of loaded estimators does not match the specified number of runs in reference yaml-file!"
         )
 
     return estimators
@@ -326,7 +327,7 @@ def apply_gridsearchCV(
     grid_search = GridSearchCV(
         estimator=estimator,
         param_grid=param_grid,
-        cv=KFold(n_splits=5, shuffle=True, random_state=42),
+        cv=KFold(n_splits=5, shuffle=True),
         n_jobs=n_jobs,
         verbose=verbose,
         scoring=scoring,

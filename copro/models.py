@@ -1,15 +1,17 @@
-from copro import machine_learning, conflict, evaluation, utils, xydata, settings
-from configparser import RawConfigParser
-from sklearn import ensemble
-from sklearn.utils.validation import check_is_fitted
-from pathlib import Path
-import pandas as pd
-import numpy as np
-from typing import Union, Tuple
-import geopandas as gpd
-import click
 import os
 import pickle
+from configparser import RawConfigParser
+from pathlib import Path
+from typing import Tuple, Union
+
+import click
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+from sklearn import ensemble
+from sklearn.utils.validation import check_is_fitted
+
+from copro import conflict, evaluation, machine_learning, settings, utils, xydata
 
 
 class MainModel:
@@ -47,6 +49,7 @@ class MainModel:
         self.estimator = estimator
         self.out_dir = out_dir
         self.n_jobs = n_jobs
+        click.echo(f"Number of jobs to run in parallel: {n_jobs}.")
         self.verbose = verbose
 
     def run(
@@ -179,26 +182,26 @@ class MainModel:
         config_REF = main_dict["_REF"][0]
         out_dir_REF = main_dict["_REF"][1]
 
-        clfs, all_y_df = _init_prediction_run(config_REF, out_dir_REF)
+        estimators, all_y_df = _init_prediction_run(config_REF, out_dir_REF)
 
         # going through each projection specified
-        for each_key, _ in config_REF.items():
+        for projection, _ in config_REF["projections"].items():
 
             # get config-object and out-dir per projection
-            click.echo(f"Loading config-object for projection run: {each_key}.")
-            config_PROJ = main_dict[str(each_key)][0][0]
-            out_dir_PROJ = main_dict[str(each_key)][1]
+            click.echo(f"Loading config-object for projection run: {projection}.")
+            config_PROJ = main_dict[str(projection)][0][0]
+            out_dir_PROJ = main_dict[str(projection)][1]
 
-            click.echo(f"Storing output for this projections to folder {out_dir_PROJ}.")
+            click.echo(f"Storing output for this projection to folder {out_dir_PROJ}.")
             Path.mkdir(
-                Path(os.path.join(out_dir_PROJ, "clfs")), parents=True, exist_ok=True
+                Path(os.path.join(out_dir_PROJ, "estimators")),
+                parents=True,
+                exist_ok=True,
             )
 
             # get projection period for this projection
             # defined as all years starting from end of reference run until specified end of projections
-            projection_period = settings.determine_projection_period(
-                config_REF, config_PROJ
-            )
+            projection_period = settings.determine_projection_period(config_REF)
 
             # for this projection, go through all years
             for i, proj_year in enumerate(projection_period):
@@ -219,7 +222,7 @@ class MainModel:
                                 out_dir_REF,
                                 "files",
                                 "conflicts_in_{}.csv".format(
-                                    config_REF.getint("settings", "y_end")
+                                    config_REF["general"]["y_end"]
                                 ),
                             )
                         )
@@ -229,7 +232,7 @@ class MainModel:
                             out_dir_REF,
                             "files",
                             "conflicts_in_{}.csv".format(
-                                config_REF.getint("settings", "y_end")
+                                config_REF["general"]["y_end"]
                             ),
                         ),
                         index_col=0,
@@ -242,35 +245,37 @@ class MainModel:
                 y_df = pd.DataFrame(columns=["ID", "geometry", "y_pred"])
 
                 # now load all classifiers created in the reference run
-                for clf in clfs:
+                for estimator in estimators:
 
                     # creating an individual output folder per classifier
                     if not os.path.isdir(
                         os.path.join(
                             os.path.join(
                                 out_dir_PROJ,
-                                "clfs",
-                                str(clf).rsplit(".", maxsplit=1)[0],
+                                "estimators",
+                                str(estimator).rsplit(".", maxsplit=1)[0],
                             )
                         )
                     ):
                         os.makedirs(
                             os.path.join(
                                 out_dir_PROJ,
-                                "clfs",
-                                str(clf).rsplit(".", maxsplit=1)[0],
+                                "estimators",
+                                str(estimator).rsplit(".", maxsplit=1)[0],
                             )
                         )
 
                     # load the pickled objects
                     # TODO: keep them in memory, i.e. after reading the clfs-folder above
-                    with open(os.path.join(out_dir_REF, "clfs", clf), "rb") as f:
+                    with open(
+                        os.path.join(out_dir_REF, "estimators", estimator), "rb"
+                    ) as f:
                         click.echo(
-                            "Loading classifier {} from {}".format(
-                                clf, os.path.join(out_dir_REF, "clfs")
+                            "Loading estimator {} from {}".format(
+                                estimator, os.path.join(out_dir_REF, "estimators")
                             )
                         )
-                        clf_obj = pickle.load(f)
+                        estimator_obj = pickle.load(f)
 
                     # for all other projection years than the first one,
                     # we need to read projected conflict from the previous projection year
@@ -279,8 +284,8 @@ class MainModel:
                             "Reading previous conflicts from file {}".format(
                                 os.path.join(
                                     out_dir_PROJ,
-                                    "clfs",
-                                    str(clf),
+                                    "estimators",
+                                    str(estimator),
                                     "projection_for_{}.csv".format(proj_year - 1),
                                 )
                             )
@@ -288,8 +293,8 @@ class MainModel:
                         conflict_data = pd.read_csv(
                             os.path.join(
                                 out_dir_PROJ,
-                                "clfs",
-                                str(clf).rsplit(".", maxsplit=1)[0],
+                                "estimators",
+                                str(estimator).rsplit(".", maxsplit=1)[0],
                                 "projection_for_{}.csv".format(proj_year - 1),
                             ),
                             index_col=0,
@@ -307,15 +312,15 @@ class MainModel:
                     # here the data will be used to make projections with various classifiers
                     # returns the prediction based on one individual classifier
                     y_df_clf = machine_learning.predictive(
-                        X, clf_obj, self.scaler_all_data
+                        X, estimator_obj, self.scaler_all_data
                     )
 
                     # storing the projection per clf to be used in the following timestep
                     y_df_clf.to_csv(
                         os.path.join(
                             out_dir_PROJ,
-                            "clfs",
-                            str(clf).rsplit(".", maxsplit=1)[0],
+                            "estimators",
+                            str(estimator).rsplit(".", maxsplit=1)[0],
                             "projection_for_{}.csv".format(proj_year),
                         )
                     )
@@ -333,8 +338,9 @@ class MainModel:
                     y_df, global_df, make_proj=True
                 )
                 gdf_hit.to_file(
-                    os.path.join(out_dir_PROJ, f"output_in_{proj_year}.geojson"),
-                    driver="GeoJSON",
+                    os.path.join(out_dir_PROJ, f"output_in_{proj_year}.gpkg"),
+                    driver="GPKG",
+                    crs="EPSG:4326",
                 )
 
             # create one major output dataframe containing all output for all projections with all classifiers
@@ -346,7 +352,7 @@ class MainModel:
 def _init_prediction_run(
     config_REF: RawConfigParser, out_dir_REF: str
 ) -> Tuple[list, pd.DataFrame]:
-    """Initializes the prediction run by loading all classifiers created in the reference run.
+    """Initializes the prediction run by loading all estimators created in the reference run.
     Also initiates an empty dataframe to store the predictions.
 
     Args:
@@ -354,12 +360,13 @@ def _init_prediction_run(
         out_dir_REF (str): Output directory for reference run.
 
     Returns:
-        Tuple[list, pd.DataFrame]: List with classifiers and initiated empty dataframe for predictions.
+        list: List with estimators.
+        pd.DataFrame: Initiated empty dataframe for predictions.
     """
 
-    clfs = machine_learning.load_clfs(config_REF, out_dir_REF)
+    estimators = machine_learning.load_estimators(config_REF, out_dir_REF)
 
     # initiate output dataframe
     all_y_df = pd.DataFrame(columns=["ID", "geometry", "y_pred"])
 
-    return clfs, all_y_df
+    return estimators, all_y_df

@@ -1,13 +1,13 @@
-import click
 import os
-import numpy as np
-from configparser import RawConfigParser
 from shutil import copyfile
 from typing import Tuple, Union
-from copro import utils, io
+
+import click
+import numpy as np
+import yaml
 from sklearn import ensemble
 
-import yaml
+from copro import io, utils
 
 
 def initiate_setup(settings_file: click.Path) -> Tuple[dict, str]:
@@ -102,13 +102,17 @@ def _collect_simulation_settings(config: dict, root_dir: click.Path) -> dict:
     # first entry is config-object for reference run
     config_dict["_REF"] = config
 
-    if "PROJ_files" in config["general"].keys():
+    if "projections" in config_dict["_REF"]:
 
         # loop through all keys and values in PROJ_files section of reference config-object
-        for (each_key, each_val) in config.items("PROJ_files"):
+        for (each_key, each_val) in config_dict["_REF"]["projections"].items():
 
             # for each value (here representing the cfg-files of the projections), get the absolute path
-            each_val = os.path.abspath(os.path.join(root_dir, each_val))
+            each_val = os.path.abspath(
+                os.path.join(
+                    root_dir, config_dict["_REF"]["projections"][each_key]["file"]
+                )
+            )
 
             # parse each config-file specified
             each_config = _parse_settings(each_val)
@@ -170,16 +174,13 @@ def define_target_var(
     return None
 
 
-def determine_projection_period(
-    config_REF: RawConfigParser, config_PROJ: RawConfigParser
-) -> list:
+def determine_projection_period(config_REF: dict) -> list:
     """Determines the period for which projections need to be made.
     This is defined as the period between the end year of the reference run
     and the specified projection year for each projection.
 
     Args:
-        config_REF (RawConfigParser): model configuration-settings for the reference run.
-        config_PROJ (RawConfigParser): model configuration-settings for a projection run..
+        config_REF (dict): model configuration-settings for the reference run.
 
     Returns:
         list: all years of the projection period.
@@ -188,7 +189,7 @@ def determine_projection_period(
     # get all years of projection period
     projection_period = np.arange(
         config_REF["general"]["y_end"] + 1,
-        config_PROJ["general"]["y_proj"] + 1,
+        config_REF["projections"]["proj_2020_to_2023"]["y_end"] + 1,
         1,
     )
     # convert to list

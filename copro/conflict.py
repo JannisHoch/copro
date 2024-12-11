@@ -1,13 +1,15 @@
-from copro import utils, nb
+import os
+import warnings
 from configparser import RawConfigParser
 from pathlib import Path
-from typing import Union, Literal
-import pandas as pd
+from typing import Literal, Union
+
+import click
 import geopandas as gpd
 import numpy as np
-import os
-import click
-import warnings
+import pandas as pd
+
+from copro import nb, utils
 
 
 def conflict_in_year_bool(

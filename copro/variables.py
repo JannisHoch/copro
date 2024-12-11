@@ -1,12 +1,13 @@
-import xarray as xr
-import rasterio as rio
-import pandas as pd
-import geopandas as gpd
-import rasterstats as rstats
-import numpy as np
 import os
 import warnings
+
 import click
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+import rasterio as rio
+import rasterstats as rstats
+import xarray as xr
 
 
 def nc_with_float_timestamp(
@@ -201,11 +202,6 @@ def nc_with_continous_datetime_timestamp(
 
         # warn if result is NaN
         if val is None:
-            warnings.warn(
-                f"`None` computed for {config['data']['extent']['id']}"
-                f"{row[config['data']['extent']['id']]}, setting to `np.nan`!"
-            )
-
             val = np.nan
 
         list_out.append(val)

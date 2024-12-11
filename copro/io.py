@@ -1,9 +1,11 @@
-import pandas as pd
-import numpy as np
-from typing import Union
-from pathlib import Path
 import os
+import shutil
+from pathlib import Path
+from typing import Union
+
 import click
+import numpy as np
+import pandas as pd
 
 
 def make_and_collect_output_dirs(
@@ -26,6 +28,10 @@ def make_and_collect_output_dirs(
         root_dir, config["general"]["output_dir"], config["general"]["simulation_name"]
     )
     click.echo(f"Saving output to main output folder {out_dir}.")
+
+    # Check if out_dir exists and delete its contents if it does
+    if os.path.exists(out_dir):
+        shutil.rmtree(out_dir)
 
     # initalize list for all out-dirs
     all_out_dirs = []

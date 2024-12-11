@@ -1,10 +1,12 @@
+import os
+import warnings
+from typing import Tuple
+
+import click
 import geopandas as gpd
 import pandas as pd
-import os
+
 from copro import utils
-import click
-from typing import Tuple
-import warnings
 
 
 def select(
@@ -40,13 +42,13 @@ def select(
 
     # save conflict data and polygon to shp-file
     conflict_gdf.to_file(
-        os.path.join(out_dir, "selected_conflicts.geojson"),
-        driver="GeoJSON",
+        os.path.join(out_dir, "selected_conflicts.gpkg"),
+        driver="GPKG",
         crs="EPSG:4326",
     )
     extent_gdf.to_file(
-        os.path.join(out_dir, "selected_polygons.geojson"),
-        driver="GeoJSON",
+        os.path.join(out_dir, "selected_polygons.gpkg"),
+        driver="GPKG",
         crs="EPSG:4326",
     )
 

@@ -1,10 +1,12 @@
-import geopandas as gpd
-import pandas as pd
-import numpy as np
 import os
 from datetime import date
+
 import click
-from copro import __version__, __author__, __email__
+import geopandas as gpd
+import numpy as np
+import pandas as pd
+
+from copro import __author__, __email__, __version__
 
 
 def get_conflict_geodataframe(
