@@ -349,8 +349,6 @@ def _fill_XY(  # noqa: R0912
                         root_dir, config, key, value, polygon_gdf, sim_year
                     )
 
-            click.echo("All data read.")
-
     return pd.DataFrame.from_dict(XY)  # .to_numpy()
 
 
