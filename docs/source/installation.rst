@@ -34,13 +34,10 @@ From PyPI
 
 To install CoPro directly from PyPI, use the following command.
 
+.. note::
+    Only the stable version `0.1.2` can be installed from PyPI. 
+    For the latest version, please install from GitHub.
+
 .. code-block:: console
 
-    pip install copro
-
-From conda
-------------
-
-.. todo::
-
-    This is not yet supported. Feel invited to provide a pull request enabling installation via conda.
+    $ pip install copro==0.1.2

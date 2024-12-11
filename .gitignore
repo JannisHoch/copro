@@ -133,6 +133,7 @@ OUT*/
 
 #pictures
 *.png
+!docs/_static/logo.png
 
 #latest UCDP file too large for commit
 *ged201*
@@ -142,7 +143,7 @@ generated*
 
 # example input data
 example/*.zip
-example/example_data/*
+example/example_data
 
 # article related stuff
 _paper/*

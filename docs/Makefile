@@ -5,8 +5,8 @@
 SPHINXOPTS    =
 # SPHINXBUILD   = python -msphinx
 SPHINXBUILD   = sphinx-build
-SPHINXPROJ    = pcrglobwb_utils
-SOURCEDIR     = .
+SPHINXPROJ    = copro
+SOURCEDIR     = source
 BUILDDIR      = _build
 
 # Put it first so that "make" without argument is like "make help".

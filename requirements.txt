@@ -1,0 +1,18 @@
+# local package
+
+
+# testing, mypy and linting requirements
+flake8
+mock==5.1.0
+mypy
+# external requirements
+nbsphinx_link==1.3.0
+pre-commit
+prospector>=1.9.0
+pyarrow==16.0.0
+pydata-sphinx-theme==0.15.2
+pylint
+rasterstats==0.19.0
+setuptools==70.0.0
+tox==4.14.2
+wheel==0.38.1
