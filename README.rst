@@ -4,9 +4,6 @@ CoPro
 
 Welcome to CoPro, a machine-learning tool for conflict risk projections based on climate, environmental, and societal drivers.
 
-.. image:: https://travis-ci.com/JannisHoch/copro.svg?branch=dev
-    :target: https://travis-ci.com/JannisHoch/copro
-
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
     :target: https://github.com/JannisHoch/copro/blob/dev/LICENSE
 
@@ -14,10 +11,10 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
     :target: https://copro.readthedocs.io/en/latest/?badge=latest
 
 .. image:: https://img.shields.io/github/v/release/JannisHoch/copro
-    :target: https://github.com/JannisHoch/copro/releases/tag/v0.0.8
+    :target: https://github.com/JannisHoch/copro/releases/tag/v2.0.1
 
 .. image:: https://zenodo.org/badge/254407279.svg
-    :target: https://zenodo.org/badge/latestdoi/254407279
+    :target: https://doi.org/10.5281/zenodo.4061705
 
 .. image:: https://badges.frapsoft.com/os/v2/open-source.svg?v=103
     :target: https://github.com/ellerbrock/open-source-badges/
@@ -25,8 +22,8 @@ Welcome to CoPro, a machine-learning tool for conflict risk projections based on
 .. image:: https://joss.theoj.org/papers/1f03334e56413ff71f65092ecc609aa4/status.svg
     :target: https://joss.theoj.org/papers/1f03334e56413ff71f65092ecc609aa4
 
-.. image:: https://mybinder.org/badge_logo.svg
-    :target: https://mybinder.org/v2/gh/JannisHoch/copro/dev?filepath=%2Fexample%2Fnb_binder.ipynb
+.. .. image:: https://mybinder.org/badge_logo.svg
+..     :target: https://mybinder.org/v2/gh/JannisHoch/copro/dev?filepath=%2Fexample%2Fnb_binder.ipynb
 
 Model purpose
 --------------
@@ -123,6 +120,11 @@ To facilitate this process, the bash-script ``download_example_data.sh`` can be 
 With this (or other) data, the provided configuration-files (cfg-files) can be used to perform a reference run or a projection run. 
 All output is stored in the output directory specified in the cfg-files. 
 In the output directory, two folders are created: one name `_REF` for output from the reference run, and `_PROJ` for output for projections.
+
+.. important::
+
+    The example data works with copro version < 2.0.0. 
+    For the latest version, the data needs to be realigned with the new config-file requirements.
 
 Jupyter notebooks
 ^^^^^^^^^^^^^^^^^^
