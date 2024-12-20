@@ -20,7 +20,7 @@ rasterstats==0.14
 rioxarray==0.0.26
 scikit-learn==0.22.1
 seaborn==0.10.1
-setuptools==65.5.1
+setuptools==70.0.0
 sphinx==3.0.3
 tox==3.14.0
 xarray==0.15.1
