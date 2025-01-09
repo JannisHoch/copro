@@ -1,6 +1,10 @@
 Model configuration file
 ========================
 
+.. important:: 
+    The here described configuration file is compatible with CoPro version < 2.0.0.
+    For versions >= 2.0.0, the configuration file needs to be realigned with the new requirements.
+
 The command line script takes on argument, which is a model configuration file.
 This file covers all necessary information to run the model for the reference period.
 
