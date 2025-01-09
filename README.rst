@@ -195,5 +195,3 @@ Authors
 * Jannis M. Hoch (Utrecht University)
 * Sophie de Bruin (Utrecht University, PBL)
 * Niko Wanders (Utrecht University)
-
-Corresponding author: Jannis M. Hoch (j.m.hoch@uu.nl)
