@@ -24,7 +24,7 @@ rasterstats==0.14.0
 rioxarray==0.0.26
 scikit-learn==1.5.0
 seaborn==0.10.1
-setuptools==70.0.0
+setuptools==78.1.1
 Sphinx>=3.0.3
 tox==3.14.0
 twine==1.14.0
