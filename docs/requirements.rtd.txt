@@ -4,7 +4,7 @@ ConfigParser==5.0.0
 coverage==4.5.4
 descartes==1.1.0
 flake8==3.7.8
-geopandas==0.7.0
+geopandas==1.1.2
 git+https://github.com/pandas-dev/pydata-sphinx-theme.git@master
 ipython==8.10.0
 jinja2==3.1.6
