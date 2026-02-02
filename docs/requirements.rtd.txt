@@ -29,5 +29,5 @@ Sphinx>=3.0.3
 tox==3.14.0
 twine==1.14.0
 watchdog==0.9.0
-wheel==0.38.1
+wheel==0.46.2
 xarray==0.15.0
