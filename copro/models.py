@@ -125,7 +125,7 @@ class MainModel:
             y_test,
             _,
             X_test_geom,
-            _,
+            X_train_ID,
             X_test_ID,
         ) = MLmodel.split_scale_train_test_split(self.X, self.Y)
 
@@ -136,6 +136,7 @@ class MainModel:
         y_pred, y_prob, perm_importances_arr_n = MLmodel.fit_predict(
             X_train,
             y_train,
+            X_train_ID,
             X_test,
             self.out_dir,
             run_nr,
@@ -290,15 +291,26 @@ class MainModel:
                                 )
                             )
                         )
+                        # This table is written by predictive() with a plain
+                        # RangeIndex and one row per polygon. Reading it with
+                        # index_col=0 gave an integer index, so the membership
+                        # test in read_projected_conflict (which expects
+                        # watprovIDs in the index, like conflicts_in_<y_end>.csv)
+                        # matched nothing - conflict at t-1 was identically 0
+                        # for every polygon from the second projection year
+                        # onwards. Filter to projected conflict polygons and
+                        # index by ID to restore the conflicts_in_* convention.
                         conflict_data = pd.read_csv(
                             os.path.join(
                                 out_dir_PROJ,
                                 "estimators",
                                 str(estimator).rsplit(".", maxsplit=1)[0],
                                 "projection_for_{}.csv".format(proj_year - 1),
-                            ),
-                            index_col=0,
+                            )
                         )
+                        conflict_data = conflict_data.loc[
+                            conflict_data["y_pred"] == 1
+                        ].set_index("ID")
 
                         X = xydata.fill_X_conflict(
                             X, conflict_data, selected_polygons_gdf

@@ -7,7 +7,7 @@ import click
 import numpy as np
 import pandas as pd
 from sklearn import ensemble, inspection, model_selection, preprocessing
-from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.model_selection import GridSearchCV, GroupKFold, StratifiedGroupKFold
 
 
 class MachineLearning:
@@ -83,6 +83,7 @@ class MachineLearning:
         self,
         X_train: Union[np.ndarray, pd.DataFrame],
         y_train: np.ndarray,
+        train_ID: np.ndarray,
         X_test: Union[np.ndarray, pd.DataFrame],
         out_dir: str,
         run_nr: int,
@@ -98,6 +99,7 @@ class MachineLearning:
         Args:
             X_train (np.ndarray, pd.DataFrame): training-data of variable values.
             y_train (np.ndarray): training-data of conflict data.
+            train_ID (np.ndarray): polygon ID per training row, used to group the inner CV folds.
             X_test (np.ndarray, pd.DataFrame): test-data of variable values.
             out_dir (str): path to output folder.
             run_nr (int): number of fit/predict repetition and created classifier.
@@ -112,8 +114,17 @@ class MachineLearning:
         """
 
         if tune_hyperparameters:
+            # run_nr varies the inner CV folds deterministically rather than
+            # randomly; the base seed is the one the train/test split uses.
+            cv_seed = self.config["machine_learning"].get("split_seed", 42) + run_nr
             fitted_estimator = apply_gridsearchCV(
-                self.estimator, X_train, y_train, n_jobs=n_jobs, verbose=verbose
+                self.estimator,
+                X_train,
+                y_train,
+                train_ID,
+                n_jobs=n_jobs,
+                verbose=verbose,
+                seed=cv_seed,
             )
         else:
             # fit the classifier with training data
@@ -282,8 +293,10 @@ def apply_gridsearchCV(
     estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
     X_train: np.ndarray,
     y_train: np.ndarray,
+    groups: np.ndarray,
     n_jobs=2,
     verbose=0,
+    seed=42,
 ) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
     """Applies grid search to find the best hyperparameters for the RandomForestClassifier.
 
@@ -291,8 +304,10 @@ def apply_gridsearchCV(
         estimator (Union[RandomForestClassifier, RandomForestRegressor]): Estimator to be used in the grid search.
         X_train (np.ndarray): Feature matrix.
         y_train (np.ndarray): Target vector.
+        groups (np.ndarray): polygon ID per training row, used to keep whole polygons inside one inner fold.
         n_jobs (int, optional): Number of cores to be used. Defaults to 2.
         verbose (int, optional): Verbosity level. Defaults to 0.
+        seed (int, optional): Seed for the inner CV fold assignment. Defaults to 42.
 
     Returns:
         Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]: Best estimator of the grid search.
@@ -312,6 +327,13 @@ def apply_gridsearchCV(
             # 'bootstrap': [True, False]
         }
         scoring = "roc_auc"
+        # Whole polygons stay inside one inner fold, so a configuration cannot
+        # win by recognising which province a row belongs to, and the folds
+        # are seeded, so identical inputs select the same best_estimator_.
+        # Stratified so the rare positive class stays proportionate across
+        # folds: positives are spatially clustered, and plain GroupKFold
+        # balances fold sizes only.
+        cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=seed)
     else:
         param_grid = {
             "n_estimators": [10, 50, 100],
@@ -322,19 +344,21 @@ def apply_gridsearchCV(
             "min_samples_leaf": [1, 5, 10],
         }
         scoring = "r2"
+        # no stratification for a continuous target
+        cv = GroupKFold(n_splits=5)
 
     # Instantiate the grid search model
     grid_search = GridSearchCV(
         estimator=estimator,
         param_grid=param_grid,
-        cv=KFold(n_splits=5, shuffle=True),
+        cv=cv,
         n_jobs=n_jobs,
         verbose=verbose,
         scoring=scoring,
     )
 
     # Fit the grid search to the data
-    grid_search.fit(X_train, y_train)
+    grid_search.fit(X_train, y_train, groups=groups)
 
     # Get the best estimator
     best_estimator = grid_search.best_estimator_

@@ -130,19 +130,19 @@ def conflict_in_previous_year_bool(
     list_out = []
     for i in range(len(extent_gdf)):
         i_poly = extent_gdf[poly_identifier].iloc[i]
-        # check if polygon is in list with conflict polygons
-        if i_poly in conflicts_per_poly.index.values:
-            # if so, check if neighboring polygons contain conflict and assign boolean value
-            if check_neighbors:
-                val = calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly)
-                # append resulting value
-                list_out.append(val)
-            # if not, assign 1 directly
-            else:
-                list_out.append(1)
+        if check_neighbors:
+            # neighbour conflict at t-1 is independent of whether THIS polygon
+            # had conflict, so it must be evaluated for every polygon. Gating it
+            # on own conflict forced it to 0 on all peaceful polygons (including
+            # every emerging row), destroying the spillover signal there.
+            val = calc_conflicts_nb(i_poly, neighboring_matrix, conflicts_per_poly)
+            list_out.append(val)
         else:
-            # if polygon not in list with conflict polygons, assign 0
-            list_out.append(0)
+            # own conflict at t-1: 1 if this polygon is in the conflict list
+            if i_poly in conflicts_per_poly.index.values:
+                list_out.append(1)
+            else:
+                list_out.append(0)
 
     return list_out
 
@@ -179,17 +179,17 @@ def read_projected_conflict(
     list_out = []
     for i in range(len(extent_gdf)):
         i_poly = extent_gdf[identifier].iloc[i]
-        if i_poly in bool_conflict.index.values:
-            if check_neighbors:
-                # determine log-scaled number of conflict events in neighboring polygons
-                val = calc_conflicts_nb(i_poly, neighboring_matrix, bool_conflict)
-                # append resulting value
-                list_out.append(val)
-            else:
-                list_out.append(1)
+        if check_neighbors:
+            # neighbour conflict is independent of whether THIS polygon had
+            # conflict, so evaluate it for every polygon. Must match the
+            # training-time computation in conflict_in_previous_year_bool().
+            val = calc_conflicts_nb(i_poly, neighboring_matrix, bool_conflict)
+            list_out.append(val)
         else:
-            # if polygon not in list with conflict polygons, assign 0
-            list_out.append(0)
+            if i_poly in bool_conflict.index.values:
+                list_out.append(1)
+            else:
+                list_out.append(0)
 
     return list_out
 

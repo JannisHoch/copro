@@ -76,13 +76,21 @@ def _filter_conflict_properties(
         & (gdf.year <= config["general"]["y_end"])
     ]
 
-    # if not thresholding options are found, return the original dataframe
-    if "thresholds" not in config["data"]["conflict"]:
+    # v1 configurations expressed conflict filtering as two flat keys,
+    # `min_nr_casualties` and `type_of_violence`, directly under
+    # `data.conflict`. v2 replaced both with the `thresholds` block, and
+    # silently ignored the old names - a config could ask for a fatality gate
+    # and get none, with no error. Translate them here so old configs keep
+    # meaning what they say.
+    thresholds = _legacy_thresholds(config["data"]["conflict"])
+
+    # if no thresholding options are found, return the original dataframe
+    if not thresholds:
         click.echo("No thresholding options found in configuration file.")
         return gdf
 
     # otherwise, go through all variables for which tresholding is specified
-    for key, value in config["data"]["conflict"]["thresholds"].items():
+    for key, value in thresholds.items():
 
         # if variable is not found in the dataframe, skip it
         if key not in gdf.columns:
@@ -108,6 +116,52 @@ def _filter_conflict_properties(
                     )
 
     return gdf
+
+
+def _legacy_thresholds(conflict_config: dict) -> dict:
+    """Returns the effective thresholds block for a conflict configuration.
+
+    Accepts both the v2 `thresholds` form and the v1 flat keys
+    `min_nr_casualties` and `type_of_violence`, which v2 dropped without
+    raising. An explicit `thresholds` entry always wins over the legacy key
+    for the same column; the legacy key is then reported as ignored rather
+    than merged, so the config has one visible source of truth per column.
+
+    v1 -> v2 mapping:
+        min_nr_casualties: N        ->  fatalities: {vmin: N}
+        type_of_violence: [1, 2, 3] ->  type_of_violence: {values: [1, 2, 3]}
+
+    Args:
+        conflict_config (dict): the `data.conflict` section of the config.
+
+    Returns:
+        dict: thresholds block, empty if no filtering was requested.
+    """
+
+    thresholds = dict(conflict_config.get("thresholds", {}))
+
+    legacy = {
+        "min_nr_casualties": ("fatalities", "vmin"),
+        "type_of_violence": ("type_of_violence", "values"),
+    }
+
+    for old_key, (column, option) in legacy.items():
+        if old_key not in conflict_config:
+            continue
+        if column in thresholds:
+            warnings.warn(
+                f"Deprecated key `{old_key}` is ignored because "
+                f"`thresholds.{column}` is also set; the thresholds block wins."
+            )
+            continue
+        warnings.warn(
+            f"Deprecated key `{old_key}` in data.conflict - translating to "
+            f"`thresholds: {{{column}: {{{option}: ...}}}}`. Please update the "
+            "configuration file."
+        )
+        thresholds[column] = {option: conflict_config[old_key]}
+
+    return thresholds
 
 
 def _clip_to_extent(
