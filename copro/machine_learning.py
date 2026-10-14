@@ -30,39 +30,90 @@ class MachineLearning:
         self.estimator = estimator
 
     def split_scale_train_test_split(
-        self, X: Union[np.ndarray, pd.DataFrame], Y: np.ndarray
+        self,
+        X: Union[np.ndarray, pd.DataFrame],
+        Y: np.ndarray,
+        meta: pd.DataFrame,
+        run_nr: int = 0,
     ):
-        """Splits and transforms the X-array (or sample data) and
-        Y-array (or target data) in test-data and training-data.
-        The fraction of data used to split the data is specified in the configuration file.
-        Additionally, the unique identifier and geometry of each data point in both
-        test-data and training-data is retrieved in separate arrays.
+        """Partitions X/Y/meta into train and test sets and scales the features.
 
-        Args:
-            X (array): array containing the variable values plus unique identifer and geometry information.
-            Y (array): array containing merely the binary conflict classifier data.
+        The partition strategy is read from the config and is one of:
+          - "random": random row-wise hold-out (optimistic; the same polygon can
+            appear in train and test across years).
+          - "temporal": train on years <= temporal_cutoff, test on later years
+            (out-of-time generalization).
+          - "leave_polygons_out": whole polygons held out, so no polygon is in
+            both train and test (spatial generalization; breaks the
+            same-polygon-across-years leakage).
 
-        Returns:
-            arrays: arrays containing training-set and test-set for X-data and Y-data as well as IDs and geometry.
+        The scaler is fit on the TRAINING rows only and then applied to the test
+        rows, so no test-set information leaks into scaling. ID and geometry ride
+        along unscaled; meta_test is returned for downstream stratification.
         """
-
         ##- separate arrays for ID, geometry, and variable values
         X_ID, X_geom, X_data = _split_conflict_geom_data(X)
 
-        ##- scaling only the variable values
-        click.echo("Fitting and transforming scaler.")
-        X_ft = self.scaler.fit_transform(X_data)
+        Y = np.asarray(Y)
+        meta = meta.reset_index(drop=True)
 
-        ##- combining ID, geometry and scaled sample values per polygon
-        X_cs = np.column_stack((X_ID, X_geom, X_ft))
+        ml = self.config["machine_learning"]
+        strategy = ml.get("split_strategy", "random")
+        # vary the seed per run so n_runs > 1 produces different random/spatial
+        # splits (reproducible given the base seed); temporal is deterministic
+        # and unaffected.
+        seed = ml.get("split_seed", 42) + run_nr
+        test_fraction = 1 - ml["train_fraction"]
+        n = X_data.shape[0]
 
-        ##- splitting in train and test samples based on user-specified fraction
-        click.echo("Splitting both X and Y in train and test data.")
-        X_train, X_test, y_train, y_test = model_selection.train_test_split(
-            X_cs,
-            Y,
-            test_size=1 - self.config["machine_learning"]["train_fraction"],
+        ##- determine train/test row indices according to the chosen strategy
+        if strategy == "random":
+            train_idx, test_idx = model_selection.train_test_split(
+                np.arange(n), test_size=test_fraction, random_state=seed
+            )
+        elif strategy == "temporal":
+            cutoff = ml.get("temporal_cutoff")
+            if cutoff is None:
+                raise ValueError(
+                    "split_strategy='temporal' requires 'temporal_cutoff' "
+                    "in the machine_learning config."
+                )
+            years = meta["year"].to_numpy()
+            train_idx = np.where(years <= cutoff)[0]
+            test_idx = np.where(years > cutoff)[0]
+            if len(train_idx) == 0 or len(test_idx) == 0:
+                raise ValueError(
+                    f"temporal_cutoff={cutoff} leaves an empty train or test set."
+                )
+        elif strategy == "leave_polygons_out":
+            groups = meta["poly_ID"].to_numpy()
+            gss = model_selection.GroupShuffleSplit(
+                n_splits=1, test_size=test_fraction, random_state=seed
+            )
+            train_idx, test_idx = next(gss.split(np.arange(n), Y, groups))
+        else:
+            raise ValueError(
+                f"Unknown split_strategy '{strategy}'. Use 'random', "
+                "'temporal', or 'leave_polygons_out'."
+            )
+
+        click.echo(
+            f"Split strategy '{strategy}' (seed {seed}): "
+            f"train={len(train_idx)}, test={len(test_idx)}."
         )
+
+        ##- fit scaler on TRAINING data only, then transform both sets
+        click.echo("Fitting scaler on training data and transforming both sets.")
+        X_train_ft = self.scaler.fit_transform(X_data[train_idx])
+        X_test_ft = self.scaler.transform(X_data[test_idx])
+
+        ##- reattach unscaled ID and geometry
+        X_train = np.column_stack((X_ID[train_idx], X_geom[train_idx], X_train_ft))
+        X_test = np.column_stack((X_ID[test_idx], X_geom[test_idx], X_test_ft))
+
+        y_train = Y[train_idx]
+        y_test = Y[test_idx]
+        meta_test = meta.iloc[test_idx]
 
         # for training-set and test-set, split in ID, geometry, and values
         X_train_ID, X_train_geom, X_train = _split_conflict_geom_data(X_train)
@@ -77,6 +128,7 @@ class MachineLearning:
             X_test_geom,
             X_train_ID,
             X_test_ID,
+            meta_test,
         )
 
     def fit_predict(
@@ -85,6 +137,7 @@ class MachineLearning:
         y_train: np.ndarray,
         train_ID: np.ndarray,
         X_test: Union[np.ndarray, pd.DataFrame],
+        y_test: np.ndarray,
         out_dir: str,
         run_nr: int,
         tune_hyperparameters=False,
@@ -101,6 +154,7 @@ class MachineLearning:
             y_train (np.ndarray): training-data of conflict data.
             train_ID (np.ndarray): polygon ID per training row, used to group the inner CV folds.
             X_test (np.ndarray, pd.DataFrame): test-data of variable values.
+            y_test (np.ndarray): test-data of conflict data, used for permutation importance.
             out_dir (str): path to output folder.
             run_nr (int): number of fit/predict repetition and created classifier.
             tune_hyperparameters (bool, optional): whether to tune hyperparameters. Defaults to False.
@@ -130,15 +184,20 @@ class MachineLearning:
             # fit the classifier with training data
             fitted_estimator = self.estimator.fit(X_train, y_train)
 
-        # compute permutation importance
-        click.echo("Computing permutation importance.")
+        # compute permutation importance on the TEST set with ROC-AUC scoring.
+        # Test set: avoids inflated importance from features the trees memorized
+        # on training data. ROC-AUC: more sensitive than default accuracy for
+        # imbalanced classification (rare conflict events), so importance values
+        # are not compressed toward zero by the high accuracy baseline.
+        click.echo("Computing permutation importance (test set, ROC-AUC).")
         perm_importances = inspection.permutation_importance(
             fitted_estimator,
-            X_train,
-            y_train,
+            X_test,
+            y_test,
             n_repeats=10,
             random_state=42,
             n_jobs=n_jobs,
+            scoring="roc_auc",
         )
         # transpose because by default features are in rows
         perm_importances_arr = perm_importances["importances"].T
@@ -309,6 +368,7 @@ def apply_gridsearchCV(
         verbose (int, optional): Verbosity level. Defaults to 0.
         seed (int, optional): Seed for the inner CV fold assignment. Defaults to 42.
 
+
     Returns:
         Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]: Best estimator of the grid search.
     """
@@ -316,24 +376,36 @@ def apply_gridsearchCV(
     click.echo("Tuning hyperparameters with GridSearchCV.")
     # Define the parameter grid
     if isinstance(estimator, ensemble.RandomForestClassifier):
+        # Trimmed grid: 8 combinations (2 x 2 x 2) over the axes that matter
+        # for rare-event conflict. The axes that are NOT searched are not
+        # listed here: they arrive on the estimator from
+        # settings.define_model (DEFAULT_HYPERPARAMETERS, or the config
+        # block), which is their one definition:
+        #   criterion             "gini"  (entropy rarely changes the split)
+        #   min_impurity_decrease 0       (0.5/1 prune trees to near-stumps)
+        #   max_features          "sqrt"  (standard RF default)
+        #   min_samples_split     2       (default)
+        #   bootstrap             True
+        # The three axes below override whatever the estimator carries.
         param_grid = {
-            "n_estimators": [50, 100, 200],
-            "criterion": ["gini", "entropy"],
-            "min_impurity_decrease": [0, 0.5, 1],
-            "max_features": ("sqrt", "log2"),
-            "min_samples_split": [2, 5, 10],
-            "min_samples_leaf": [1, 2, 4],
-            "class_weight": [{1: 75}, {1: 100}, {1: 150}],
-            # 'bootstrap': [True, False]
+            "n_estimators": [100, 200],
+            "min_samples_leaf": [1, 4],
+            "class_weight": [{1: 100}, {1: 150}],
         }
-        scoring = "roc_auc"
+        # average_precision (area under the precision-recall curve) selects
+        # hyperparameters for the rare positive class, rather than roc_auc which
+        # is padded by the large pool of easy true negatives.
+        scoring = "average_precision"
         # Whole polygons stay inside one inner fold, so a configuration cannot
-        # win by recognising which province a row belongs to, and the folds
-        # are seeded, so identical inputs select the same best_estimator_.
+        # win by recognising which province a row belongs to. The outer
+        # train/test split was already honest - the search only ever sees
+        # X_train - but the inner fold that scores the eight candidates was
+        # random over rows, which is the one place province identity could pay.
         # Stratified so the rare positive class stays proportionate across
         # folds: positives are spatially clustered, and plain GroupKFold
-        # balances fold sizes only.
-        cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=seed)
+        # balances fold sizes only, which can leave a fold with very few
+        # onsets and an unstable average_precision.
+        cv = StratifiedGroupKFold(n_splits=3, shuffle=True, random_state=seed)        
     else:
         param_grid = {
             "n_estimators": [10, 50, 100],
@@ -345,8 +417,8 @@ def apply_gridsearchCV(
         }
         scoring = "r2"
         # no stratification for a continuous target
-        cv = GroupKFold(n_splits=5)
-
+        cv = GroupKFold(n_splits=3)
+        
     # Instantiate the grid search model
     grid_search = GridSearchCV(
         estimator=estimator,
@@ -362,7 +434,7 @@ def apply_gridsearchCV(
 
     # Get the best estimator
     best_estimator = grid_search.best_estimator_
-    click.echo(f"ROC-AUC of best estimator is {grid_search.best_score_}.")
+    click.echo(f"Best estimator {scoring} score is {grid_search.best_score_}.")
     click.echo(f"Best estimator is {grid_search.best_estimator_}.")
 
     return best_estimator

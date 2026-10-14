@@ -19,6 +19,7 @@ class MainModel:
         self,
         X: Union[np.ndarray, pd.DataFrame],
         Y: Union[np.ndarray, pd.DataFrame],
+        meta: pd.DataFrame,
         estimator: Union[
             ensemble.RandomForestClassifier, ensemble.RandomForestRegressor
         ],
@@ -41,6 +42,7 @@ class MainModel:
         """
         self.X = X
         self.Y = Y
+        self.meta = meta
         self.config = config
         self.scaler = machine_learning.define_scaling(config)
         self.scaler_all_data = self.scaler.fit(
@@ -127,7 +129,9 @@ class MainModel:
             X_test_geom,
             X_train_ID,
             X_test_ID,
-        ) = MLmodel.split_scale_train_test_split(self.X, self.Y)
+            meta_test,
+        ) = MLmodel.split_scale_train_test_split(self.X, self.Y, self.meta, run_nr)
+        
 
         # convert to dataframe
         X_df = pd.DataFrame(X_test)
@@ -138,6 +142,7 @@ class MainModel:
             y_train,
             X_train_ID,
             X_test,
+            y_test,
             self.out_dir,
             run_nr,
             tune_hyperparameters,
@@ -155,6 +160,23 @@ class MainModel:
             X_test_ID, X_test_geom, y_test, y_pred, y_prob_0, y_prob_1
         )
 
+        # ride-along metadata is split in lockstep with X; assert it stayed aligned.
+        # Compare as strings: watprovID may be non-numeric, and numeric coercion
+        # would turn such IDs into NaN (NaN != NaN), falsely tripping this guard.
+        ids_from_X = np.asarray(X_test_ID).astype(str)
+        ids_from_meta = meta_test["poly_ID"].to_numpy().astype(str)
+        if not np.array_equal(ids_from_X, ids_from_meta):
+            click.echo(f"  X_test_ID head:    {ids_from_X[:10]}")
+            click.echo(f"  meta poly_ID head: {ids_from_meta[:10]}")
+            click.echo(f"  lengths: X={len(ids_from_X)}, meta={len(ids_from_meta)}")
+            raise ValueError(
+                "Ride-along metadata is misaligned with the test set "
+                "(poly_ID mismatch) - check the train/test split."
+            )
+
+        y_df["run_nr"] = run_nr
+        y_df["year"] = meta_test["year"].to_numpy()
+        y_df["conflict_t_min_1"] = meta_test["conflict_t_min_1"].to_numpy()
         return X_df, y_df, eval_dict, perm_importances_arr_n
 
     def run_prediction(

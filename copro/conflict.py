@@ -306,3 +306,108 @@ def _store_boolean_conflict_data_to_csv(
     data_stored = data_stored.drop("geometry", axis=1)
     data_stored = data_stored.astype(int)
     data_stored.to_csv(os.path.join(out_dir, f"conflicts_in_{sim_year}.csv"))
+
+
+# --------------------------------------------------------------------------- #
+# Conflict-history features (Step 3): all-events UCDP history at t-1 and
+# VIEWS-style time-since-conflict decay. The lookups are computed ONCE per
+# region (single spatial join each) and consumed per year inside _fill_XY.
+# --------------------------------------------------------------------------- #
+
+
+def conflict_years_lookup(
+    conflict_gdf: gpd.GeoDataFrame,
+    extent_gdf: gpd.GeoDataFrame,
+    poly_identifier="watprovID",
+) -> dict:
+    """One spatial join over ALL years -> sorted array of conflict years per
+    polygon, from the MAIN (fatality-gated) conflict file. Basis for the
+    time-since-conflict decay features."""
+
+    merged = gpd.sjoin(conflict_gdf, extent_gdf)
+    lookup = {}
+    for poly, yrs in merged.groupby(merged[poly_identifier])["year"]:
+        lookup[poly] = np.unique(yrs.to_numpy())
+    return lookup
+
+
+def decay_in_year(
+    extent_gdf: gpd.GeoDataFrame,
+    conflict_years: dict,
+    sim_year: int,
+    half_life: float,
+    poly_identifier="watprovID",
+) -> list:
+    """Time-since-conflict decay 2**(-tsc/half_life) per polygon for sim_year,
+    using only conflict years <= sim_year - 1 (no leakage). Polygons with no
+    observed conflict yet get 0.0: UCDP history before y_start is effectively
+    unobservable, so 'never seen in conflict' is treated as deep peace."""
+
+    list_out = []
+    for i in range(len(extent_gdf)):
+        i_poly = extent_gdf[poly_identifier].iloc[i]
+        yrs = conflict_years.get(i_poly, None)
+        if yrs is None:
+            list_out.append(0.0)
+            continue
+        prev = yrs[yrs <= sim_year - 1]
+        if len(prev) == 0:
+            list_out.append(0.0)
+        else:
+            tsc = sim_year - prev.max()
+            list_out.append(float(2.0 ** (-tsc / half_life)))
+    return list_out
+
+
+def projected_decay(
+    extent_gdf: gpd.GeoDataFrame,
+    last_conflict_lookup: dict,
+    proj_year: int,
+    half_life: float,
+    poly_identifier="watprovID",
+) -> list:
+    """Decay during projection years. `last_conflict_lookup` maps watprovID to
+    the last conflict year <= proj_year - 1: observed history up to y_end,
+    overridden per estimator with its own projected conflict years (built in
+    models.run_prediction from the stored projection_for_<year>.csv files).
+    Polygons absent from the lookup have never been in conflict -> 0.0."""
+
+    list_out = []
+    for i in range(len(extent_gdf)):
+        i_poly = extent_gdf[poly_identifier].iloc[i]
+        last = last_conflict_lookup.get(i_poly, None)
+        if last is None:
+            list_out.append(0.0)
+        else:
+            tsc = proj_year - int(last)
+            list_out.append(float(2.0 ** (-tsc / half_life)))
+    return list_out
+
+
+
+def store_conflict_history_files(
+    conflict_years: dict,
+    extent_gdf: gpd.GeoDataFrame,
+    y_end: int,
+    out_dir: str,
+    poly_identifier="watprovID",
+):
+    """Stores the projection initial condition for the decay features, next to
+    conflicts_in_<y_end>.csv:
+    - last_conflict_year_<y_end>.csv: last MAIN-definition conflict year
+      (<= y_end) per polygon; never-in-conflict polygons are omitted."""
+
+    files_dir = os.path.join(out_dir, "files")
+    Path.mkdir(Path(files_dir), exist_ok=True)
+
+    rows = []
+    for poly, yrs in conflict_years.items():
+        prev = yrs[yrs <= y_end]
+        if len(prev) > 0:
+            rows.append((poly, int(prev.max())))
+    last_df = pd.DataFrame(
+        rows, columns=[poly_identifier, "last_conflict_year"]
+    ).set_index(poly_identifier)
+    out_file = os.path.join(files_dir, f"last_conflict_year_{y_end}.csv")
+    click.echo(f"Storing last conflict years to file {out_file}.")
+    last_df.to_csv(out_file)
