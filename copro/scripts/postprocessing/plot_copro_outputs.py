@@ -3,14 +3,13 @@
 Standalone entry point for inspecting CoPro output without the R workflow.
 Uses CoPro's built-in `plots` module where it provides something useful.
 
-    python plot_copro_outputs.py                        # list available runs
-    python plot_copro_outputs.py MENA                   # show plots on screen
-    python plot_copro_outputs.py MENA --save            # write PNGs to the run dir
-    python plot_copro_outputs.py MENA --source acled    # non-default conflict source
-    python plot_copro_outputs.py MENA --output-root ../OUT
+    python plot_copro_outputs.py --output-root ../OUT                       # list available runs
+    python plot_copro_outputs.py MENA --output-root ../OUT                  # show plots on screen
+    python plot_copro_outputs.py MENA --output-root ../OUT --save           # write PNGs to the run dir
+    python plot_copro_outputs.py MENA --output-root ../OUT --source acled   # non-default conflict source
 
-OUTPUT_ROOT below is a convenience default only; --output-root overrides it,
-following the same pattern as grouped_importance.py and onset_experiment.py.
+--output-root is required, as in grouped_importance.py and onset_experiment.py,
+so the plots cannot silently be made from another run's output.
 """
 
 import argparse
@@ -35,10 +34,6 @@ plt.ioff()
 # -----------------------------------------------------------------------------
 # Configuration
 # -----------------------------------------------------------------------------
-
-OUTPUT_ROOT = Path(
-    r"C:\Siderius_UNCHARTED\Projects\2026 FAO conflict II\4.Analysis\copro\output"
-)
 
 # Optional. Two columns are used if present: `variable` and `label`. When the
 # file is missing, raw variable names are used and nothing breaks. Keeping the
@@ -66,7 +61,7 @@ def get_output_path(region, source=DEFAULT_SOURCE, output_root=None):
     is accepted as a fallback for older output trees.
     """
 
-    root = Path(output_root) if output_root else OUTPUT_ROOT
+    root = Path(output_root)
 
     for name in (f"{region}_{source}", region):
         path = root / name / "_REF"
@@ -82,7 +77,7 @@ def get_output_path(region, source=DEFAULT_SOURCE, output_root=None):
 def list_runs(output_root=None):
     """Returns (region, source) pairs for every run directory found."""
 
-    root = Path(output_root) if output_root else OUTPUT_ROOT
+    root = Path(output_root)
 
     runs = []
     for d in sorted(root.iterdir()):
@@ -343,7 +338,7 @@ if __name__ == "__main__":
     )
     ap.add_argument("region", nargs="?", help="region name; omit to list available runs")
     ap.add_argument("--source", default=DEFAULT_SOURCE, help="conflict source suffix")
-    ap.add_argument("--output-root", default=None, help="CoPro output root")
+    ap.add_argument("--output-root", required=True, help="CoPro output root")
     ap.add_argument("--save", action="store_true", help="write PNGs instead of showing them")
     args = ap.parse_args()
 

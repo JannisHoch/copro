@@ -23,8 +23,11 @@ difference between cutoffs.
 Cutoffs are applied at SPLIT time to the XY's own `year` column, so the XY
 cache does not depend on the cutoff - no rebuild, no cache delete.
 
-Reads : <OUTPUT_ROOT>/<sim>/_REF/XY.gpkg  +  indicator_categories.csv
-Writes: <OUTPUT_ROOT>/eval/summary/grouped_importance.csv
+Reads : <output_root>/<sim>/_REF/XY.gpkg  +  indicator_categories.csv
+Writes: <output_root>/eval/summary/grouped_importance.csv
+
+--output-root and --categories are required, with no default here, so the
+importance cannot silently be computed for another run or another grouping.
 """
 
 import os
@@ -40,9 +43,6 @@ from copro import settings
 # --------------------------------------------------------------------------- #
 # configuration
 # --------------------------------------------------------------------------- #
-OUTPUT_ROOT = "C:/Siderius_UNCHARTED/Projects/2026 FAO conflict II/4.Analysis/copro/output"
-CATEGORIES_FILE = "./workflows/indicator_categories.csv"
-
 STRATEGIES = ["random", "temporal", "leave_polygons_out"]
 
 # Standalone fallback only - the R side passes --temporal-cutoff, and the
@@ -160,7 +160,7 @@ def grouped_perm_importance(rf, X_em, y_em, base_ap, col_index, cols, rng):
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
-def main(output_root=OUTPUT_ROOT, categories_file=CATEGORIES_FILE, region=None,
+def main(output_root, categories_file, region=None,
          source=None, temporal_cutoffs=TEMPORAL_CUTOFFS):
     cats = pd.read_csv(categories_file)
     out_dir = os.path.join(output_root, "eval", "summary")
@@ -287,8 +287,8 @@ def main(output_root=OUTPUT_ROOT, categories_file=CATEGORIES_FILE, region=None,
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser(description="Grouped permutation importance on emerging onset.")
-    ap.add_argument("--output-root", default=OUTPUT_ROOT, help="CoPro output root (contains <sim>/_REF and eval/)")
-    ap.add_argument("--categories", default=CATEGORIES_FILE, help="path to indicator_categories.csv")
+    ap.add_argument("--output-root", required=True, help="CoPro output root (contains <sim>/_REF and eval/)")
+    ap.add_argument("--categories", required=True, help="path to indicator_categories.csv")
     ap.add_argument("--region", default=None, help="optional: restrict to one region (sim folder prefix)")
     ap.add_argument("--source", default=None, help="optional: conflict source suffix, e.g. ucdp")
     ap.add_argument("--temporal-cutoff", type=int, nargs="+", default=TEMPORAL_CUTOFFS,
