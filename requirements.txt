@@ -15,4 +15,4 @@ pylint
 rasterstats==0.19.0
 setuptools==78.1.1
 tox==4.14.2
-wheel==0.38.1
+wheel==0.46.2
