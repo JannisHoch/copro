@@ -100,6 +100,14 @@ def polygon_model_accuracy(
     )
     df_count["max_prob_1"] = pd.to_numeric(df.y_prob_1).groupby(df.ID).max()
 
+    # - per polygon ID, stratum and calibrated probability, where the projection
+    #   carries them (a deploy model with calibration.json)
+    if "calibrated_probability" in df.columns:
+        df_count["stratum"] = df.stratum.groupby(df.ID).first()
+        df_count["calibrated_probability"] = (
+            pd.to_numeric(df.calibrated_probability).groupby(df.ID).mean()
+        )
+
     # - merge the two dataframes with ID as key
     df_temp = pd.merge(ID_count, df_count, on="ID")
 

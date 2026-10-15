@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 from pathlib import Path
@@ -152,7 +153,6 @@ class MachineLearning:
         Args:
             X_train (np.ndarray, pd.DataFrame): training-data of variable values.
             y_train (np.ndarray): training-data of conflict data.
-            train_ID (np.ndarray): polygon ID per training row, used to group the inner CV folds.
             X_test (np.ndarray, pd.DataFrame): test-data of variable values.
             y_test (np.ndarray): test-data of conflict data, used for permutation importance.
             out_dir (str): path to output folder.
@@ -167,22 +167,19 @@ class MachineLearning:
             np.ndarray: dataframe containing permutation importances of variables.
         """
 
-        if tune_hyperparameters:
-            # run_nr varies the inner CV folds deterministically rather than
-            # randomly; the base seed is the one the train/test split uses.
-            cv_seed = self.config["machine_learning"].get("split_seed", 42) + run_nr
-            fitted_estimator = apply_gridsearchCV(
-                self.estimator,
-                X_train,
-                y_train,
-                train_ID,
-                n_jobs=n_jobs,
-                verbose=verbose,
-                seed=cv_seed,
-            )
-        else:
-            # fit the classifier with training data
-            fitted_estimator = self.estimator.fit(X_train, y_train)
+        # same seed convention as the train/test split, so run_nr varies the
+        # inner CV folds deterministically rather than randomly.
+        cv_seed = self.config["machine_learning"].get("split_seed", 42) + run_nr
+        fitted_estimator = fit_estimator(
+            self.estimator,
+            X_train,
+            y_train,
+            train_ID,
+            tune_hyperparameters,
+            cv_seed,
+            n_jobs=n_jobs,
+            verbose=verbose,
+        )
 
         # compute permutation importance on the TEST set with ROC-AUC scoring.
         # Test set: avoids inflated importance from features the trees memorized
@@ -243,6 +240,82 @@ def load_estimators(config: dict, out_dir: str) -> list[str]:
 
     return estimators
 
+def load_deploy_model(deploy_dir: str) -> Tuple[object, object, dict]:
+    """Loads the deploy estimator, its scaler and the manifest describing them.
+
+    `deploy.py` writes the pair as two flat pickles plus a manifest, not as an
+    `estimators/` folder, so `load_estimators()` does not apply here. Estimator
+    and scaler are returned together because they were fitted on the same rows
+    and must never be paired with anything else.
+
+    Args:
+        deploy_dir (str): path to the _DEPLOY folder written by deploy.py.
+
+    Returns:
+        tuple: fitted estimator, fitted scaler, manifest dictionary.
+    """
+
+    manifest_file = os.path.join(deploy_dir, "deploy_manifest.json")
+    with open(manifest_file, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    if manifest["kind"] != "copro_deploy_model":
+        raise ValueError(
+            f"{manifest_file} is not a copro deploy manifest "
+            f"(kind = {manifest['kind']})."
+        )
+
+    estimator_file = os.path.join(deploy_dir, manifest["estimator_file"])
+    scaler_file = os.path.join(deploy_dir, manifest["scaler_file"])
+
+    click.echo(f"Loading deploy estimator from {estimator_file}.")
+    with open(estimator_file, "rb") as f:
+        estimator = pickle.load(f)
+
+    click.echo(f"Loading deploy scaler from {scaler_file}.")
+    with open(scaler_file, "rb") as f:
+        scaler = pickle.load(f)
+
+    click.echo(
+        f"Deploy model: feature set {manifest['feature_set']}, "
+        f"{manifest['n_features']} features, fitted on {manifest['n_rows']} rows, "
+        f"{manifest['n_covered_polygons']} polygons covered."
+    )
+
+    return estimator, scaler, manifest
+
+
+def check_projection_columns(manifest: dict, X_est: pd.DataFrame):
+    """Checks the projection feature matrix against the deploy manifest.
+
+    `predictive()` converts X to a numpy array and the deploy estimator was
+    fitted on an array too, so neither object carries feature names
+    (`feature_names_in_` is absent on both) and sklearn can only check the
+    column COUNT. Two predictor sets of equal width, or the same set listed in
+    a different order in the projection config, would be scored silently
+    against the wrong trees. This ordered comparison is the only thing that can
+    catch it.
+
+    Args:
+        manifest (dict): manifest returned by `load_deploy_model`.
+        X_est (pd.DataFrame): projection feature matrix, columns 0 and 1 being
+            poly_ID and poly_geometry.
+    """
+
+    projected_cols = [str(c) for c in X_est.columns[2:]]
+    expected_cols = list(manifest["feature_columns"])
+
+    if projected_cols != expected_cols:
+        missing = [c for c in expected_cols if c not in projected_cols]
+        unexpected = [c for c in projected_cols if c not in expected_cols]
+        raise ValueError(
+            "Projection feature columns do not match the deploy model.\n"
+            f"  deploy model ({len(expected_cols)}): {expected_cols}\n"
+            f"  projection   ({len(projected_cols)}): {projected_cols}\n"
+            f"  in the model but not the projection: {missing}\n"
+            f"  in the projection but not the model: {unexpected}\n"
+            "Order matters: the estimator was fitted on positions, not names."
+        )
 
 def _split_conflict_geom_data(
     X: Union[np.ndarray, pd.DataFrame]
@@ -346,6 +419,104 @@ def predictive(
     )
 
     return y_df
+
+
+# One score-to-probability rule per stratum: at the same score, a polygon that
+# had conflict the year before sees conflict more often than one that had not.
+STRATA = ["emerging", "ongoing"]
+
+
+def strata_from_conflict(conflict_t_min_1) -> np.ndarray:
+    """Stratum per row from conflict in the previous year.
+
+    Args:
+        conflict_t_min_1 (array-like): 0/1 or boolean, conflict at t-1.
+
+    Returns:
+        np.ndarray: "ongoing" where conflict was present at t-1, else "emerging".
+    """
+
+    return np.where(np.asarray(conflict_t_min_1).astype(int) == 1, "ongoing", "emerging")
+
+
+def score_to_probability(rules: dict, strata: np.ndarray, score: np.ndarray) -> np.ndarray:
+    """Converts scores (`y_prob_1`) to probabilities with the rule of each
+    row's stratum. The rules are fitted by `scripts/calibrate.py`.
+
+    A rule is a list of points: the mean score of a group of held-out rows and
+    the probability of that group. A score between two points is read off the
+    straight line between them. A score below the first or above the last
+    point gets the first or last probability, so nothing is extrapolated.
+
+    Args:
+        rules (dict): the `rules` block of calibration.json.
+        strata (np.ndarray): stratum per row, from `strata_from_conflict`.
+        score (np.ndarray): score per row.
+
+    Returns:
+        np.ndarray: probability per row.
+    """
+
+    score = np.asarray(score, dtype=float)
+    probability = np.full(len(score), np.nan)
+    for stratum in STRATA:
+        rows = strata == stratum
+        probability[rows] = np.interp(
+            score[rows], rules[stratum]["score_mean"], rules[stratum]["probability"]
+        )
+
+    return probability
+
+
+def fit_estimator(
+    estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    groups: np.ndarray,
+    tune_hyperparameters: bool,
+    seed: int,
+    n_jobs=2,
+    verbose=0,
+) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
+    """Fits the estimator, with or without a hyperparameter search first.
+
+    The one place an estimator is fitted. `MachineLearning.fit_predict` calls
+    it on the training rows of an evaluation run and `scripts/deploy.py` calls
+    it on all rows, so the deploy model is produced by the procedure the
+    evaluation measured - the same fixed hyperparameters, or the same search.
+
+    Args:
+        estimator (Union[RandomForestClassifier, RandomForestRegressor]): estimator from `settings.define_model`.
+        X_train (np.ndarray): Feature matrix, already scaled.
+        y_train (np.ndarray): Target vector.
+        groups (np.ndarray): polygon ID per row; used by the search only.
+        tune_hyperparameters (bool): from `settings.define_tuning`.
+        seed (int): Seed for the inner CV fold assignment; used by the search only.
+        n_jobs (int, optional): Number of cores to be used. Defaults to 2.
+        verbose (int, optional): Verbosity level. Defaults to 0.
+
+    Returns:
+        Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]: the fitted estimator.
+    """
+
+    if tune_hyperparameters:
+        return apply_gridsearchCV(
+            estimator,
+            X_train,
+            y_train,
+            groups,
+            n_jobs=n_jobs,
+            verbose=verbose,
+            seed=seed,
+        )
+
+    # No search to spread over the cores, so the forest uses them itself. The
+    # trees do not depend on n_jobs. It is a machine setting, not a model
+    # setting, so it is taken off again before the estimator is pickled.
+    estimator.set_params(n_jobs=n_jobs)
+    fitted_estimator = estimator.fit(X_train, y_train)
+    fitted_estimator.set_params(n_jobs=None)
+    return fitted_estimator
 
 
 def apply_gridsearchCV(
