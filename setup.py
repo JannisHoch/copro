@@ -17,6 +17,7 @@ requirements = [
     "geopandas==0.14.2",
     "numpy==1.26.3",
     "scikit-learn==1.5.0",
+    "joblib==1.5.1",
     "netcdf4==1.6.0",
 ]
 
@@ -48,6 +49,7 @@ setup(
         ],
     },
     install_requires=requirements,
+    extras_require={"explain": ["shap==0.49.1"]},
     license="MIT",
     long_description=readme,
     include_package_data=True,
