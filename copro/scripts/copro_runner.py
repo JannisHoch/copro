@@ -107,9 +107,9 @@ def cli(cfg: click.Path, cores: int, verbose: int):
     # (n_repeats=10 in machine_learning.fit_predict), and MainModel.run() vstacks
     # one such block per run - so this frame has n_runs * n_repeats rows, not
     # n_runs. Unlabelled, a repeat is indistinguishable from a run downstream,
-    # which made run-to-run importance stability look far better than it is: the
-    # R side was correlating repeats of a single fit and reporting the result as
-    # rank stability across fits. Label them so the two can be told apart.
+    # and correlating repeats of a single fit reads as rank stability across
+    # fits, which makes importance look far more stable than it is. Label them
+    # so the two can be told apart.
     n_runs_cfg = n_runs
     n_imp_rows = len(out_perm_importances_df)
     if n_imp_rows % n_runs_cfg != 0:
@@ -136,7 +136,7 @@ def cli(cfg: click.Path, cores: int, verbose: int):
     io.save_to_csv(out_dict, out_dir_REF, "evaluation_metrics")
     io.save_to_npy(out_y_df, out_dir_REF, "raw_output_data")
 
-    # tidy per-test-row table for downstream evaluation in R.
+    # tidy per-test-row table for downstream evaluation.
     # Written to a persistent eval/ folder (sibling of the per-run _REF folder,
     # which is recreated each run) so multiple split strategies accumulate side
     # by side: <output_dir>/eval/<simulation_name>_<strategy>.csv

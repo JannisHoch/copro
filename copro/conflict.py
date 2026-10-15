@@ -309,9 +309,9 @@ def _store_boolean_conflict_data_to_csv(
 
 
 # --------------------------------------------------------------------------- #
-# Conflict-history features (Step 3): all-events UCDP history at t-1 and
-# VIEWS-style time-since-conflict decay. The lookups are computed ONCE per
-# region (single spatial join each) and consumed per year inside _fill_XY.
+# Conflict-history features: VIEWS-style time-since-conflict decay. The
+# lookups are computed ONCE per region (single spatial join each) and consumed
+# per year inside _fill_XY.
 # --------------------------------------------------------------------------- #
 
 

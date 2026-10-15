@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Step 4 - Emerging-only onset model experiment (pooled vs onset vs blend).
+Emerging-only onset model experiment (pooled vs onset vs blend).
 (CoPro postprocessing - run after a region sweep.)
 
 Standalone diagnostic - does NOT modify the CoPro pipeline. For each region it
@@ -14,7 +14,7 @@ re-fits TWO RFs from the cached indicator matrix (XY.gpkg) on a SHARED split:
 Both are evaluated on the SAME emerging test rows (conflict_t_min_1 == 0).
 The blend  w * p_onset + (1 - w) * p_pooled  is swept over w = 0.0 .. 1.0:
 w = 0 is the pooled reference, w = 1 the standalone onset model, so one table
-covers all three outcomes of Decision point 4.
+covers the pooled model, the onset model and every blend in between.
 
 Splits are made on the FULL dataset first (random / temporal /
 leave_polygons_out, identical logic to grouped_importance.py), so held-out
@@ -31,18 +31,18 @@ Two mechanism checks ride along per run:
            branch is an embedded onset model)
   check 3: which features take the upper-tree splits (depth <= 2) of the
            pooled forest - names the substitutes that partition the data
-           when conflict_t_min_1 is not chosen (candidate targets for the
-           Step 5 level-to-anomaly conversion)
+           when conflict_t_min_1 is not chosen (candidate targets for
+           converting level features to anomalies)
 
 Reads : <output_root>/<sim>/_REF/XY.gpkg
 Writes: <output_root>/eval/summary/onset_experiment.csv
         <output_root>/eval/summary/onset_experiment_tmin1_depths.csv
         <output_root>/eval/summary/onset_experiment_top_splits.csv
 
-output_root is one run's root (RUN_ROOT in the R wrapper) and the temporal
-cutoff is the wrapper's TEMPORAL_CUTOFF. Both are required arguments, with no
-default here, so the experiment cannot silently run against another run or
-another cutoff than the pipeline's.
+output_root is one run's output root and temporal_cutoff the last training
+year of the temporal split. Both are required arguments, with no default here,
+so the experiment cannot silently run against another run or another cutoff
+than intended.
 """
 
 import os
@@ -59,7 +59,7 @@ from copro import settings
 # --------------------------------------------------------------------------- #
 # configuration
 # --------------------------------------------------------------------------- #
-REGIONS = ["Sub_Saharan_Africa", "MENA"]  # first-pass check; None = all sims
+REGIONS = None                            # sim folder prefixes; None = all sims
 SOURCE = "ucdp"                           # conflict source suffix; None = all
 
 STRATEGIES = ["random", "temporal", "leave_polygons_out"]
@@ -354,13 +354,13 @@ def main(output_root, temporal_cutoff, regions=REGIONS, source=SOURCE,
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser(
-        description="Step 4: emerging-only onset model vs pooled model vs blend."
+        description="Emerging-only onset model vs pooled model vs blend."
     )
     ap.add_argument("--output-root", required=True,
-                    help="one run's root, RUN_ROOT (contains <sim>/_REF and eval/)")
+                    help="one run's output root (contains <sim>/_REF and eval/)")
     ap.add_argument("--temporal-cutoff", type=int, required=True,
-                    help="last training year of the temporal split (wrapper TEMPORAL_CUTOFF)")
-    ap.add_argument("--regions", default=",".join(REGIONS),
+                    help="last training year of the temporal split")
+    ap.add_argument("--regions", default="all",
                     help="comma-separated sim folder prefixes; 'all' = no filter")
     ap.add_argument("--source", default=SOURCE,
                     help="conflict source suffix, e.g. ucdp; 'all' = no filter")

@@ -10,9 +10,9 @@ import xarray as xr
 
 from copro import conflict, nb, utils, variables
 
-# Conflict-derived feature columns (Step 3 added the last four). These are
-# filled from conflict data, never from NetCDF, in both reference and
-# projection runs.
+# Conflict-derived feature columns: the two conflict-at-t-1 flags and the two
+# time-since-conflict decay features. These are filled from conflict data,
+# never from NetCDF, in both reference and projection runs.
 CONFLICT_DERIVED_KEYS = [
     "conflict_t_min_1",
     "conflict_t_min_1_nb",
@@ -59,7 +59,7 @@ class XYData:
             self.XY_dict[key] = pd.Series(dtype=float)
         self.XY_dict["conflict_t_min_1"] = pd.Series(dtype=bool)
         self.XY_dict["conflict_t_min_1_nb"] = pd.Series(dtype=float)
-        # conflict-history features (Step 3): VIEWS-style time-since-conflict
+        # conflict-history features: VIEWS-style time-since-conflict
         # decay at two half-lives. (GED sub-threshold counts were tested and
         # dropped: UCDP's dyad gate biases sub-threshold counts toward dyads
         # that later escalate, and the counts have no forward analogue in
@@ -733,10 +733,9 @@ def _split_XY_data(
             "",
             "A single entirely-NaN indicator is enough to do this, because "
             "dropna() is row-wise.",
-            "Such an indicator can arrive without any config change: INDICATORS "
-            "is built by intersecting indicator_categories.csv with the "
-            "*_global.nc files present on disk, so a stray or half-written file "
-            "joins the feature set silently.",
+            "Check the files listed under data.indicators in the configuration: "
+            "a file that is empty, or holds no values for these polygons and "
+            "years, does this without raising any other error.",
             "If you repair an indicator in place rather than removing it, DELETE "
             "THE XY CACHE before re-running - _check_XY_cache validates the "
             "column list, years and input filenames, never the file contents.",

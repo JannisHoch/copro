@@ -1,6 +1,6 @@
 """CoPro output plotting - standard plots for a first look at a finished run.
 
-Standalone entry point for inspecting CoPro output without the R workflow.
+Standalone entry point for inspecting CoPro output.
 Uses CoPro's built-in `plots` module where it provides something useful.
 
     python plot_copro_outputs.py --output-root ../OUT                       # list available runs
@@ -37,7 +37,7 @@ plt.ioff()
 
 # Optional. Two columns are used if present: `variable` and `label`. When the
 # file is missing, raw variable names are used and nothing breaks. Keeping the
-# labels in one CSV avoids a second copy drifting out of step with the R side.
+# labels in one CSV avoids a second copy drifting out of step elsewhere.
 INDICATOR_CATEGORIES_FILE = Path("indicator_categories.csv")
 
 DEFAULT_SOURCE = "ucdp"

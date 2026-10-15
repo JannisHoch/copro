@@ -72,8 +72,8 @@ def run_projection(deploy_dir, keys=None):
         )
 
     # The config the model was fitted from. Read from _DEPLOY rather than from
-    # CONFIG_DIR: the config there is regenerated on every run and may describe
-    # a different predictor set than the one this model was fitted on.
+    # the folder the config came from: that copy may since have been
+    # regenerated for a different predictor set than this model was fitted on.
     config_matches = sorted(glob.glob(os.path.join(out_dir_DEPLOY, "copy_of_*.yaml")))
     if len(config_matches) != 1:
         raise ValueError(

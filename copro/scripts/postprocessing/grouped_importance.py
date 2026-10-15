@@ -45,10 +45,9 @@ from copro import settings
 # --------------------------------------------------------------------------- #
 STRATEGIES = ["random", "temporal", "leave_polygons_out"]
 
-# Standalone fallback only - the R side passes --temporal-cutoff, and the
-# wrapper's TEMPORAL_CUTOFF / TEMPORAL_CUTOFF_WINDOW are the source of truth.
-# Same two names here so the fallback follows the centre year rather than
-# pinning a window that quietly stops matching the pipeline.
+# Default window only - --temporal-cutoff overrides it. Defined as a centre
+# year and an odd window width, so the default follows the centre year rather
+# than pinning a list of years.
 TEMPORAL_CUTOFF = 2017
 TEMPORAL_CUTOFF_WINDOW = 3
 if TEMPORAL_CUTOFF_WINDOW % 2 == 0:

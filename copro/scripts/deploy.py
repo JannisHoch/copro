@@ -123,9 +123,9 @@ from copro import machine_learning, selection, settings, xydata
 def _hyperparameters(estimator):
     """The subset of RF attributes worth recording in the manifest.
 
-    Same attribute list as copro_functions.R's hyperparameter extractor, so the
-    deploy fit can be compared against the evaluation fits without a second
-    convention. dicts (class_weight) are stringified the same way.
+    The attribute list, and the `key:value` form for dicts (class_weight), are
+    kept fixed, so the deploy fit can be compared with hyperparameters
+    extracted from the evaluation fits under one convention.
     """
     attrs = [
         "n_estimators",
@@ -190,8 +190,9 @@ def build_deploy(
 
     # The projection configs travel with the model too, under their own names,
     # so the bare filename in the `projections` block resolves inside _DEPLOY
-    # and the projection run needs nothing from CONFIG_DIR - where configs are
-    # regenerated on every run and may describe a different predictor set.
+    # and the projection run needs nothing from the folder the configs came
+    # from, where they may since have been regenerated for another predictor
+    # set.
     for key, entry in config.get("projections", {}).items():
         proj_src = os.path.join(root_dir, entry["file"])
         shutil.copyfile(
