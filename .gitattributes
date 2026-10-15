@@ -1,0 +1,9 @@
+# Store text with LF in the repository, whatever each machine's
+# core.autocrlf happens to be.
+* text=auto
+
+# Windows batch files must keep CRLF or they will not run.
+*.bat text eol=crlf
+
+# Binary.
+*.png binary

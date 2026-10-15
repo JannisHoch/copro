@@ -1,0 +1,36 @@
+general:
+  # project.py reads this file from the deploy folder (_DEPLOY) and resolves
+  # input_dir against it, so input_dir must be an absolute path there
+  input_dir: ../data
+
+data:
+  extent:
+    file: polygons/Sub_Saharan_Africa_adm1.gpkg
+
+  # same indicators, in the same order, as example_settings.yaml: the deploy
+  # model is fitted on column positions, and the projection must match them
+  indicators:
+    Temperature_yearlymonmax:
+      file: predictors/Temperature_yearlymonmax_selection.nc
+      log: False
+      stat: mean
+    PopulationRural_2UP:
+      file: predictors/PopulationRural_2UP_selection.nc
+      log: False
+      stat: mean
+    importdependency:
+      file: predictors/importdependency_selection.nc
+      log: False
+      stat: mean
+    FAO_priceIndex:
+      file: predictors/FAO_priceIndex_selection.nc
+      log: False
+      stat: mean
+    diversity:
+      file: predictors/diversity_selection.nc
+      log: False
+      stat: mean
+    AgGDP:
+      file: predictors/AgGDP_selection.nc
+      log: False
+      stat: mean
