@@ -16,7 +16,7 @@ netCDF4==1.5.3
 notebook>=6.1.5
 numpy==1.22.0
 pandas==1.0.3
-pip>=26.1.2
+pip>=26.2
 pytest==9.0.3
 pytest-runner==5.1
 rasterio==1.1.3
