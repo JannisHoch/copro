@@ -13,7 +13,7 @@ numpy==1.22.0
 pandas==1.0.3
 pip==26.1.2
 pyproj==2.6.0
-pytest==5.4.2
+pytest==9.0.3
 pytest-runner==5.2
 rasterio==1.1.0
 rasterstats==0.14
