@@ -14,7 +14,7 @@ requirements = [
     "rasterio==1.2.10",
     "rioxarray==0.15.0",
     "rasterstats==0.19.0",
-    "geopandas==0.14.2",
+    "geopandas==1.1.2",
     "numpy==1.26.3",
     "scikit-learn==1.5.0",
     "netcdf4==1.6.0",
