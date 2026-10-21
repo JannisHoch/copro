@@ -8,7 +8,49 @@ import pandas as pd
 import rasterio as rio
 import rasterstats as rstats
 import xarray as xr
+from joblib import Parallel, delayed
 
+
+def _zonal_one(geom, nc_arr_vals, affine, stat_method, id_val, id_col, warn_on_none):
+    """Compute zonal statistics for a single polygon geometry.
+
+    Pulled out so the polygon loop can be dispatched to joblib workers.
+    Returns the statistic value, or np.nan if rasterstats returns None.
+    """
+    zonal_stats = rstats.zonal_stats(
+        geom,
+        nc_arr_vals,
+        affine=affine,
+        stats=stat_method,
+        all_touched=True,
+    )
+    val = zonal_stats[0][stat_method]
+
+    if val is None:
+        if warn_on_none:
+            warnings.warn(
+                f"`None` computed for {id_col}{id_val}, setting to `np.nan`!"
+            )
+        val = np.nan
+
+    return val
+
+def _warn_nan_summary(values, extent_gdf, id_col, var_name, data_year):
+    """One warning per variable-year instead of one per polygon.
+
+    data_year is the LAGGED year read from the nc-file, not the simulation
+    year: sim_year has already had LAG_TIME subtracted by this point.
+    """
+    ids = (extent_gdf[id_col].tolist() if id_col in extent_gdf.columns
+           else list(range(len(values))))
+    nan_ids = [i for i, v in zip(ids, values)
+               if v is None or (isinstance(v, float) and np.isnan(v))]
+    if not nan_ids:
+        return
+    shown = ", ".join(str(i) for i in nan_ids[:5])
+    more = f", +{len(nan_ids) - 5} more" if len(nan_ids) > 5 else ""
+    warnings.warn(f"{var_name} {data_year}: {len(nan_ids)}/{len(values)} "
+                  f"polygons NaN ({shown}{more})")
 
 def nc_with_float_timestamp(
     extent_gdf: gpd.GeoDataFrame,
@@ -58,6 +100,11 @@ def nc_with_float_timestamp(
     click.echo(f"\tstatistical method: {stat_method}.")
     click.echo(f"\tlag time: {LAG_TIME} year(s).")
 
+    if ln_flag:
+        raise NotImplementedError(
+            "Log-transformation for continuous datetime timestamp not yet implemented."
+        )
+
     sim_year = sim_year - LAG_TIME
 
     # open nc-file with xarray as dataset
@@ -74,39 +121,26 @@ def nc_with_float_timestamp(
             f"No data was found for this year in the nc-file {nc_fo}, check if all is correct."
         )
 
-    # initialize output list
-    list_out = []
-    # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for _, row in extent_gdf.iterrows():
+    id_col = config["data"]["extent"].get("id", "watprovID")
+    n_jobs = config.get("general", {}).get("n_jobs_zonal", -1)
 
-        # compute zonal stats for this province
-        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
-        # if all_touched=False, only for raster cells with centre point in polygon are considered,
-        # but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(
+    # compute zonal stats per polygon in parallel
+    # all_touched=True means raster cells touched by polygon are included
+    list_out = Parallel(n_jobs=n_jobs, backend="loky")(
+        delayed(_zonal_one)(
             row.geometry,
             nc_arr_vals,
-            affine=affine,
-            stats=stat_method,
-            all_touched=True,
+            affine,
+            stat_method,
+            row[id_col] if id_col in extent_gdf.columns else None,
+            id_col,
+            True,
         )
-        val = zonal_stats[0][stat_method]
+        for _, row in extent_gdf.iterrows()
+    )
+    list_out = list(list_out)
 
-        # if specified, log-transform value
-        if ln_flag:
-            raise NotImplementedError(
-                "Log-transformation for continuous datetime timestamp not yet implemented."
-            )
-
-        # warn if result is NaN
-        if val is None:
-            warnings.warn(
-                f"`None` computed for {config['data']['extent']['id']}"
-                f"{row[config['data']['extent']['id']]}, setting to `np.nan`!"
-            )
-            val = np.nan
-
-        list_out.append(val)
+    _warn_nan_summary(list_out, extent_gdf, id_col, var_name, sim_year)
 
     return list_out
 
@@ -159,6 +193,11 @@ def nc_with_continous_datetime_timestamp(
     click.echo(f"\tstatistical method: {stat_method}.")
     click.echo(f"\tlag time: {LAG_TIME} year(s).")
 
+    if ln_flag:
+        raise NotImplementedError(
+            "Log-transformation for continuous datetime timestamp not yet implemented."
+        )
+
     sim_year = sim_year - LAG_TIME
     # open nc-file with xarray as dataset
     nc_ds = xr.open_dataset(nc_fo)
@@ -176,34 +215,25 @@ def nc_with_continous_datetime_timestamp(
     # open nc-file with rasterio to get affine information
     affine = rio.open(nc_fo).transform
 
-    # initialize output list
-    list_out = []
-    # loop through all polygons in geo-dataframe and compute statistics, then append to output file
-    for _, row in extent_gdf.iterrows():
+    id_col = config["data"]["extent"].get("id", "watprovID")
+    n_jobs = config.get("general", {}).get("n_jobs_zonal", -1)
 
-        # compute zonal stats for this province
-        # computes a value per polygon for all raster cells that are touched by polygon (all_touched=True)
-        # if all_touched=False, only for raster cells with centre point in polygon are considered,
-        # but this is problematic for very small polygons
-        zonal_stats = rstats.zonal_stats(
+    # compute zonal stats per polygon in parallel
+    # all_touched=True means raster cells touched by polygon are included
+    list_out = Parallel(n_jobs=n_jobs, backend="loky")(
+        delayed(_zonal_one)(
             row.geometry,
             nc_arr_vals,
-            affine=affine,
-            stats=stat_method,
-            all_touched=True,
+            affine,
+            stat_method,
+            row[id_col] if id_col in extent_gdf.columns else None,
+            id_col,
+            True,
         )
-        val = zonal_stats[0][stat_method]
+        for _, row in extent_gdf.iterrows()
+    )
+    list_out = list(list_out)
 
-        # if specified, log-transform value
-        if ln_flag:
-            raise NotImplementedError(
-                "Log-transformation for continuous datetime timestamp not yet implemented."
-            )
-
-        # warn if result is NaN
-        if val is None:
-            val = np.nan
-
-        list_out.append(val)
+    _warn_nan_summary(list_out, extent_gdf, id_col, var_name, sim_year)
 
     return list_out

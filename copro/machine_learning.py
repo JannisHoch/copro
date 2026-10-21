@@ -1,3 +1,4 @@
+import json
 import os
 import pickle
 from pathlib import Path
@@ -7,7 +8,7 @@ import click
 import numpy as np
 import pandas as pd
 from sklearn import ensemble, inspection, model_selection, preprocessing
-from sklearn.model_selection import GridSearchCV, KFold
+from sklearn.model_selection import GridSearchCV, GroupKFold, StratifiedGroupKFold
 
 
 class MachineLearning:
@@ -30,39 +31,90 @@ class MachineLearning:
         self.estimator = estimator
 
     def split_scale_train_test_split(
-        self, X: Union[np.ndarray, pd.DataFrame], Y: np.ndarray
+        self,
+        X: Union[np.ndarray, pd.DataFrame],
+        Y: np.ndarray,
+        meta: pd.DataFrame,
+        run_nr: int = 0,
     ):
-        """Splits and transforms the X-array (or sample data) and
-        Y-array (or target data) in test-data and training-data.
-        The fraction of data used to split the data is specified in the configuration file.
-        Additionally, the unique identifier and geometry of each data point in both
-        test-data and training-data is retrieved in separate arrays.
+        """Partitions X/Y/meta into train and test sets and scales the features.
 
-        Args:
-            X (array): array containing the variable values plus unique identifer and geometry information.
-            Y (array): array containing merely the binary conflict classifier data.
+        The partition strategy is read from the config and is one of:
+          - "random": random row-wise hold-out (optimistic; the same polygon can
+            appear in train and test across years).
+          - "temporal": train on years <= temporal_cutoff, test on later years
+            (out-of-time generalization).
+          - "leave_polygons_out": whole polygons held out, so no polygon is in
+            both train and test (spatial generalization; breaks the
+            same-polygon-across-years leakage).
 
-        Returns:
-            arrays: arrays containing training-set and test-set for X-data and Y-data as well as IDs and geometry.
+        The scaler is fit on the TRAINING rows only and then applied to the test
+        rows, so no test-set information leaks into scaling. ID and geometry ride
+        along unscaled; meta_test is returned for downstream stratification.
         """
-
         ##- separate arrays for ID, geometry, and variable values
         X_ID, X_geom, X_data = _split_conflict_geom_data(X)
 
-        ##- scaling only the variable values
-        click.echo("Fitting and transforming scaler.")
-        X_ft = self.scaler.fit_transform(X_data)
+        Y = np.asarray(Y)
+        meta = meta.reset_index(drop=True)
 
-        ##- combining ID, geometry and scaled sample values per polygon
-        X_cs = np.column_stack((X_ID, X_geom, X_ft))
+        ml = self.config["machine_learning"]
+        strategy = ml.get("split_strategy", "random")
+        # vary the seed per run so n_runs > 1 produces different random/spatial
+        # splits (reproducible given the base seed); temporal is deterministic
+        # and unaffected.
+        seed = ml.get("split_seed", 42) + run_nr
+        test_fraction = 1 - ml["train_fraction"]
+        n = X_data.shape[0]
 
-        ##- splitting in train and test samples based on user-specified fraction
-        click.echo("Splitting both X and Y in train and test data.")
-        X_train, X_test, y_train, y_test = model_selection.train_test_split(
-            X_cs,
-            Y,
-            test_size=1 - self.config["machine_learning"]["train_fraction"],
+        ##- determine train/test row indices according to the chosen strategy
+        if strategy == "random":
+            train_idx, test_idx = model_selection.train_test_split(
+                np.arange(n), test_size=test_fraction, random_state=seed
+            )
+        elif strategy == "temporal":
+            cutoff = ml.get("temporal_cutoff")
+            if cutoff is None:
+                raise ValueError(
+                    "split_strategy='temporal' requires 'temporal_cutoff' "
+                    "in the machine_learning config."
+                )
+            years = meta["year"].to_numpy()
+            train_idx = np.where(years <= cutoff)[0]
+            test_idx = np.where(years > cutoff)[0]
+            if len(train_idx) == 0 or len(test_idx) == 0:
+                raise ValueError(
+                    f"temporal_cutoff={cutoff} leaves an empty train or test set."
+                )
+        elif strategy == "leave_polygons_out":
+            groups = meta["poly_ID"].to_numpy()
+            gss = model_selection.GroupShuffleSplit(
+                n_splits=1, test_size=test_fraction, random_state=seed
+            )
+            train_idx, test_idx = next(gss.split(np.arange(n), Y, groups))
+        else:
+            raise ValueError(
+                f"Unknown split_strategy '{strategy}'. Use 'random', "
+                "'temporal', or 'leave_polygons_out'."
+            )
+
+        click.echo(
+            f"Split strategy '{strategy}' (seed {seed}): "
+            f"train={len(train_idx)}, test={len(test_idx)}."
         )
+
+        ##- fit scaler on TRAINING data only, then transform both sets
+        click.echo("Fitting scaler on training data and transforming both sets.")
+        X_train_ft = self.scaler.fit_transform(X_data[train_idx])
+        X_test_ft = self.scaler.transform(X_data[test_idx])
+
+        ##- reattach unscaled ID and geometry
+        X_train = np.column_stack((X_ID[train_idx], X_geom[train_idx], X_train_ft))
+        X_test = np.column_stack((X_ID[test_idx], X_geom[test_idx], X_test_ft))
+
+        y_train = Y[train_idx]
+        y_test = Y[test_idx]
+        meta_test = meta.iloc[test_idx]
 
         # for training-set and test-set, split in ID, geometry, and values
         X_train_ID, X_train_geom, X_train = _split_conflict_geom_data(X_train)
@@ -77,13 +129,16 @@ class MachineLearning:
             X_test_geom,
             X_train_ID,
             X_test_ID,
+            meta_test,
         )
 
     def fit_predict(
         self,
         X_train: Union[np.ndarray, pd.DataFrame],
         y_train: np.ndarray,
+        train_ID: np.ndarray,
         X_test: Union[np.ndarray, pd.DataFrame],
+        y_test: np.ndarray,
         out_dir: str,
         run_nr: int,
         tune_hyperparameters=False,
@@ -99,6 +154,7 @@ class MachineLearning:
             X_train (np.ndarray, pd.DataFrame): training-data of variable values.
             y_train (np.ndarray): training-data of conflict data.
             X_test (np.ndarray, pd.DataFrame): test-data of variable values.
+            y_test (np.ndarray): test-data of conflict data, used for permutation importance.
             out_dir (str): path to output folder.
             run_nr (int): number of fit/predict repetition and created classifier.
             tune_hyperparameters (bool, optional): whether to tune hyperparameters. Defaults to False.
@@ -111,23 +167,34 @@ class MachineLearning:
             np.ndarray: dataframe containing permutation importances of variables.
         """
 
-        if tune_hyperparameters:
-            fitted_estimator = apply_gridsearchCV(
-                self.estimator, X_train, y_train, n_jobs=n_jobs, verbose=verbose
-            )
-        else:
-            # fit the classifier with training data
-            fitted_estimator = self.estimator.fit(X_train, y_train)
-
-        # compute permutation importance
-        click.echo("Computing permutation importance.")
-        perm_importances = inspection.permutation_importance(
-            fitted_estimator,
+        # same seed convention as the train/test split, so run_nr varies the
+        # inner CV folds deterministically rather than randomly.
+        cv_seed = self.config["machine_learning"].get("split_seed", 42) + run_nr
+        fitted_estimator = fit_estimator(
+            self.estimator,
             X_train,
             y_train,
+            train_ID,
+            tune_hyperparameters,
+            cv_seed,
+            n_jobs=n_jobs,
+            verbose=verbose,
+        )
+
+        # compute permutation importance on the TEST set with ROC-AUC scoring.
+        # Test set: avoids inflated importance from features the trees memorized
+        # on training data. ROC-AUC: more sensitive than default accuracy for
+        # imbalanced classification (rare conflict events), so importance values
+        # are not compressed toward zero by the high accuracy baseline.
+        click.echo("Computing permutation importance (test set, ROC-AUC).")
+        perm_importances = inspection.permutation_importance(
+            fitted_estimator,
+            X_test,
+            y_test,
             n_repeats=10,
             random_state=42,
             n_jobs=n_jobs,
+            scoring="roc_auc",
         )
         # transpose because by default features are in rows
         perm_importances_arr = perm_importances["importances"].T
@@ -173,6 +240,82 @@ def load_estimators(config: dict, out_dir: str) -> list[str]:
 
     return estimators
 
+def load_deploy_model(deploy_dir: str) -> Tuple[object, object, dict]:
+    """Loads the deploy estimator, its scaler and the manifest describing them.
+
+    `deploy.py` writes the pair as two flat pickles plus a manifest, not as an
+    `estimators/` folder, so `load_estimators()` does not apply here. Estimator
+    and scaler are returned together because they were fitted on the same rows
+    and must never be paired with anything else.
+
+    Args:
+        deploy_dir (str): path to the _DEPLOY folder written by deploy.py.
+
+    Returns:
+        tuple: fitted estimator, fitted scaler, manifest dictionary.
+    """
+
+    manifest_file = os.path.join(deploy_dir, "deploy_manifest.json")
+    with open(manifest_file, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    if manifest["kind"] != "copro_deploy_model":
+        raise ValueError(
+            f"{manifest_file} is not a copro deploy manifest "
+            f"(kind = {manifest['kind']})."
+        )
+
+    estimator_file = os.path.join(deploy_dir, manifest["estimator_file"])
+    scaler_file = os.path.join(deploy_dir, manifest["scaler_file"])
+
+    click.echo(f"Loading deploy estimator from {estimator_file}.")
+    with open(estimator_file, "rb") as f:
+        estimator = pickle.load(f)
+
+    click.echo(f"Loading deploy scaler from {scaler_file}.")
+    with open(scaler_file, "rb") as f:
+        scaler = pickle.load(f)
+
+    click.echo(
+        f"Deploy model: feature set {manifest['feature_set']}, "
+        f"{manifest['n_features']} features, fitted on {manifest['n_rows']} rows, "
+        f"{manifest['n_covered_polygons']} polygons covered."
+    )
+
+    return estimator, scaler, manifest
+
+
+def check_projection_columns(manifest: dict, X_est: pd.DataFrame):
+    """Checks the projection feature matrix against the deploy manifest.
+
+    `predictive()` converts X to a numpy array and the deploy estimator was
+    fitted on an array too, so neither object carries feature names
+    (`feature_names_in_` is absent on both) and sklearn can only check the
+    column COUNT. Two predictor sets of equal width, or the same set listed in
+    a different order in the projection config, would be scored silently
+    against the wrong trees. This ordered comparison is the only thing that can
+    catch it.
+
+    Args:
+        manifest (dict): manifest returned by `load_deploy_model`.
+        X_est (pd.DataFrame): projection feature matrix, columns 0 and 1 being
+            poly_ID and poly_geometry.
+    """
+
+    projected_cols = [str(c) for c in X_est.columns[2:]]
+    expected_cols = list(manifest["feature_columns"])
+
+    if projected_cols != expected_cols:
+        missing = [c for c in expected_cols if c not in projected_cols]
+        unexpected = [c for c in projected_cols if c not in expected_cols]
+        raise ValueError(
+            "Projection feature columns do not match the deploy model.\n"
+            f"  deploy model ({len(expected_cols)}): {expected_cols}\n"
+            f"  projection   ({len(projected_cols)}): {projected_cols}\n"
+            f"  in the model but not the projection: {missing}\n"
+            f"  in the projection but not the model: {unexpected}\n"
+            "Order matters: the estimator was fitted on positions, not names."
+        )
 
 def _split_conflict_geom_data(
     X: Union[np.ndarray, pd.DataFrame]
@@ -278,12 +421,112 @@ def predictive(
     return y_df
 
 
+# One score-to-probability rule per stratum: at the same score, a polygon that
+# had conflict the year before sees conflict more often than one that had not.
+STRATA = ["emerging", "ongoing"]
+
+
+def strata_from_conflict(conflict_t_min_1) -> np.ndarray:
+    """Stratum per row from conflict in the previous year.
+
+    Args:
+        conflict_t_min_1 (array-like): 0/1 or boolean, conflict at t-1.
+
+    Returns:
+        np.ndarray: "ongoing" where conflict was present at t-1, else "emerging".
+    """
+
+    return np.where(np.asarray(conflict_t_min_1).astype(int) == 1, "ongoing", "emerging")
+
+
+def score_to_probability(rules: dict, strata: np.ndarray, score: np.ndarray) -> np.ndarray:
+    """Converts scores (`y_prob_1`) to probabilities with the rule of each
+    row's stratum. The rules are fitted by `scripts/calibrate.py`.
+
+    A rule is a list of points: the mean score of a group of held-out rows and
+    the probability of that group. A score between two points is read off the
+    straight line between them. A score below the first or above the last
+    point gets the first or last probability, so nothing is extrapolated.
+
+    Args:
+        rules (dict): the `rules` block of calibration.json.
+        strata (np.ndarray): stratum per row, from `strata_from_conflict`.
+        score (np.ndarray): score per row.
+
+    Returns:
+        np.ndarray: probability per row.
+    """
+
+    score = np.asarray(score, dtype=float)
+    probability = np.full(len(score), np.nan)
+    for stratum in STRATA:
+        rows = strata == stratum
+        probability[rows] = np.interp(
+            score[rows], rules[stratum]["score_mean"], rules[stratum]["probability"]
+        )
+
+    return probability
+
+
+def fit_estimator(
+    estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    groups: np.ndarray,
+    tune_hyperparameters: bool,
+    seed: int,
+    n_jobs=2,
+    verbose=0,
+) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
+    """Fits the estimator, with or without a hyperparameter search first.
+
+    The one place an estimator is fitted. `MachineLearning.fit_predict` calls
+    it on the training rows of an evaluation run and `scripts/deploy.py` calls
+    it on all rows, so the deploy model is produced by the procedure the
+    evaluation measured - the same fixed hyperparameters, or the same search.
+
+    Args:
+        estimator (Union[RandomForestClassifier, RandomForestRegressor]): estimator from `settings.define_model`.
+        X_train (np.ndarray): Feature matrix, already scaled.
+        y_train (np.ndarray): Target vector.
+        groups (np.ndarray): polygon ID per row; used by the search only.
+        tune_hyperparameters (bool): from `settings.define_tuning`.
+        seed (int): Seed for the inner CV fold assignment; used by the search only.
+        n_jobs (int, optional): Number of cores to be used. Defaults to 2.
+        verbose (int, optional): Verbosity level. Defaults to 0.
+
+    Returns:
+        Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]: the fitted estimator.
+    """
+
+    if tune_hyperparameters:
+        return apply_gridsearchCV(
+            estimator,
+            X_train,
+            y_train,
+            groups,
+            n_jobs=n_jobs,
+            verbose=verbose,
+            seed=seed,
+        )
+
+    # No search to spread over the cores, so the forest uses them itself. The
+    # trees do not depend on n_jobs. It is a machine setting, not a model
+    # setting, so it is taken off again before the estimator is pickled.
+    estimator.set_params(n_jobs=n_jobs)
+    fitted_estimator = estimator.fit(X_train, y_train)
+    fitted_estimator.set_params(n_jobs=None)
+    return fitted_estimator
+
+
 def apply_gridsearchCV(
     estimator: Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor],
     X_train: np.ndarray,
     y_train: np.ndarray,
+    groups: np.ndarray,
     n_jobs=2,
     verbose=0,
+    seed=42,
 ) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
     """Applies grid search to find the best hyperparameters for the RandomForestClassifier.
 
@@ -291,8 +534,11 @@ def apply_gridsearchCV(
         estimator (Union[RandomForestClassifier, RandomForestRegressor]): Estimator to be used in the grid search.
         X_train (np.ndarray): Feature matrix.
         y_train (np.ndarray): Target vector.
+        groups (np.ndarray): polygon ID per training row, used to keep whole polygons inside one inner fold.
         n_jobs (int, optional): Number of cores to be used. Defaults to 2.
         verbose (int, optional): Verbosity level. Defaults to 0.
+        seed (int, optional): Seed for the inner CV fold assignment. Defaults to 42.
+
 
     Returns:
         Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]: Best estimator of the grid search.
@@ -301,17 +547,36 @@ def apply_gridsearchCV(
     click.echo("Tuning hyperparameters with GridSearchCV.")
     # Define the parameter grid
     if isinstance(estimator, ensemble.RandomForestClassifier):
+        # Trimmed grid: 8 combinations (2 x 2 x 2) over the axes that matter
+        # for rare-event conflict. The axes that are NOT searched are not
+        # listed here: they arrive on the estimator from
+        # settings.define_model (DEFAULT_HYPERPARAMETERS, or the config
+        # block), which is their one definition:
+        #   criterion             "gini"  (entropy rarely changes the split)
+        #   min_impurity_decrease 0       (0.5/1 prune trees to near-stumps)
+        #   max_features          "sqrt"  (standard RF default)
+        #   min_samples_split     2       (default)
+        #   bootstrap             True
+        # The three axes below override whatever the estimator carries.
         param_grid = {
-            "n_estimators": [50, 100, 200],
-            "criterion": ["gini", "entropy"],
-            "min_impurity_decrease": [0, 0.5, 1],
-            "max_features": ("sqrt", "log2"),
-            "min_samples_split": [2, 5, 10],
-            "min_samples_leaf": [1, 2, 4],
-            "class_weight": [{1: 75}, {1: 100}, {1: 150}],
-            # 'bootstrap': [True, False]
+            "n_estimators": [100, 200],
+            "min_samples_leaf": [1, 4],
+            "class_weight": [{1: 100}, {1: 150}],
         }
-        scoring = "roc_auc"
+        # average_precision (area under the precision-recall curve) selects
+        # hyperparameters for the rare positive class, rather than roc_auc which
+        # is padded by the large pool of easy true negatives.
+        scoring = "average_precision"
+        # Whole polygons stay inside one inner fold, so a configuration cannot
+        # win by recognising which province a row belongs to. The outer
+        # train/test split was already honest - the search only ever sees
+        # X_train - but the inner fold that scores the eight candidates was
+        # random over rows, which is the one place province identity could pay.
+        # Stratified so the rare positive class stays proportionate across
+        # folds: positives are spatially clustered, and plain GroupKFold
+        # balances fold sizes only, which can leave a fold with very few
+        # onsets and an unstable average_precision.
+        cv = StratifiedGroupKFold(n_splits=3, shuffle=True, random_state=seed)        
     else:
         param_grid = {
             "n_estimators": [10, 50, 100],
@@ -322,23 +587,25 @@ def apply_gridsearchCV(
             "min_samples_leaf": [1, 5, 10],
         }
         scoring = "r2"
-
+        # no stratification for a continuous target
+        cv = GroupKFold(n_splits=3)
+        
     # Instantiate the grid search model
     grid_search = GridSearchCV(
         estimator=estimator,
         param_grid=param_grid,
-        cv=KFold(n_splits=5, shuffle=True),
+        cv=cv,
         n_jobs=n_jobs,
         verbose=verbose,
         scoring=scoring,
     )
 
     # Fit the grid search to the data
-    grid_search.fit(X_train, y_train)
+    grid_search.fit(X_train, y_train, groups=groups)
 
     # Get the best estimator
     best_estimator = grid_search.best_estimator_
-    click.echo(f"ROC-AUC of best estimator is {grid_search.best_score_}.")
+    click.echo(f"Best estimator {scoring} score is {grid_search.best_score_}.")
     click.echo(f"Best estimator is {grid_search.best_estimator_}.")
 
     return best_estimator

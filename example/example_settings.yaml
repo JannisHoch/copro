@@ -1,0 +1,67 @@
+general:
+  # label for this predictor set; recorded in the deploy manifest
+  feature_set: core
+  input_dir: ../data
+  output_dir: ../OUT
+  simulation_name: test_run  
+  # start year
+  y_start: 2000
+  # end year
+  y_end: 2012
+
+projections:
+  proj_nr_1:
+    file: ./example_settings_proj.yaml
+    y_end: 2015
+
+pre_calc:
+  # if nothing is specified, the XY array will be stored in output_dir
+  # if XY already pre-calculated, then provide path to pkl-file
+  XY: ""
+
+
+data:
+  extent:
+    file: polygons/Sub_Saharan_Africa_adm1.gpkg
+    
+  conflict:
+    # either specify path to file or state 'download' to download latest PRIO/UCDP dataset
+    file: ACLED/Sub_Saharan_Africa_acled_aggregated_1996-2026_upto_2026-04-25.csv
+    min_nr_casualties: 5
+    # 1=state-based armed conflict; 2=non-state conflict; 3=one-sided violence
+    type_of_violence: [1, 2, 3]
+
+  indicators:
+    Temperature_yearlymonmax:
+      file: predictors/Temperature_yearlymonmax_selection.nc
+      log: False
+      stat: mean
+    PopulationRural_2UP:
+      file: predictors/PopulationRural_2UP_selection.nc
+      log: False
+      stat: mean
+    importdependency:
+      file: predictors/importdependency_selection.nc
+      log: False
+      stat: mean
+    FAO_priceIndex:
+      file: predictors/FAO_priceIndex_selection.nc
+      log: False
+      stat: mean
+    diversity:
+      file: predictors/diversity_selection.nc
+      log: False
+      stat: mean
+    AgGDP:
+      file: predictors/AgGDP_selection.nc
+      log: False
+      stat: mean
+      
+machine_learning:
+  # choose from: MinMaxScaler, StandardScaler, RobustScaler, QuantileTransformer
+  model: Classification
+  classifier: RFClassifier
+  scaler: QuantileTransformer
+  train_fraction: 0.7
+  # number of repetitions
+  n_runs: 2
