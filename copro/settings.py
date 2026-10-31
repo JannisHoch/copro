@@ -1,3 +1,4 @@
+import json
 import os
 from shutil import copyfile
 from typing import Tuple, Union
@@ -123,10 +124,36 @@ def _collect_simulation_settings(config: dict, root_dir: click.Path) -> dict:
     return config_dict
 
 
+# Default hyperparameters of the classifier, used when the config has no
+# `machine_learning.hyperparameters` block. Keys in that block replace the
+# default for those keys only. The values come from a UCDP-based global
+# application (6 subregions) at water-province level; on other data, set the
+# block or switch the search on with `machine_learning.tune_hyperparameters`.
+DEFAULT_HYPERPARAMETERS = {
+    "n_estimators": 200,
+    "criterion": "gini",
+    "min_samples_split": 2,
+    "min_samples_leaf": 4,
+    "min_impurity_decrease": 0,
+    "max_features": "sqrt",
+    "bootstrap": True,
+    "class_weight": {1: 100},
+    "random_state": 42,
+}
+
+
 def define_model(
     config: dict,
 ) -> Union[ensemble.RandomForestClassifier, ensemble.RandomForestRegressor]:
     """Defines model based on model configurations.
+
+    A classifier carries `DEFAULT_HYPERPARAMETERS`. Keys given in the optional
+    `machine_learning.hyperparameters` block of the config replace the default
+    for those keys only. Both the evaluation run and the deploy fit get their
+    estimator here, so they cannot start from different configurations.
+
+    A regressor is returned with sklearn defaults: the default set is for
+    the classifier (class_weight, gini) and says nothing about regression.
 
     Args:
         config (dict): Parsed configuration-settings of the model.
@@ -136,13 +163,88 @@ def define_model(
     """
 
     if config["machine_learning"]["model"] in ["Classification", "C"]:
-        return ensemble.RandomForestClassifier(random_state=42)
+        hyperparameters = dict(DEFAULT_HYPERPARAMETERS)
+        from_config = config["machine_learning"].get("hyperparameters", {})
+        hyperparameters.update(from_config)
+        # YAML mapping keys can arrive as strings; sklearn matches class_weight
+        # keys against classes_, which is integer dtype here.
+        if isinstance(hyperparameters["class_weight"], dict):
+            hyperparameters["class_weight"] = {
+                int(k): v for k, v in hyperparameters["class_weight"].items()
+            }
+        click.echo("Classifier hyperparameters:")
+        for key, value in hyperparameters.items():
+            origin = "config" if key in from_config else "package default"
+            click.echo(f"...{key}: {value} ({origin})")
+        return ensemble.RandomForestClassifier(**hyperparameters)
     if config["machine_learning"]["model"] in ["Regression", "R"]:
         return ensemble.RandomForestRegressor(random_state=42)
     raise ValueError(
         "no supported model selected - \
             choose between Classification or Regression"
     )
+
+
+def define_tuning(config: dict) -> bool:
+    """Whether hyperparameters are searched with GridSearchCV before fitting.
+
+    Read from `machine_learning.tune_hyperparameters`. Off when the config says
+    nothing, so a config without the key fits the hyperparameters from
+    `define_model` as they are. The evaluation run and the deploy fit both ask
+    here, so one cannot search while the other does not.
+
+    Args:
+        config (dict): Parsed configuration-settings of the model.
+
+    Returns:
+        bool: True if hyperparameters are to be searched.
+    """
+
+    tune_hyperparameters = config["machine_learning"].get("tune_hyperparameters", False)
+    if tune_hyperparameters:
+        click.echo("Hyperparameter search is ON (machine_learning.tune_hyperparameters).")
+    else:
+        click.echo("Hyperparameter search is OFF - fitting the hyperparameters as defined.")
+    return tune_hyperparameters
+
+
+def describe_fit(config, estimator, tune_hyperparameters, feature_columns) -> dict:
+    """Describes what a set of scores was produced with.
+
+    `copro_runner` writes this next to the held-out rows of every evaluation
+    run. `scripts/calibrate.py` builds it again from the deploy model's own
+    config and compares the two, so a score-to-probability rule cannot be
+    fitted on rows from a different predictor set, period or hyperparameter
+    configuration than the model it will be applied to.
+
+    Args:
+        config (dict): Parsed configuration-settings of the model.
+        estimator: the estimator from `define_model`.
+        tune_hyperparameters (bool): from `define_tuning`.
+        feature_columns (list): feature column names, in model order.
+
+    Returns:
+        dict: the description, in the form it has after a JSON round trip.
+    """
+
+    description = {
+        "feature_set": config["general"].get("feature_set"),
+        "y_start": config["general"]["y_start"],
+        "y_end": config["general"]["y_end"],
+        "scaler": config["machine_learning"]["scaler"],
+        "tune_hyperparameters": tune_hyperparameters,
+        # as configured, before any search: with the search on the selections
+        # differ per run and are not a property of the configuration
+        "hyperparameters": {
+            key: value
+            for key, value in estimator.get_params().items()
+            if key in DEFAULT_HYPERPARAMETERS
+        },
+        "feature_columns": [str(c) for c in feature_columns],
+    }
+    # round trip, so a description built here compares equal to one read from
+    # file (class_weight keys become strings)
+    return json.loads(json.dumps(description))
 
 
 def define_target_var(
@@ -174,28 +276,28 @@ def define_target_var(
     return None
 
 
-def determine_projection_period(config_REF: dict) -> list:
+def determine_projection_period(config_REF: dict, projection: str) -> list:
     """Determines the period for which projections need to be made.
     This is defined as the period between the end year of the reference run
-    and the specified projection year for each projection.
+    and the y_end of the given projection.
 
     Args:
         config_REF (dict): model configuration-settings for the reference run.
+        projection (str): key of the projection in config_REF["projections"].
 
     Returns:
         list: all years of the projection period.
     """
-
     # get all years of projection period
     projection_period = np.arange(
         config_REF["general"]["y_end"] + 1,
-        config_REF["projections"]["proj_2020_to_2023"]["y_end"] + 1,
+        config_REF["projections"][projection]["y_end"] + 1,
         1,
     )
     # convert to list
     projection_period = projection_period.tolist()
     click.echo(
-        f"The projection period is {projection_period[0]} to {projection_period[-1]}."
+        f"The projection period for {projection} is "
+        f"{projection_period[0]} to {projection_period[-1]}."
     )
-
     return projection_period
